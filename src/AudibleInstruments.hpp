@@ -10,6 +10,7 @@ using namespace rack;
 struct AudiblePanel : ModulePanel {
 	AudiblePanel() {
 		backgroundColor = nvgRGBf(0.85, 0.85, 0.85);
+		highlightColor = nvgRGBf(0.90, 0.90, 0.90);
 	}
 };
 

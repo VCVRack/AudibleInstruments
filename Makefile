@@ -77,4 +77,16 @@ TARGET = plugin.dll
 endif
 
 
+all: $(TARGET)
+
+dist: $(TARGET)
+	mkdir -p dist/AudibleInstruments
+	cp LICENSE* dist/AudibleInstruments/
+	cp plugin.* dist/AudibleInstruments/
+	cp -R res dist/AudibleInstruments/
+
+clean:
+	rm -rfv build $(TARGET) dist
+
+
 include ../../Makefile.inc
