@@ -57,3 +57,51 @@ Percentages are progress amounts, X means won't port
 #### [100%] Branches (Bernoulli Gate)
 #### [100%] Blinds (Quad VC-polarizer)
 #### [100%] Veils (Quad VCA)
+
+
+
+
+### Sound sources
+- [[Macro Oscillator]] (based on [Braids](http://mutable-instruments.net/modules/braids))
+- [[Modal Synthesizer]] (based on [Elements](http://mutable-instruments.net/modules/elements))
+
+### Modulation sources
+- [[Tidal Modulator]] (based on [Tides](http://mutable-instruments.net/modules/tides))
+
+### Sound modifiers
+- [[Texture Synthesizer]] (based on [Clouds](http://mutable-instruments.net/modules/clouds))
+- [[Meta Modulator]] (based on [Warps](http://mutable-instruments.net/modules/warps))
+- [[Resonator]] (based on [Rings](http://mutable-instruments.net/modules/rings))
+
+### Plumbing
+- [[Multiples]] (based on [Links](http://mutable-instruments.net/modules/links))
+- [[Utilities]] (based on [Kinks](http://mutable-instruments.net/modules/kinks))
+- [[Mixer]] (based on [Shades](http://mutable-instruments.net/modules/shades))
+- [[Bernoulli Gate]] (based on [Branches](http://mutable-instruments.net/modules/branches))
+- [[Quad VC-polarizer]] (based on [Blinds](http://mutable-instruments.net/modules/blinds))
+- [[Quad VCA]] (based on [Veils](http://mutable-instruments.net/modules/veils))
+
+
+![](http://virtuoso.audio/images/AudibleInstruments/macro oscillator.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/modal synthesizer.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/tidal modulator.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/texture synthesizer.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/meta modulator.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/resonator.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/multiples.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/utilities.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/mixer.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/bernoulli gate.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/quad VC-polarizer.png)
+
+![](http://virtuoso.audio/images/AudibleInstruments/quad VCA.png)

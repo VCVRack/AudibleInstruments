@@ -1,5 +1,6 @@
-#include "AudibleInstruments.hpp"
 #include <string.h>
+#include "AudibleInstruments.hpp"
+#include "dsp.hpp"
 #include "elements/dsp/part.h"
 
 
@@ -65,13 +66,13 @@ struct Elements : Module {
 		NUM_OUTPUTS
 	};
 
+	SampleRateConverter<2> inputSrc;
+	SampleRateConverter<2> outputSrc;
+	DoubleRingBuffer<Frame<2>, 256> inputBuffer;
+	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
+
 	uint16_t reverb_buffer[32768] = {};
 	elements::Part *part;
-	int bufferFrame = 0;
-	float blow[16] = {};
-	float strike[16] = {};
-	float main[16] = {};
-	float aux[16] = {};
 	float lights[2] = {};
 
 	Elements();
@@ -99,14 +100,36 @@ Elements::~Elements() {
 }
 
 void Elements::step() {
-	// TODO Sample rate convert from 32000Hz
-	blow[bufferFrame] = getf(inputs[BLOW_INPUT]);
-	strike[bufferFrame] = getf(inputs[STRIKE_INPUT]);
-	setf(outputs[AUX_OUTPUT], 5.0*aux[bufferFrame]);
-	setf(outputs[MAIN_OUTPUT], 5.0*main[bufferFrame]);
+	// Get input
+	if (!inputBuffer.full()) {
+		Frame<2> inputFrame;
+		inputFrame.samples[0] = getf(inputs[BLOW_INPUT]) / 5.0;
+		inputFrame.samples[1] = getf(inputs[STRIKE_INPUT]) / 5.0;
+		inputBuffer.push(inputFrame);
+	}
 
-	if (++bufferFrame >= 16) {
-		bufferFrame = 0;
+	// Render frames
+	if (outputBuffer.empty()) {
+		float blow[16] = {};
+		float strike[16] = {};
+		float main[16];
+		float aux[16];
+
+		// Convert input buffer
+		{
+			inputSrc.setRatio(32000.0 / gRack->sampleRate);
+			Frame<2> inputFrames[16];
+			int inLen = inputBuffer.size();
+			int outLen = 16;
+			inputSrc.process((float*) inputBuffer.startData(), &inLen, (float*) inputFrames, &outLen);
+			inputBuffer.startIncr(inLen);
+
+			for (int i = 0; i < outLen; i++) {
+				blow[i] = inputFrames[i].samples[0];
+				strike[i] = inputFrames[i].samples[1];
+			}
+		}
+
 		// Set patch from parameters
 		elements::Patch* p = part->mutable_patch();
 		p->exciter_envelope_shape = params[CONTOUR_PARAM];
@@ -114,7 +137,7 @@ void Elements::step() {
 		p->exciter_blow_level = params[BLOW_PARAM];
 		p->exciter_strike_level = params[STRIKE_PARAM];
 
-		#define BIND(_p, _m, _i) clampf(params[_p] + 3.3*quadraticBipolar(params[_m])*getf(inputs[_i])/5.0, 0.0, 0.9995)
+#define BIND(_p, _m, _i) clampf(params[_p] + 3.3*quadraticBipolar(params[_m])*getf(inputs[_i])/5.0, 0.0, 0.9995)
 
 		p->exciter_bow_timbre = BIND(BOW_TIMBRE_PARAM, BOW_TIMBRE_MOD_PARAM, BOW_TIMBRE_MOD_INPUT);
 		p->exciter_blow_meta = BIND(FLOW_PARAM, FLOW_MOD_PARAM, FLOW_MOD_INPUT);
@@ -137,9 +160,31 @@ void Elements::step() {
 		// Generate audio
 		part->Process(performance, blow, strike, main, aux, 16);
 
+		// Convert output buffer
+		{
+			Frame<2> outputFrames[16];
+			for (int i = 0; i < 16; i++) {
+				outputFrames[i].samples[0] = main[i];
+				outputFrames[i].samples[1] = aux[i];
+			}
+
+			outputSrc.setRatio(gRack->sampleRate / 32000.0);
+			int inLen = 16;
+			int outLen = outputBuffer.capacity();
+			outputSrc.process((float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
+			outputBuffer.endIncr(outLen);
+		}
+
 		// Set lights
 		lights[0] = part->exciter_level();
 		lights[1] = part->resonator_level();
+	}
+
+	// Set output
+	if (!outputBuffer.empty()) {
+		Frame<2> outputFrame = outputBuffer.shift();
+		setf(outputs[AUX_OUTPUT], 5.0 * outputFrame.samples[0]);
+		setf(outputs[MAIN_OUTPUT], 5.0 * outputFrame.samples[1]);
 	}
 }
 

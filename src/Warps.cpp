@@ -61,6 +61,7 @@ void Warps::step() {
 		p->frequency_shift_cv = clampf(getf(inputs[ALGORITHM_INPUT]) / 5.0, -1.0, 1.0);
 		p->phase_shift = p->modulation_algorithm;
 		p->note = 60.0 * params[LEVEL1_PARAM] + 12.0 * getf(inputs[LEVEL1_INPUT], 2.0) + 12.0;
+		p->note += log2f(96000.0 / gRack->sampleRate) * 12.0;
 		float state = roundf(params[STATE_PARAM]);
 		p->carrier_shape = (int32_t)state;
 		lights[0] = state - 1.0;

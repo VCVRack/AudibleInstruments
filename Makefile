@@ -1,9 +1,7 @@
 
 ARCH ?= linux
-CXXFLAGS = -MMD -fPIC -g -Wall -std=c++11 -O3 -ffast-math -DTEST \
+CXXFLAGS = -MMD -fPIC -g -Wall -std=c++11 -O3 -msse -mfpmath=sse -ffast-math -DTEST \
 	-I./src -I../../include -I./eurorack \
-	-fasm \
-	-finline \
 	-fshort-enums
 
 LDFLAGS =

@@ -82,6 +82,8 @@ void Tides::step() {
 		pitch += 12.0*getf(inputs[PITCH_INPUT]);
 		pitch += params[FM_PARAM] * getf(inputs[FM_INPUT], 0.1) / 5.0;
 		pitch += 60.0;
+		// Scale to the global sample rate
+		pitch += log2f(48000.0 / gRack->sampleRate) * 12.0;
 		generator.set_pitch(clampf(pitch*0x80, -0x8000, 0x7fff));
 
 		// Slope, smoothness, pitch

@@ -1,5 +1,6 @@
-#include "AudibleInstruments.hpp"
 #include <string.h>
+#include "AudibleInstruments.hpp"
+#include "dsp.hpp"
 #include "braids/macro_oscillator.h"
 
 
@@ -28,8 +29,8 @@ struct Braids : Module {
 	};
 
 	braids::MacroOscillator *osc;
-	int bufferFrame = 0;
-	int16_t buffer[24] = {};
+	SampleRateConverter<1> src;
+	DoubleRingBuffer<float, 256> outputBuffer;
 	bool lastTrig = false;
 
 	Braids();
@@ -54,9 +55,6 @@ Braids::~Braids() {
 }
 
 void Braids::step() {
-	// TODO Sample rate convert from 96000Hz
-	setf(outputs[OUT_OUTPUT], 5.0*(buffer[bufferFrame] / 32768.0));
-
 	// Trigger
 	bool trig = getf(inputs[TRIG_INPUT]) >= 1.0;
 	if (!lastTrig && trig) {
@@ -64,8 +62,8 @@ void Braids::step() {
 	}
 	lastTrig = trig;
 
-	if (++bufferFrame >= 24) {
-		bufferFrame = 0;
+	// Render frames
+	if (outputBuffer.empty()) {
 		// Set shape
 		int shape = roundf(params[SHAPE_PARAM]);
 		osc->set_shape((braids::MacroOscillatorShape) shape);
@@ -82,8 +80,28 @@ void Braids::step() {
 		int16_t p = clampf((pitch * 12.0 + 60) * 128, 0, INT16_MAX);
 		osc->set_pitch(p);
 
+		// TODO: add a sync input buffer (must be sample rate converted)
 		uint8_t sync_buffer[24] = {};
-		osc->Render(sync_buffer, buffer, 24);
+
+		int16_t render_buffer[24];
+		osc->Render(sync_buffer, render_buffer, 24);
+
+		// Sample rate convert
+		float in[24];
+		for (int i = 0; i < 24; i++) {
+			in[i] = render_buffer[i] / 32768.0;
+		}
+		src.setRatio(gRack->sampleRate / 96000.0);
+
+		int inLen = 24;
+		int outLen = outputBuffer.capacity();
+		src.process(in, &inLen, outputBuffer.endData(), &outLen);
+		outputBuffer.endIncr(outLen);
+	}
+
+	// Output
+	if (!outputBuffer.empty()) {
+		setf(outputs[OUT_OUTPUT], 5.0 * outputBuffer.shift());
 	}
 }
 

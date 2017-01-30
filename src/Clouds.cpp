@@ -1,5 +1,6 @@
-#include "AudibleInstruments.hpp"
 #include <string.h>
+#include "AudibleInstruments.hpp"
+#include "dsp.hpp"
 #include "clouds/dsp/granular_processor.h"
 
 
@@ -33,14 +34,15 @@ struct Clouds : Module {
 		NUM_OUTPUTS
 	};
 
+	SampleRateConverter<2> inputSrc;
+	SampleRateConverter<2> outputSrc;
+	DoubleRingBuffer<Frame<2>, 256> inputBuffer;
+	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
+
 	uint8_t *block_mem;
 	uint8_t *block_ccm;
 	clouds::GranularProcessor *processor;
-	int bufferFrame = 0;
-	float inL[32] = {};
-	float inR[32] = {};
-	float outL[32] = {};
-	float outR[32] = {};
+
 	bool triggered = false;
 
 	Clouds();
@@ -56,10 +58,8 @@ Clouds::Clouds() {
 
 	const int memLen = 118784;
 	const int ccmLen = 65536 - 128;
-	block_mem = new uint8_t[memLen];
-	memset(block_mem, 0, memLen);
-	block_ccm = new uint8_t[ccmLen];
-	memset(block_ccm, 0, ccmLen);
+	block_mem = new uint8_t[memLen]();
+	block_ccm = new uint8_t[ccmLen]();
 	processor = new clouds::GranularProcessor();
 	memset(processor, 0, sizeof(*processor));
 
@@ -73,21 +73,42 @@ Clouds::~Clouds() {
 }
 
 void Clouds::step() {
-	// TODO Sample rate conversion from 32000 Hz
-	inL[bufferFrame] = getf(inputs[IN_L_INPUT]);
-	inR[bufferFrame] = getf(inputs[IN_R_INPUT]);
-	setf(outputs[OUT_L_OUTPUT], outL[bufferFrame]);
-	setf(outputs[OUT_R_OUTPUT], outR[bufferFrame]);
+	// Get input
+	if (!inputBuffer.full()) {
+		Frame<2> inputFrame;
+		inputFrame.samples[0] = getf(inputs[IN_L_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
+		inputFrame.samples[1] = getf(inputs[IN_R_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
+		inputBuffer.push(inputFrame);
+	}
 
 	// Trigger
 	if (getf(inputs[TRIG_INPUT]) >= 1.0) {
 		triggered = true;
 	}
 
-	if (++bufferFrame >= 32) {
-		bufferFrame = 0;
+	// Render frames
+	if (outputBuffer.empty()) {
+		clouds::ShortFrame input[32] = {};
+		// Convert input buffer
+		{
+			inputSrc.setRatio(32000.0 / gRack->sampleRate);
+			Frame<2> inputFrames[32];
+			int inLen = inputBuffer.size();
+			int outLen = 32;
+			inputSrc.process((const float*) inputBuffer.startData(), &inLen, (float*) inputFrames, &outLen);
+			inputBuffer.startIncr(inLen);
+
+			// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
+			for (int i = 0; i < outLen; i++) {
+				input[i].l = clampf(inputFrames[i].samples[0] * 32767.0, -32768, 32767);
+				input[i].r = clampf(inputFrames[i].samples[1] * 32767.0, -32768, 32767);
+			}
+		}
+
+		// Set up processor
 		processor->set_num_channels(2);
 		processor->set_low_fidelity(false);
+		// TODO Support the other modes
 		processor->set_playback_mode(clouds::PLAYBACK_MODE_GRANULAR);
 		processor->Prepare();
 
@@ -105,21 +126,32 @@ void Clouds::step() {
 		p->feedback = 0.0f;
 		p->reverb = 0.0f;
 
-		clouds::ShortFrame input[32];
 		clouds::ShortFrame output[32];
-		for (int j = 0; j < 32; j++) {
-			input[j].l = clampf(inL[j] * params[IN_GAIN_PARAM] / 5.0, -1.0, 1.0) * 32767;
-			input[j].r = clampf(inR[j] * params[IN_GAIN_PARAM] / 5.0, -1.0, 1.0) * 32767;
-		}
-
 		processor->Process(input, output, 32);
 
-		for (int j = 0; j < 32; j++) {
-			outL[j] = (float)output[j].l / 32767 * 5.0;
-			outR[j] = (float)output[j].r / 32767 * 5.0;
+		// Convert output buffer
+		{
+			Frame<2> outputFrames[32];
+			for (int i = 0; i < 32; i++) {
+				outputFrames[i].samples[0] = output[i].l / 32768.0;
+				outputFrames[i].samples[1] = output[i].r / 32768.0;
+			}
+
+			outputSrc.setRatio(gRack->sampleRate / 32000.0);
+			int inLen = 32;
+			int outLen = outputBuffer.capacity();
+			outputSrc.process((const float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
+			outputBuffer.endIncr(outLen);
 		}
 
 		triggered = false;
+	}
+
+	// Set output
+	if (!outputBuffer.empty()) {
+		Frame<2> outputFrame = outputBuffer.shift();
+		setf(outputs[OUT_L_OUTPUT], 5.0 * outputFrame.samples[0]);
+		setf(outputs[OUT_R_OUTPUT], 5.0 * outputFrame.samples[1]);
 	}
 }
 

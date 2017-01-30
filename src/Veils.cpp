@@ -108,10 +108,10 @@ VeilsWidget::VeilsWidget() : ModuleWidget(new Veils()) {
 	addChild(createScrew(Vec(15, 365)));
 	addChild(createScrew(Vec(150, 365)));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 210), module, Veils::GAIN3_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 288), module, Veils::GAIN4_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(8, 210), module, Veils::GAIN3_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(8, 288), module, Veils::GAIN4_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<TinyBlackKnob>(Vec(72, 56), module, Veils::RESPONSE1_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<TinyBlackKnob>(Vec(72, 135), module, Veils::RESPONSE2_PARAM, 0.0, 1.0, 1.0));

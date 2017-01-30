@@ -45,8 +45,8 @@ static void computeChannel(const float *in, const float *p, float threshold, flo
 	bool gate = (out >= 1.0);
 	if (gate && !*lastGate) {
 		// trigger
-		std::uniform_real_distribution<float> dist(0.0, 1.0);
-		bool toss = (dist(rng) < threshold + getf(p));
+		float r = randomf();
+		bool toss = (r < threshold + getf(p));
 		if (mode < 0.5) {
 			// direct mode
 			*outcome = toss;

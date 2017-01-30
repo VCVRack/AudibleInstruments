@@ -1,5 +1,6 @@
-#include "AudibleInstruments.hpp"
 #include <string.h>
+#include "AudibleInstruments.hpp"
+#include "dsp.hpp"
 #include "rings/dsp/part.h"
 #include "rings/dsp/strummer.h"
 #include "rings/dsp/string_synth_part.h"
@@ -41,11 +42,12 @@ struct Rings : Module {
 		NUM_OUTPUTS
 	};
 
+	SampleRateConverter<1> inputSrc;
+	SampleRateConverter<2> outputSrc;
+	DoubleRingBuffer<float, 256> inputBuffer;
+	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
+
 	uint16_t reverb_buffer[32768] = {};
-	int bufferFrame = 0;
-	float in[24] = {};
-	float out[24] = {};
-	float aux[24] = {};
 	rings::Part part;
 	rings::StringSynthPart string_synth;
 	rings::Strummer strummer;
@@ -76,33 +78,36 @@ Rings::~Rings() {
 }
 
 void Rings::step() {
-	// TODO Sample rate conversion from 48000 Hz
 	// TODO
 	// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
-	in[bufferFrame] = clampf(getf(inputs[IN_INPUT])/5.0, -1.0, 1.0);
-	// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
-	if (outputs[ODD_OUTPUT] && outputs[EVEN_OUTPUT]) {
-		setf(outputs[ODD_OUTPUT], clampf(out[bufferFrame], -1.0, 1.0)*5.0);
-		setf(outputs[EVEN_OUTPUT], clampf(aux[bufferFrame], -1.0, 1.0)*5.0);
-	}
-	else {
-		float v = clampf(out[bufferFrame] + aux[bufferFrame], -1.0, 1.0)*5.0;
-		setf(outputs[ODD_OUTPUT], v);
-		setf(outputs[EVEN_OUTPUT], v);
+	// Get input
+	if (!inputBuffer.full()) {
+		float inputFrame = getf(inputs[IN_INPUT]) / 5.0;
+		inputBuffer.push(inputFrame);
 	}
 
 	if (!strum) {
 		strum = getf(inputs[STRUM_INPUT]) >= 1.0;
 	}
 
-	if (++bufferFrame >= 24) {
-		bufferFrame = 0;
+	// Render frames
+	if (outputBuffer.empty()) {
+		float in[24] = {};
+		// Convert input buffer
+		{
+			inputSrc.setRatio(48000.0 / gRack->sampleRate);
+			int inLen = inputBuffer.size();
+			int outLen = 24;
+			inputSrc.process(inputBuffer.startData(), &inLen, (float*) in, &outLen);
+			inputBuffer.startIncr(inLen);
+		}
 
 		// modes
-		int polyphony = 1;
+		int polyphony;
 		switch ((int) roundf(params[POLYPHONY_PARAM])) {
 			case 1: polyphony = 2; break;
 			case 2: polyphony = 4; break;
+			default: polyphony = 1;
 		}
 		if (polyphony != part.polyphony()) {
 			part.set_polyphony(polyphony);
@@ -145,6 +150,8 @@ void Rings::step() {
 		performance_state.chord = clampf(roundf(structure * (rings::kNumChords - 1)), 0, rings::kNumChords - 1);
 
 		// Process audio
+		float out[24];
+		float aux[24];
 		if (0) {
 			// strummer.Process(NULL, 24, &performance_state);
 			// string_synth.Process(performance_state, patch, in, out, aux, 24);
@@ -153,7 +160,38 @@ void Rings::step() {
 			strummer.Process(in, 24, &performance_state);
 			part.Process(performance_state, patch, in, out, aux, 24);
 		}
+
+		// Convert output buffer
+		{
+			Frame<2> outputFrames[24];
+			for (int i = 0; i < 24; i++) {
+				outputFrames[i].samples[0] = out[i];
+				outputFrames[i].samples[1] = aux[i];
+			}
+
+			outputSrc.setRatio(gRack->sampleRate / 48000.0);
+			int inLen = 24;
+			int outLen = outputBuffer.capacity();
+			outputSrc.process((const float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
+			outputBuffer.endIncr(outLen);
+		}
 	}
+
+	// Set output
+	if (!outputBuffer.empty()) {
+		Frame<2> outputFrame = outputBuffer.shift();
+		// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
+		if (outputs[ODD_OUTPUT] && outputs[EVEN_OUTPUT]) {
+			setf(outputs[ODD_OUTPUT], clampf(outputFrame.samples[0], -1.0, 1.0)*5.0);
+			setf(outputs[EVEN_OUTPUT], clampf(outputFrame.samples[1], -1.0, 1.0)*5.0);
+		}
+		else {
+			float v = clampf(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0)*5.0;
+			setf(outputs[ODD_OUTPUT], v);
+			setf(outputs[EVEN_OUTPUT], v);
+		}
+	}
+
 }
 
 

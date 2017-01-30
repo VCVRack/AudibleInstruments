@@ -28,7 +28,6 @@ struct Kinks : Module {
 		NUM_OUTPUTS
 	};
 
-	std::normal_distribution<float> dist;
 	float lastTrig = 0.0;
 	float sample = 0.0;
 	float lights[3] = {};
@@ -38,7 +37,7 @@ struct Kinks : Module {
 };
 
 
-Kinks::Kinks() : dist(0.0, 1.0) {
+Kinks::Kinks() {
 	params.resize(NUM_PARAMS);
 	inputs.resize(NUM_INPUTS);
 	outputs.resize(NUM_OUTPUTS);
@@ -46,11 +45,11 @@ Kinks::Kinks() : dist(0.0, 1.0) {
 
 void Kinks::step() {
 	// Gaussian noise generator
-	float noise = 2.0 * dist(rng);
+	float noise = 2.0 * randomNormal();
 
 	// S&H
 	float trig = getf(inputs[TRIG_INPUT]);
-	float dtrig = (trig - lastTrig) * SAMPLE_RATE;
+	float dtrig = (trig - lastTrig) * gRack->sampleRate;
 	if (dtrig > DTRIG) {
 		sample = getf(inputs[SH_INPUT], noise);
 	}
