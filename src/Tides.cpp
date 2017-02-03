@@ -83,7 +83,7 @@ void Tides::step() {
 		pitch += params[FM_PARAM] * getf(inputs[FM_INPUT], 0.1) / 5.0;
 		pitch += 60.0;
 		// Scale to the global sample rate
-		pitch += log2f(48000.0 / gRack->sampleRate) * 12.0;
+		pitch += log2f(48000.0 / gSampleRate) * 12.0;
 		generator.set_pitch(clampf(pitch*0x80, -0x8000, 0x7fff));
 
 		// Slope, smoothness, pitch
@@ -145,8 +145,8 @@ TidesWidget::TidesWidget() : ModuleWidget(new Tides()) {
 	box.size = Vec(15*14, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Tides.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Tides.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -166,21 +166,21 @@ TidesWidget::TidesWidget() : ModuleWidget(new Tides()) {
 	addParam(createParam<SmallWhiteKnob>(Vec(85, 155), module, Tides::SLOPE_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<SmallWhiteKnob>(Vec(156, 155), module, Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput(Vec(23, 221), module, Tides::SHAPE_INPUT));
-	addInput(createInput(Vec(95, 221), module, Tides::SLOPE_INPUT));
-	addInput(createInput(Vec(166, 221), module, Tides::SMOOTHNESS_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(18, 216), module, Tides::SHAPE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(90, 216), module, Tides::SLOPE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(161, 216), module, Tides::SMOOTHNESS_INPUT));
 
-	addInput(createInput(Vec(23, 275), module, Tides::TRIG_INPUT));
-	addInput(createInput(Vec(59, 275), module, Tides::FREEZE_INPUT));
-	addInput(createInput(Vec(95, 275), module, Tides::PITCH_INPUT));
-	addInput(createInput(Vec(130, 275), module, Tides::FM_INPUT));
-	addInput(createInput(Vec(166, 275), module, Tides::LEVEL_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(18, 270), module, Tides::TRIG_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(54, 270), module, Tides::FREEZE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(90, 270), module, Tides::PITCH_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(125, 270), module, Tides::FM_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(161, 270), module, Tides::LEVEL_INPUT));
 
-	addInput(createInput(Vec(23, 318), module, Tides::CLOCK_INPUT));
-	addOutput(createOutput(Vec(59, 318), module, Tides::HIGH_OUTPUT));
-	addOutput(createOutput(Vec(95, 318), module, Tides::LOW_OUTPUT));
-	addOutput(createOutput(Vec(130, 318), module, Tides::UNI_OUTPUT));
-	addOutput(createOutput(Vec(166, 318), module, Tides::BI_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(18, 313), module, Tides::CLOCK_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(54, 313), module, Tides::HIGH_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(90, 313), module, Tides::LOW_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(125, 313), module, Tides::UNI_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(161, 313), module, Tides::BI_OUTPUT));
 
 	Tides *tides = dynamic_cast<Tides*>(module);
 	addChild(createValueLight<SmallValueLight>(Vec(58, 63), &tides->lights[0]));

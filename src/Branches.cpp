@@ -77,8 +77,8 @@ BranchesWidget::BranchesWidget() : ModuleWidget(new Branches()) {
 	box.size = Vec(15*6, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Branches.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Branches.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -86,19 +86,19 @@ BranchesWidget::BranchesWidget() : ModuleWidget(new Branches()) {
 	addChild(createScrew(Vec(15, 0)));
 	addChild(createScrew(Vec(15, 365)));
 
-	addParam(createParam<SmallRedKnob>(Vec(44-20, 84-20), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallRedKnob>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<MediumToggleSwitch>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput(Vec(11, 125-1), module, Branches::IN1_INPUT));
-	addInput(createInput(Vec(58, 125-1), module, Branches::P1_INPUT));
-	addOutput(createOutput(Vec(11, 163-1), module, Branches::OUT1A_OUTPUT));
-	addOutput(createOutput(Vec(58, 163-1), module, Branches::OUT1B_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 119), module, Branches::IN1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(52, 119), module, Branches::P1_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(5, 157), module, Branches::OUT1A_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 157), module, Branches::OUT1B_OUTPUT));
 
-	addParam(createParam<SmallGreenKnob>(Vec(44-20, 240-20), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallGreenKnob>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<MediumToggleSwitch>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput(Vec(11, 281-1), module, Branches::IN2_INPUT));
-	addInput(createInput(Vec(58, 281-1), module, Branches::P2_INPUT));
-	addOutput(createOutput(Vec(11, 319-1), module, Branches::OUT2A_OUTPUT));
-	addOutput(createOutput(Vec(58, 319-1), module, Branches::OUT2B_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 275), module, Branches::IN2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(52, 275), module, Branches::P2_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(5, 313), module, Branches::OUT2A_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 313), module, Branches::OUT2B_OUTPUT));
 
 	Branches *branches = dynamic_cast<Branches*>(module);
 	addChild(createValueLight<SmallValueLight>(Vec(42, 170), &branches->light[0]));

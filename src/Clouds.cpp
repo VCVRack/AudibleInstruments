@@ -91,7 +91,7 @@ void Clouds::step() {
 		clouds::ShortFrame input[32] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRatio(32000.0 / gRack->sampleRate);
+			inputSrc.setRatio(32000.0 / gSampleRate);
 			Frame<2> inputFrames[32];
 			int inLen = inputBuffer.size();
 			int outLen = 32;
@@ -137,7 +137,7 @@ void Clouds::step() {
 				outputFrames[i].samples[1] = output[i].r / 32768.0;
 			}
 
-			outputSrc.setRatio(gRack->sampleRate / 32000.0);
+			outputSrc.setRatio(gSampleRate / 32000.0);
 			int inLen = 32;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process((const float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
@@ -160,8 +160,8 @@ CloudsWidget::CloudsWidget() : ModuleWidget(new Clouds()) {
 	box.size = Vec(15*18, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Clouds.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Clouds.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -175,26 +175,26 @@ CloudsWidget::CloudsWidget() : ModuleWidget(new Clouds()) {
 	// addParam(createParam<MediumMomentarySwitch>(Vec(211, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
 	// addParam(createParam<MediumMomentarySwitch>(Vec(239, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<LargeRedKnob>(Vec(42-14, 108-14), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeGreenKnob>(Vec(123-14, 108-14), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeWhiteKnob>(Vec(205-14, 108-14), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<LargeRedKnob>(Vec(28, 94), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<LargeGreenKnob>(Vec(109, 94), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<LargeWhiteKnob>(Vec(191, 94), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
 
-	addParam(createParam<SmallRedKnob>(Vec(25-10, 191-10), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallRedKnob>(Vec(92-10, 191-10), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallGreenKnob>(Vec(157-10, 191-10), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(224-10, 191-10), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallRedKnob>(Vec(15, 181), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallRedKnob>(Vec(82, 181), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallGreenKnob>(Vec(147, 181), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(214, 181), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5));
 
-	addInput(createInput(Vec(17, 275), module, Clouds::FREEZE_INPUT));
-	addInput(createInput(Vec(60, 275), module, Clouds::TRIG_INPUT));
-	addInput(createInput(Vec(103, 275), module, Clouds::POSITION_INPUT));
-	addInput(createInput(Vec(146, 275), module, Clouds::SIZE_INPUT));
-	addInput(createInput(Vec(190, 275), module, Clouds::PITCH_INPUT));
-	addInput(createInput(Vec(233, 275), module, Clouds::BLEND_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(11, 270), module, Clouds::FREEZE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(54, 270), module, Clouds::TRIG_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(97, 270), module, Clouds::POSITION_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(140, 270), module, Clouds::SIZE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(184, 270), module, Clouds::PITCH_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(227, 270), module, Clouds::BLEND_INPUT));
 
-	addInput(createInput(Vec(17, 318), module, Clouds::IN_L_INPUT));
-	addInput(createInput(Vec(60, 318), module, Clouds::IN_R_INPUT));
-	addInput(createInput(Vec(103, 318), module, Clouds::DENSITY_INPUT));
-	addInput(createInput(Vec(146, 318), module, Clouds::TEXTURE_INPUT));
-	addOutput(createOutput(Vec(190, 318), module, Clouds::OUT_L_OUTPUT));
-	addOutput(createOutput(Vec(233, 318), module, Clouds::OUT_R_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(11, 313), module, Clouds::IN_L_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(54, 313), module, Clouds::IN_R_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(97, 313), module, Clouds::DENSITY_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(140, 313), module, Clouds::TEXTURE_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(184, 313), module, Clouds::OUT_L_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(227, 313), module, Clouds::OUT_R_OUTPUT));
 }

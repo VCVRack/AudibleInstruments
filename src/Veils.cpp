@@ -97,8 +97,8 @@ VeilsWidget::VeilsWidget() : ModuleWidget(new Veils()) {
 	box.size = Vec(15*12, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Veils.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Veils.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -118,20 +118,20 @@ VeilsWidget::VeilsWidget() : ModuleWidget(new Veils()) {
 	addParam(createParam<TinyBlackKnob>(Vec(72, 214), module, Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<TinyBlackKnob>(Vec(72, 292), module, Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput(Vec(112, 43), module, Veils::IN1_INPUT));
-	addInput(createInput(Vec(112, 122), module, Veils::IN2_INPUT));
-	addInput(createInput(Vec(112, 200), module, Veils::IN3_INPUT));
-	addInput(createInput(Vec(112, 279), module, Veils::IN4_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 38), module, Veils::IN1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 117), module, Veils::IN2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 195), module, Veils::IN3_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 274), module, Veils::IN4_INPUT));
 
-	addInput(createInput(Vec(112, 82), module, Veils::CV1_INPUT));
-	addInput(createInput(Vec(112, 161), module, Veils::CV2_INPUT));
-	addInput(createInput(Vec(112, 240), module, Veils::CV3_INPUT));
-	addInput(createInput(Vec(112, 318), module, Veils::CV4_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 77), module, Veils::CV1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 156), module, Veils::CV2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 235), module, Veils::CV3_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 313), module, Veils::CV4_INPUT));
 
-	addOutput(createOutput(Vec(146, 43), module, Veils::OUT1_OUTPUT));
-	addOutput(createOutput(Vec(146, 122), module, Veils::OUT2_OUTPUT));
-	addOutput(createOutput(Vec(146, 200), module, Veils::OUT3_OUTPUT));
-	addOutput(createOutput(Vec(146, 279), module, Veils::OUT4_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 38), module, Veils::OUT1_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 117), module, Veils::OUT2_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 195), module, Veils::OUT3_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 274), module, Veils::OUT4_OUTPUT));
 
 	Veils *veils = dynamic_cast<Veils*>(module);
 	addChild(createValueLight<MediumValueLight>(Vec(149, 86), &veils->lights[0]));

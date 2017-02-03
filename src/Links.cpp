@@ -58,8 +58,8 @@ LinksWidget::LinksWidget() : ModuleWidget(new Links()) {
 	box.size = Vec(15*4, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Links.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Links.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -67,20 +67,20 @@ LinksWidget::LinksWidget() : ModuleWidget(new Links()) {
 	addChild(createScrew(Vec(15, 0)));
 	addChild(createScrew(Vec(15, 365)));
 
-	addInput(createInput(Vec(6-1, 78-1), module, Links::A1_INPUT));
-	addOutput(createOutput(Vec(34-1, 78-1), module, Links::A1_OUTPUT));
-	addOutput(createOutput(Vec(6-1, 116-1), module, Links::A2_OUTPUT));
-	addOutput(createOutput(Vec(34-1, 116-1), module, Links::A3_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(0, 72), module, Links::A1_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 72), module, Links::A1_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(0, 110), module, Links::A2_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 110), module, Links::A3_OUTPUT));
 
-	addInput(createInput(Vec(6-1, 180-1), module, Links::B1_INPUT));
-	addInput(createInput(Vec(34-1, 180-1), module, Links::B2_INPUT));
-	addOutput(createOutput(Vec(6-1, 217-1), module, Links::B1_OUTPUT));
-	addOutput(createOutput(Vec(34-1, 217-1), module, Links::B2_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(0, 174), module, Links::B1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(29, 174), module, Links::B2_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(0, 211), module, Links::B1_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 211), module, Links::B2_OUTPUT));
 
-	addInput(createInput(Vec(6-1, 281-1), module, Links::C1_INPUT));
-	addInput(createInput(Vec(34-1, 281-1), module, Links::C2_INPUT));
-	addInput(createInput(Vec(6-1, 319-1), module, Links::C3_INPUT));
-	addOutput(createOutput(Vec(34-1, 319-1), module, Links::C1_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(0, 275), module, Links::C1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(29, 275), module, Links::C2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(0, 313), module, Links::C3_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 313), module, Links::C1_OUTPUT));
 
 	Links *links = dynamic_cast<Links*>(module);
 	addChild(createValueLight<SmallValueLight>(Vec(26, 61), &links->lights[0]));

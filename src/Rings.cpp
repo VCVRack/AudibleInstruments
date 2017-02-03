@@ -95,7 +95,7 @@ void Rings::step() {
 		float in[24] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRatio(48000.0 / gRack->sampleRate);
+			inputSrc.setRatio(48000.0 / gSampleRate);
 			int inLen = inputBuffer.size();
 			int outLen = 24;
 			inputSrc.process(inputBuffer.startData(), &inLen, (float*) in, &outLen);
@@ -169,7 +169,7 @@ void Rings::step() {
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRatio(gRack->sampleRate / 48000.0);
+			outputSrc.setRatio(gSampleRate / 48000.0);
 			int inLen = 24;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process((const float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
@@ -199,8 +199,8 @@ RingsWidget::RingsWidget() : ModuleWidget(new Rings()) {
 	box.size = Vec(15*14, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Rings.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Rings.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -226,17 +226,17 @@ RingsWidget::RingsWidget() : ModuleWidget(new Rings()) {
 	addParam(createParam<TinyBlackKnob>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<TinyBlackKnob>(Vec(172, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput(Vec(18, 275), module, Rings::BRIGHTNESS_MOD_INPUT));
-	addInput(createInput(Vec(56, 275), module, Rings::FREQUENCY_MOD_INPUT));
-	addInput(createInput(Vec(95, 275), module, Rings::DAMPING_MOD_INPUT));
-	addInput(createInput(Vec(133, 275), module, Rings::STRUCTURE_MOD_INPUT));
-	addInput(createInput(Vec(171, 275), module, Rings::POSITION_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(12, 270), module, Rings::BRIGHTNESS_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(51, 270), module, Rings::FREQUENCY_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(89, 270), module, Rings::DAMPING_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(128, 270), module, Rings::STRUCTURE_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(166, 270), module, Rings::POSITION_MOD_INPUT));
 
-	addInput(createInput(Vec(18, 318), module, Rings::STRUM_INPUT));
-	addInput(createInput(Vec(56, 318), module, Rings::PITCH_INPUT));
-	addInput(createInput(Vec(95, 318), module, Rings::IN_INPUT));
-	addOutput(createOutput(Vec(133, 318), module, Rings::ODD_OUTPUT));
-	addOutput(createOutput(Vec(171, 318), module, Rings::EVEN_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(12, 313), module, Rings::STRUM_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(51, 313), module, Rings::PITCH_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(89, 313), module, Rings::IN_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(128, 313), module, Rings::ODD_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(166, 313), module, Rings::EVEN_OUTPUT));
 
 	Rings *rings = dynamic_cast<Rings*>(module);
 	addChild(createValueLight<SmallModeLight>(Vec(39, 45), &rings->params[Rings::POLYPHONY_PARAM]));

@@ -91,7 +91,7 @@ void Braids::step() {
 		for (int i = 0; i < 24; i++) {
 			in[i] = render_buffer[i] / 32768.0;
 		}
-		src.setRatio(gRack->sampleRate / 96000.0);
+		src.setRatio(gSampleRate / 96000.0);
 
 		int inLen = 24;
 		int outLen = outputBuffer.capacity();
@@ -157,12 +157,17 @@ static const char *algo_values[] = {
 
 struct BraidsDisplay : TransparentWidget {
 	float *value;
+	std::shared_ptr<Font> font;
+
+	BraidsDisplay() {
+		font = Font::load("plugins/AudibleInstruments/res/hdad-segment14-1.002/Segment14.ttf");
+	}
+
 	void draw(NVGcontext *vg) {
 		int shape = roundf(getf(value));
 
-		int font = loadFont("plugins/AudibleInstruments/res/hdad-segment14-1.002/Segment14.ttf");
 		nvgFontSize(vg, 36);
-		nvgFontFaceId(vg, font);
+		nvgFontFaceId(vg, font->handle);
 		nvgTextLetterSpacing(vg, 2.5);
 
 		NVGcolor color = nvgRGB(0xaf, 0xd2, 0x2c);
@@ -178,8 +183,8 @@ BraidsWidget::BraidsWidget() : ModuleWidget(new Braids()) {
 	box.size = Vec(15*16, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Braids.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Braids.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -198,18 +203,18 @@ BraidsWidget::BraidsWidget() : ModuleWidget(new Braids()) {
 
 	addParam(createParam<MediumWhiteKnob>(Vec(187-10, 71-11), module, Braids::SHAPE_PARAM, 0.0, braids::MACRO_OSC_SHAPE_LAST-2, 0.0));
 
-	addParam(createParam<MediumWhiteKnob>(Vec(30-10, 150-11), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<MediumWhiteKnob>(Vec(108-10, 150-11), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
-	addParam(createParam<MediumWhiteKnob>(Vec(187-10, 150-11), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<MediumWhiteKnob>(Vec(20, 139), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<MediumWhiteKnob>(Vec(98, 139), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<MediumWhiteKnob>(Vec(177, 139), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<MediumGreenKnob>(Vec(30-10, 229-11), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<MediumGreenKnob>(Vec(108-10, 229-11), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<MediumRedKnob>(Vec(187-10, 229-11), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<MediumGreenKnob>(Vec(20, 218), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<MediumGreenKnob>(Vec(98, 218), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<MediumRedKnob>(Vec(177, 218), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
 
-	addInput(createInput(Vec(12, 318), module, Braids::TRIG_INPUT));
-	addInput(createInput(Vec(50, 318), module, Braids::PITCH_INPUT));
-	addInput(createInput(Vec(87, 318), module, Braids::FM_INPUT));
-	addInput(createInput(Vec(125, 318), module, Braids::TIMBRE_INPUT));
-	addInput(createInput(Vec(162, 318), module, Braids::COLOR_INPUT));
-	addOutput(createOutput(Vec(207, 318), module, Braids::OUT_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(7, 313), module, Braids::TRIG_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(45, 313), module, Braids::PITCH_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(82, 313), module, Braids::FM_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(120, 313), module, Braids::TIMBRE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(157, 313), module, Braids::COLOR_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(202, 313), module, Braids::OUT_OUTPUT));
 }

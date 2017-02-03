@@ -117,7 +117,7 @@ void Elements::step() {
 
 		// Convert input buffer
 		{
-			inputSrc.setRatio(32000.0 / gRack->sampleRate);
+			inputSrc.setRatio(32000.0 / gSampleRate);
 			Frame<2> inputFrames[16];
 			int inLen = inputBuffer.size();
 			int outLen = 16;
@@ -168,7 +168,7 @@ void Elements::step() {
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRatio(gRack->sampleRate / 32000.0);
+			outputSrc.setRatio(gSampleRate / 32000.0);
 			int inLen = 16;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process((float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
@@ -193,8 +193,8 @@ ElementsWidget::ElementsWidget() : ModuleWidget(new Elements()) {
 	box.size = Vec(15*34, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Elements.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Elements.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -204,60 +204,59 @@ ElementsWidget::ElementsWidget() : ModuleWidget(new Elements()) {
 	addChild(createScrew(Vec(15, 365)));
 	addChild(createScrew(Vec(480, 365)));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(49-20, 63-20), module, Elements::CONTOUR_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(120-20, 63-20), module, Elements::BOW_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallRedKnob>(Vec(190-20, 63-20), module, Elements::BLOW_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallGreenKnob>(Vec(260-20, 63-20), module, Elements::STRIKE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(331-20, 63-20), module, Elements::COARSE_PARAM, -30.0, 30.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(402-20, 63-20), module, Elements::FINE_PARAM, -2.0, 2.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(472-20, 63-20), module, Elements::FM_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(29, 43), module, Elements::CONTOUR_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(100, 43), module, Elements::BOW_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallRedKnob>(Vec(170, 43), module, Elements::BLOW_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallGreenKnob>(Vec(240, 43), module, Elements::STRIKE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(311, 43), module, Elements::COARSE_PARAM, -30.0, 30.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(382, 43), module, Elements::FINE_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(452, 43), module, Elements::FM_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<LargeRedKnob>(Vec(142-26, 143-26), module, Elements::FLOW_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeGreenKnob>(Vec(239-26, 143-26), module, Elements::MALLET_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeWhiteKnob>(Vec(353-26, 143-26), module, Elements::GEOMETRY_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeWhiteKnob>(Vec(450-26, 143-26), module, Elements::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<LargeRedKnob>(Vec(116, 117), module, Elements::FLOW_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<LargeGreenKnob>(Vec(213, 117), module, Elements::MALLET_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<LargeWhiteKnob>(Vec(327, 117), module, Elements::GEOMETRY_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<LargeWhiteKnob>(Vec(424, 117), module, Elements::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(120-20, 223-20), module, Elements::BOW_TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallRedKnob>(Vec(191-20, 223-20), module, Elements::BLOW_TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallGreenKnob>(Vec(260-20, 223-20), module, Elements::STRIKE_TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(331-20, 223-20), module, Elements::DAMPING_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(401-20, 223-20), module, Elements::POSITION_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(472-20, 223-20), module, Elements::SPACE_PARAM, 0.0, 2.0, 0.0));
+	addParam(createParam<SmallWhiteKnob>(Vec(100, 203), module, Elements::BOW_TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallRedKnob>(Vec(171, 203), module, Elements::BLOW_TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallGreenKnob>(Vec(240, 203), module, Elements::STRIKE_TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(311, 203), module, Elements::DAMPING_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(381, 203), module, Elements::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<SmallWhiteKnob>(Vec(452, 203), module, Elements::SPACE_PARAM, 0.0, 2.0, 0.0));
 
-	addParam(createParam<TinyBlackKnob>(Vec(113-9, 283-9), module, Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(152-9, 283-9), module, Elements::FLOW_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(190-9, 283-9), module, Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(229-9, 283-9), module, Elements::MALLET_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(267-9, 283-9), module, Elements::STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(325-9, 283-9), module, Elements::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(363-9, 283-9), module, Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(402-9, 283-9), module, Elements::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(440-9, 283-9), module, Elements::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(479-9, 283-9), module, Elements::SPACE_MOD_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(104, 274), module, Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(143, 274), module, Elements::FLOW_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(181, 274), module, Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(220, 274), module, Elements::MALLET_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(258, 274), module, Elements::STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(316, 274), module, Elements::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(354, 274), module, Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(393, 274), module, Elements::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(431, 274), module, Elements::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<TinyBlackKnob>(Vec(470, 274), module, Elements::SPACE_MOD_PARAM, -2.0, 2.0, 0.0));
 
-	addInput(createInput(Vec(32-10, 190-10), module, Elements::NOTE_INPUT));
-	addInput(createInput(Vec(68-10, 190-10), module, Elements::FM_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(16, 175), module, Elements::NOTE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(52, 175), module, Elements::FM_INPUT));
 
-	addInput(createInput(Vec(32-10, 236-10), module, Elements::GATE_INPUT));
-	addInput(createInput(Vec(68-10, 236-10), module, Elements::STRENGTH_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(16, 221), module, Elements::GATE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(52, 221), module, Elements::STRENGTH_INPUT));
 
-	addInput(createInput(Vec(32-10, 282-10), module, Elements::BLOW_INPUT));
-	addInput(createInput(Vec(68-10, 282-10), module, Elements::STRIKE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(16, 267), module, Elements::BLOW_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(52, 267), module, Elements::STRIKE_INPUT));
 
-	addOutput(createOutput(Vec(32-10, 328-10), module, Elements::AUX_OUTPUT));
-	addOutput(createOutput(Vec(68-10, 328-10), module, Elements::MAIN_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(16, 313), module, Elements::AUX_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 313), module, Elements::MAIN_OUTPUT));
 
-	addInput(createInput(Vec(113-10, 328-10), module, Elements::BOW_TIMBRE_MOD_INPUT));
-	addInput(createInput(Vec(152-10, 328-10), module, Elements::FLOW_MOD_INPUT));
-	addInput(createInput(Vec(190-10, 328-10), module, Elements::BLOW_TIMBRE_MOD_INPUT));
-	addInput(createInput(Vec(229-10, 328-10), module, Elements::MALLET_MOD_INPUT));
-	addInput(createInput(Vec(267-10, 328-10), module, Elements::STRIKE_TIMBRE_MOD_INPUT));
-	addInput(createInput(Vec(325-10, 328-10), module, Elements::DAMPING_MOD_INPUT));
-	addInput(createInput(Vec(363-10, 328-10), module, Elements::GEOMETRY_MOD_INPUT));
-	addInput(createInput(Vec(402-10, 328-10), module, Elements::POSITION_MOD_INPUT));
-	addInput(createInput(Vec(440-10, 328-10), module, Elements::BRIGHTNESS_MOD_INPUT));
-	addInput(createInput(Vec(479-10, 328-10), module, Elements::SPACE_MOD_INPUT));
-	// addInputPort(createInputPort(Vec(479-10, 328-10), module, Elements::SPACE_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(97, 313), module, Elements::BOW_TIMBRE_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(136, 313), module, Elements::FLOW_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(174, 313), module, Elements::BLOW_TIMBRE_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(213, 313), module, Elements::MALLET_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(251, 313), module, Elements::STRIKE_TIMBRE_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(309, 313), module, Elements::DAMPING_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(347, 313), module, Elements::GEOMETRY_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(386, 313), module, Elements::POSITION_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(424, 313), module, Elements::BRIGHTNESS_MOD_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(463, 313), module, Elements::SPACE_MOD_INPUT));
 
 	addParam(createParam<LargeMomentarySwitch>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 2.0, 0.0));
 

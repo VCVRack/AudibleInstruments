@@ -79,8 +79,8 @@ ShadesWidget::ShadesWidget() : ModuleWidget(new Shades()) {
 	box.size = Vec(15*6, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Shades.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Shades.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -96,13 +96,13 @@ ShadesWidget::ShadesWidget() : ModuleWidget(new Shades()) {
 	addParam(createParam<SlideSwitch>(Vec(11, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<SlideSwitch>(Vec(11, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput(Vec(11, 247), module, Shades::IN1_INPUT));
-	addInput(createInput(Vec(11, 283), module, Shades::IN2_INPUT));
-	addInput(createInput(Vec(11, 319), module, Shades::IN3_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 242), module, Shades::IN1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 278), module, Shades::IN2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 314), module, Shades::IN3_INPUT));
 
-	addOutput(createOutput(Vec(58, 247), module, Shades::OUT1_OUTPUT));
-	addOutput(createOutput(Vec(58, 283), module, Shades::OUT2_OUTPUT));
-	addOutput(createOutput(Vec(58, 319), module, Shades::OUT3_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 242), module, Shades::OUT1_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 278), module, Shades::OUT2_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 314), module, Shades::OUT3_OUTPUT));
 
 	Shades *shades = dynamic_cast<Shades*>(module);
 	addChild(createValueLight<SmallValueLight>(Vec(42, 256), &shades->lights[0]));

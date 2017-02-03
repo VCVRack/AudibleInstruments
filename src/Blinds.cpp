@@ -88,8 +88,8 @@ BlindsWidget::BlindsWidget() : ModuleWidget(new Blinds()) {
 	box.size = Vec(15*12, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Blinds.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Blinds.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -109,20 +109,20 @@ BlindsWidget::BlindsWidget() : ModuleWidget(new Blinds()) {
 	addParam(createParam<TinyBlackKnob>(Vec(72, 221), module, Blinds::MOD3_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<TinyBlackKnob>(Vec(72, 300), module, Blinds::MOD4_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput(Vec(112, 43), module, Blinds::IN1_INPUT));
-	addInput(createInput(Vec(112, 122), module, Blinds::IN2_INPUT));
-	addInput(createInput(Vec(112, 200), module, Blinds::IN3_INPUT));
-	addInput(createInput(Vec(112, 279), module, Blinds::IN4_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 38), module, Blinds::IN1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 117), module, Blinds::IN2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 195), module, Blinds::IN3_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 274), module, Blinds::IN4_INPUT));
 
-	addInput(createInput(Vec(112, 82), module, Blinds::CV1_INPUT));
-	addInput(createInput(Vec(112, 161), module, Blinds::CV2_INPUT));
-	addInput(createInput(Vec(112, 240), module, Blinds::CV3_INPUT));
-	addInput(createInput(Vec(112, 318), module, Blinds::CV4_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 77), module, Blinds::CV1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 156), module, Blinds::CV2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 235), module, Blinds::CV3_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(107, 313), module, Blinds::CV4_INPUT));
 
-	addOutput(createOutput(Vec(146, 43), module, Blinds::OUT1_OUTPUT));
-	addOutput(createOutput(Vec(146, 122), module, Blinds::OUT2_OUTPUT));
-	addOutput(createOutput(Vec(146, 200), module, Blinds::OUT3_OUTPUT));
-	addOutput(createOutput(Vec(146, 279), module, Blinds::OUT4_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 38), module, Blinds::OUT1_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 117), module, Blinds::OUT2_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 195), module, Blinds::OUT3_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 274), module, Blinds::OUT4_OUTPUT));
 
 	Blinds *blinds = dynamic_cast<Blinds*>(module);
 	addChild(createValueLight<MediumValueLight>(Vec(149, 86), &blinds->lights[0]));

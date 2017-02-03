@@ -61,7 +61,7 @@ void Warps::step() {
 		p->frequency_shift_cv = clampf(getf(inputs[ALGORITHM_INPUT]) / 5.0, -1.0, 1.0);
 		p->phase_shift = p->modulation_algorithm;
 		p->note = 60.0 * params[LEVEL1_PARAM] + 12.0 * getf(inputs[LEVEL1_INPUT], 2.0) + 12.0;
-		p->note += log2f(96000.0 / gRack->sampleRate) * 12.0;
+		p->note += log2f(96000.0 / gSampleRate) * 12.0;
 		float state = roundf(params[STATE_PARAM]);
 		p->carrier_shape = (int32_t)state;
 		lights[0] = state - 1.0;
@@ -80,8 +80,8 @@ WarpsWidget::WarpsWidget() : ModuleWidget(new Warps()) {
 	box.size = Vec(15*10, 380);
 
 	{
-		AudiblePanel *panel = new AudiblePanel();
-		panel->imageFilename = "plugins/AudibleInstruments/res/Warps.png";
+		Panel *panel = new LightPanel();
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Warps.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -98,15 +98,15 @@ WarpsWidget::WarpsWidget() : ModuleWidget(new Warps()) {
 	addParam(createParam<TinyBlackKnob>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<TinyBlackKnob>(Vec(53, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput(Vec(11, 275), module, Warps::LEVEL1_INPUT));
-	addInput(createInput(Vec(47, 275), module, Warps::LEVEL2_INPUT));
-	addInput(createInput(Vec(83, 275), module, Warps::ALGORITHM_INPUT));
-	addInput(createInput(Vec(119, 275), module, Warps::TIMBRE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 270), module, Warps::LEVEL1_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(41, 270), module, Warps::LEVEL2_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(77, 270), module, Warps::ALGORITHM_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(113, 270), module, Warps::TIMBRE_INPUT));
 
-	addInput(createInput(Vec(11, 318), module, Warps::CARRIER_INPUT));
-	addInput(createInput(Vec(47, 318), module, Warps::MODULATOR_INPUT));
-	addOutput(createOutput(Vec(83, 318), module, Warps::MODULATOR_OUTPUT));
-	addOutput(createOutput(Vec(119, 318), module, Warps::AUX_OUTPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(5, 313), module, Warps::CARRIER_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(41, 313), module, Warps::MODULATOR_INPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(77, 313), module, Warps::MODULATOR_OUTPUT));
+	addOutput(createOutput<OutputPortPJ3410>(Vec(113, 313), module, Warps::AUX_OUTPUT));
 
 	Warps *warps = dynamic_cast<Warps*>(module);
 	addChild(createValueLight<SmallModeLight>(Vec(21, 168), &warps->lights[0]));
