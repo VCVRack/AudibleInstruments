@@ -44,7 +44,7 @@ struct Rings : Module {
 
 	SampleRateConverter<1> inputSrc;
 	SampleRateConverter<2> outputSrc;
-	DoubleRingBuffer<float, 256> inputBuffer;
+	DoubleRingBuffer<Frame<1>, 256> inputBuffer;
 	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
 
 	uint16_t reverb_buffer[32768] = {};
@@ -82,8 +82,9 @@ void Rings::step() {
 	// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
 	// Get input
 	if (!inputBuffer.full()) {
-		float inputFrame = getf(inputs[IN_INPUT]) / 5.0;
-		inputBuffer.push(inputFrame);
+		Frame<1> f;
+		f.samples[0] = getf(inputs[IN_INPUT]) / 5.0;
+		inputBuffer.push(f);
 	}
 
 	if (!strum) {
@@ -98,7 +99,7 @@ void Rings::step() {
 			inputSrc.setRatio(48000.0 / gSampleRate);
 			int inLen = inputBuffer.size();
 			int outLen = 24;
-			inputSrc.process(inputBuffer.startData(), &inLen, (float*) in, &outLen);
+			inputSrc.process(inputBuffer.startData(), &inLen, (Frame<1>*) in, &outLen);
 			inputBuffer.startIncr(inLen);
 		}
 
@@ -172,7 +173,7 @@ void Rings::step() {
 			outputSrc.setRatio(gSampleRate / 48000.0);
 			int inLen = 24;
 			int outLen = outputBuffer.capacity();
-			outputSrc.process((const float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
+			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
 			outputBuffer.endIncr(outLen);
 		}
 	}

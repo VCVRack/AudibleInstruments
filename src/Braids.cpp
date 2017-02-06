@@ -30,7 +30,7 @@ struct Braids : Module {
 
 	braids::MacroOscillator *osc;
 	SampleRateConverter<1> src;
-	DoubleRingBuffer<float, 256> outputBuffer;
+	DoubleRingBuffer<Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
 
 	Braids();
@@ -87,9 +87,9 @@ void Braids::step() {
 		osc->Render(sync_buffer, render_buffer, 24);
 
 		// Sample rate convert
-		float in[24];
+		Frame<1> in[24];
 		for (int i = 0; i < 24; i++) {
-			in[i] = render_buffer[i] / 32768.0;
+			in[i].samples[0] = render_buffer[i] / 32768.0;
 		}
 		src.setRatio(gSampleRate / 96000.0);
 
@@ -101,7 +101,8 @@ void Braids::step() {
 
 	// Output
 	if (!outputBuffer.empty()) {
-		setf(outputs[OUT_OUTPUT], 5.0 * outputBuffer.shift());
+		Frame<1> f = outputBuffer.shift();
+		setf(outputs[OUT_OUTPUT], 5.0 * f.samples[0]);
 	}
 }
 

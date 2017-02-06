@@ -95,7 +95,7 @@ void Clouds::step() {
 			Frame<2> inputFrames[32];
 			int inLen = inputBuffer.size();
 			int outLen = 32;
-			inputSrc.process((const float*) inputBuffer.startData(), &inLen, (float*) inputFrames, &outLen);
+			inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
 			inputBuffer.startIncr(inLen);
 
 			// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
@@ -140,7 +140,7 @@ void Clouds::step() {
 			outputSrc.setRatio(gSampleRate / 32000.0);
 			int inLen = 32;
 			int outLen = outputBuffer.capacity();
-			outputSrc.process((const float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
+			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
 			outputBuffer.endIncr(outLen);
 		}
 

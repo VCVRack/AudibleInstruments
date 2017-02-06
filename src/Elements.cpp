@@ -121,7 +121,7 @@ void Elements::step() {
 			Frame<2> inputFrames[16];
 			int inLen = inputBuffer.size();
 			int outLen = 16;
-			inputSrc.process((float*) inputBuffer.startData(), &inLen, (float*) inputFrames, &outLen);
+			inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
 			inputBuffer.startIncr(inLen);
 
 			for (int i = 0; i < outLen; i++) {
@@ -171,7 +171,7 @@ void Elements::step() {
 			outputSrc.setRatio(gSampleRate / 32000.0);
 			int inLen = 16;
 			int outLen = outputBuffer.capacity();
-			outputSrc.process((float*) outputFrames, &inLen, (float*) outputBuffer.endData(), &outLen);
+			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
 			outputBuffer.endIncr(outLen);
 		}
 
