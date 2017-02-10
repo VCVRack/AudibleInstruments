@@ -137,11 +137,13 @@ void Tides::step() {
 	setf(outputs[UNI_OUTPUT], unif);
 	setf(outputs[BI_OUTPUT], bif);
 
-	lights[1] = sample.flags & tides::FLAG_END_OF_ATTACK ? -unif : unif;
+	lights[1] = (sample.flags & tides::FLAG_END_OF_ATTACK ? -unif : unif) / 8.0;
 }
 
 
-TidesWidget::TidesWidget() : ModuleWidget(new Tides()) {
+TidesWidget::TidesWidget() {
+	Tides *module = new Tides();
+	setModule(module);
 	box.size = Vec(15*14, 380);
 
 	{
@@ -151,10 +153,10 @@ TidesWidget::TidesWidget() : ModuleWidget(new Tides()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(180, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(180, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(180, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(180, 365)));
 
 	addParam(createParam<LargeToggleSwitch>(Vec(19, 52), module, Tides::MODE_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<LargeToggleSwitch>(Vec(19, 93), module, Tides::RANGE_PARAM, -1.0, 1.0, 0.0));
@@ -170,11 +172,11 @@ TidesWidget::TidesWidget() : ModuleWidget(new Tides()) {
 	addInput(createInput<InputPortPJ3410>(Vec(90, 216), module, Tides::SLOPE_INPUT));
 	addInput(createInput<InputPortPJ3410>(Vec(161, 216), module, Tides::SMOOTHNESS_INPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(18, 270), module, Tides::TRIG_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(54, 270), module, Tides::FREEZE_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(90, 270), module, Tides::PITCH_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(125, 270), module, Tides::FM_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(161, 270), module, Tides::LEVEL_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(18, 271), module, Tides::TRIG_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(54, 271), module, Tides::FREEZE_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(90, 271), module, Tides::PITCH_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(125, 271), module, Tides::FM_INPUT));
+	addInput(createInput<InputPortPJ3410>(Vec(161, 271), module, Tides::LEVEL_INPUT));
 
 	addInput(createInput<InputPortPJ3410>(Vec(18, 313), module, Tides::CLOCK_INPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(54, 313), module, Tides::HIGH_OUTPUT));
@@ -182,8 +184,7 @@ TidesWidget::TidesWidget() : ModuleWidget(new Tides()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(125, 313), module, Tides::UNI_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(161, 313), module, Tides::BI_OUTPUT));
 
-	Tides *tides = dynamic_cast<Tides*>(module);
-	addChild(createValueLight<SmallValueLight>(Vec(58, 63), &tides->lights[0]));
-	addChild(createValueLight<SmallValueLight>(Vec(58, 84), &tides->lights[1]));
-	addChild(createValueLight<SmallValueLight>(Vec(58, 105), &tides->lights[2]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 62), &module->lights[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 83), &module->lights[1]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 103), &module->lights[2]));
 }

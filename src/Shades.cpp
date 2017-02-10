@@ -75,7 +75,9 @@ void Shades::step() {
 }
 
 
-ShadesWidget::ShadesWidget() : ModuleWidget(new Shades()) {
+ShadesWidget::ShadesWidget() {
+	Shades *module = new Shades();
+	setModule(module);
 	box.size = Vec(15*6, 380);
 
 	{
@@ -85,8 +87,8 @@ ShadesWidget::ShadesWidget() : ModuleWidget(new Shades()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 
 	addParam(createParam<SmallRedKnob>(Vec(40, 41), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<SmallWhiteKnob>(Vec(40, 107), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
@@ -104,8 +106,7 @@ ShadesWidget::ShadesWidget() : ModuleWidget(new Shades()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 278), module, Shades::OUT2_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 314), module, Shades::OUT3_OUTPUT));
 
-	Shades *shades = dynamic_cast<Shades*>(module);
-	addChild(createValueLight<SmallValueLight>(Vec(42, 256), &shades->lights[0]));
-	addChild(createValueLight<SmallValueLight>(Vec(42, 292), &shades->lights[1]));
-	addChild(createValueLight<SmallValueLight>(Vec(42, 328), &shades->lights[2]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 254), &module->lights[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 290), &module->lights[1]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 326), &module->lights[2]));
 }

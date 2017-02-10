@@ -76,7 +76,9 @@ void Warps::step() {
 }
 
 
-WarpsWidget::WarpsWidget() : ModuleWidget(new Warps()) {
+WarpsWidget::WarpsWidget() {
+	Warps *module = new Warps();
+	setModule(module);
 	box.size = Vec(15*10, 380);
 
 	{
@@ -86,10 +88,10 @@ WarpsWidget::WarpsWidget() : ModuleWidget(new Warps()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(120, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(120, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(120, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(120, 365)));
 
 	addParam(createParam<HugeGlowKnob>(Vec(30, 53), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
@@ -108,6 +110,5 @@ WarpsWidget::WarpsWidget() : ModuleWidget(new Warps()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(77, 313), module, Warps::MODULATOR_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(113, 313), module, Warps::AUX_OUTPUT));
 
-	Warps *warps = dynamic_cast<Warps*>(module);
-	addChild(createValueLight<SmallModeLight>(Vec(21, 168), &warps->lights[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(20, 167), &module->lights[0]));
 }

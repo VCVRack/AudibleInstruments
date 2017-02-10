@@ -84,7 +84,9 @@ void Blinds::step() {
 }
 
 
-BlindsWidget::BlindsWidget() : ModuleWidget(new Blinds()) {
+BlindsWidget::BlindsWidget() {
+	Blinds *module = new Blinds();
+	setModule(module);
 	box.size = Vec(15*12, 380);
 
 	{
@@ -94,10 +96,10 @@ BlindsWidget::BlindsWidget() : ModuleWidget(new Blinds()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(150, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(150, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(150, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(150, 365)));
 
 	addParam(createParam<SmallWhiteKnob>(Vec(8, 52), module, Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<SmallWhiteKnob>(Vec(8, 131), module, Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0));
@@ -124,14 +126,13 @@ BlindsWidget::BlindsWidget() : ModuleWidget(new Blinds()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 195), module, Blinds::OUT3_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 274), module, Blinds::OUT4_OUTPUT));
 
-	Blinds *blinds = dynamic_cast<Blinds*>(module);
-	addChild(createValueLight<MediumValueLight>(Vec(149, 86), &blinds->lights[0]));
-	addChild(createValueLight<MediumValueLight>(Vec(149, 165), &blinds->lights[1]));
-	addChild(createValueLight<MediumValueLight>(Vec(149, 244), &blinds->lights[2]));
-	addChild(createValueLight<MediumValueLight>(Vec(149, 323), &blinds->lights[3]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 245), &module->lights[2]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 324), &module->lights[3]));
 
-	addChild(createValueLight<SmallValueLight>(Vec(78, 97), &blinds->gainLights[0]));
-	addChild(createValueLight<SmallValueLight>(Vec(78, 176), &blinds->gainLights[1]));
-	addChild(createValueLight<SmallValueLight>(Vec(78, 255), &blinds->gainLights[2]));
-	addChild(createValueLight<SmallValueLight>(Vec(78, 334), &blinds->gainLights[3]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 96), &module->gainLights[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 175), &module->gainLights[1]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 254), &module->gainLights[2]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 333), &module->gainLights[3]));
 }

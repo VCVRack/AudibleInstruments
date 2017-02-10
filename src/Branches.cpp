@@ -73,7 +73,9 @@ void Branches::step() {
 }
 
 
-BranchesWidget::BranchesWidget() : ModuleWidget(new Branches()) {
+BranchesWidget::BranchesWidget() {
+	Branches *module = new Branches();
+	setModule(module);
 	box.size = Vec(15*6, 380);
 
 	{
@@ -83,8 +85,8 @@ BranchesWidget::BranchesWidget() : ModuleWidget(new Branches()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 
 	addParam(createParam<SmallRedKnob>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<MediumToggleSwitch>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
@@ -100,7 +102,6 @@ BranchesWidget::BranchesWidget() : ModuleWidget(new Branches()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(5, 313), module, Branches::OUT2A_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 313), module, Branches::OUT2B_OUTPUT));
 
-	Branches *branches = dynamic_cast<Branches*>(module);
-	addChild(createValueLight<SmallValueLight>(Vec(42, 170), &branches->light[0]));
-	addChild(createValueLight<SmallValueLight>(Vec(42, 326), &branches->light[1]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(40, 169), &module->light[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(40, 325), &module->light[1]));
 }

@@ -165,48 +165,17 @@ struct SlideSwitch : Switch {
 	}
 };
 
-////////////////////
-// lights
-////////////////////
-
-struct ValueLight : virtual Light {
-	float *value = NULL;
-	void step();
-};
-
-struct ModeLight : ValueLight {
-	void step();
-};
-
-struct SmallLight : virtual Light {
-	SmallLight() {
-		box.size = Vec(7, 7);
-		spriteOffset = Vec(-16, -16);
-		spriteSize = Vec(38, 38);
-		spriteImage = Image::load("plugins/AudibleInstruments/res/light_small.png");
+struct TripleModeLight : ValueLight {
+	void step() {
+		float v = roundf(getf(value));
+		if (v == 0.0)
+			color = SCHEME_CYAN;
+		else if (v == 1.0)
+			color = SCHEME_ORANGE;
+		else
+			color = SCHEME_RED;
 	}
 };
-
-struct MediumLight : virtual Light {
-	MediumLight() {
-		box.size = Vec(14, 14);
-		spriteOffset = Vec(-16, -15);
-		spriteSize = Vec(45, 45);
-		spriteImage = Image::load("plugins/AudibleInstruments/res/light_medium.png");
-	}
-};
-
-struct SmallValueLight : SmallLight, ValueLight {};
-struct MediumValueLight : MediumLight, ValueLight {};
-struct SmallModeLight : SmallLight, ModeLight {};
-
-template <class TLight>
-ValueLight *createValueLight(Vec pos, float *value) {
-	ValueLight *light = new TLight();
-	light->box.pos = pos;
-	light->value = value;
-	return light;
-}
 
 ////////////////////
 // module widgets

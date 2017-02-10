@@ -1,31 +1,15 @@
 #include "AudibleInstruments.hpp"
 
 
-void ValueLight::step() {
-	float v = getf(value);
-	if (v > 0) {
-		color = nvgHSL(0.36, 0.7, 0.7);
-		color.a = v; // May be larger than 1
-	}
-	else if (v < 0) {
-		color = nvgHSL(0.0, 0.7, 0.7);
-		color.a = -v;
-	}
-	else {
-		color = nvgRGBAf(1.0, 1.0, 1.0, 0.0);
-	}
-}
-
-
-void ModeLight::step() {
-	int mode = (int) roundf(getf(value));
-	switch (mode) {
-		case 0: color = nvgHSL(0.36, 0.7, 0.7); break;
-		case 1: color = nvgHSL(0.18, 0.7, 0.7); break;
-		case 2: color = nvgHSL(0.0, 0.7, 0.7); break;
-		default: color = nvgRGBAf(0.0, 0.0, 0.0, 0.0); break;
-	}
-}
+// void ModeLight::step() {
+// 	int mode = (int) roundf(getf(value));
+// 	switch (mode) {
+// 		case 0: color = nvgHSL(0.36, 0.7, 0.7); break;
+// 		case 1: color = nvgHSL(0.18, 0.7, 0.7); break;
+// 		case 2: color = nvgHSL(0.0, 0.7, 0.7); break;
+// 		default: color = nvgRGBAf(0.0, 0.0, 0.0, 0.0); break;
+// 	}
+// }
 
 
 struct AudibleInstrumentsPlugin : Plugin {

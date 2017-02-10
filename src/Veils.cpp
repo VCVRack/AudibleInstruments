@@ -93,7 +93,9 @@ void Veils::step() {
 }
 
 
-VeilsWidget::VeilsWidget() : ModuleWidget(new Veils()) {
+VeilsWidget::VeilsWidget() {
+	Veils *module = new Veils();
+	setModule(module);
 	box.size = Vec(15*12, 380);
 
 	{
@@ -103,10 +105,10 @@ VeilsWidget::VeilsWidget() : ModuleWidget(new Veils()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(150, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(150, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(150, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(150, 365)));
 
 	addParam(createParam<SmallWhiteKnob>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<SmallWhiteKnob>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.0));
@@ -133,9 +135,8 @@ VeilsWidget::VeilsWidget() : ModuleWidget(new Veils()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 195), module, Veils::OUT3_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 274), module, Veils::OUT4_OUTPUT));
 
-	Veils *veils = dynamic_cast<Veils*>(module);
-	addChild(createValueLight<MediumValueLight>(Vec(149, 86), &veils->lights[0]));
-	addChild(createValueLight<MediumValueLight>(Vec(149, 165), &veils->lights[1]));
-	addChild(createValueLight<MediumValueLight>(Vec(149, 244), &veils->lights[2]));
-	addChild(createValueLight<MediumValueLight>(Vec(149, 323), &veils->lights[3]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 245), &module->lights[2]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 324), &module->lights[3]));
 }

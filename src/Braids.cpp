@@ -173,14 +173,16 @@ struct BraidsDisplay : TransparentWidget {
 
 		NVGcolor color = nvgRGB(0xaf, 0xd2, 0x2c);
 		nvgFillColor(vg, nvgTransRGBA(color, 16));
-		nvgText(vg, box.pos.x, box.pos.y, "~~~~", NULL);
+		nvgText(vg, 0.0, 0.0, "~~~~", NULL);
 		nvgFillColor(vg, color);
-		nvgText(vg, box.pos.x, box.pos.y, algo_values[shape], NULL);
+		nvgText(vg, 0.0, 0.0, algo_values[shape], NULL);
 	}
 };
 
 
-BraidsWidget::BraidsWidget() : ModuleWidget(new Braids()) {
+BraidsWidget::BraidsWidget() {
+	Braids *module = new Braids();
+	setModule(module);
 	box.size = Vec(15*16, 380);
 
 	{
@@ -197,10 +199,10 @@ BraidsWidget::BraidsWidget() : ModuleWidget(new Braids()) {
 		addChild(display);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(210, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(210, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(210, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(210, 365)));
 
 	addParam(createParam<MediumWhiteKnob>(Vec(187-10, 71-11), module, Braids::SHAPE_PARAM, 0.0, braids::MACRO_OSC_SHAPE_LAST-2, 0.0));
 

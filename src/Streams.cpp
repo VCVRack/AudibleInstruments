@@ -46,7 +46,9 @@ void Streams::step() {
 }
 
 
-StreamsWidget::StreamsWidget() : ModuleWidget(new Streams()) {
+StreamsWidget::StreamsWidget() {
+	Streams *module = new Streams();
+	setModule(module);
 	box.size = Vec(15*12, 380);
 
 	{
@@ -56,10 +58,10 @@ StreamsWidget::StreamsWidget() : ModuleWidget(new Streams()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(150, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(150, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(150, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(150, 365)));
 
 	// addParam(createParam<HugeGlowKnob>(Vec(30, 53), module, Streams::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 

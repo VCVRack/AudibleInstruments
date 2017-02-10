@@ -189,7 +189,9 @@ void Elements::step() {
 }
 
 
-ElementsWidget::ElementsWidget() : ModuleWidget(new Elements()) {
+ElementsWidget::ElementsWidget() {
+	Elements *module = new Elements();
+	setModule(module);
 	box.size = Vec(15*34, 380);
 
 	{
@@ -199,10 +201,10 @@ ElementsWidget::ElementsWidget() : ModuleWidget(new Elements()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(480, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(480, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(480, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(480, 365)));
 
 	addParam(createParam<SmallWhiteKnob>(Vec(29, 43), module, Elements::CONTOUR_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<SmallWhiteKnob>(Vec(100, 43), module, Elements::BOW_PARAM, 0.0, 1.0, 0.5));
@@ -260,7 +262,6 @@ ElementsWidget::ElementsWidget() : ModuleWidget(new Elements()) {
 
 	addParam(createParam<LargeMomentarySwitch>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 2.0, 0.0));
 
-	Elements *elements = dynamic_cast<Elements*>(module);
-	addChild(createValueLight<MediumValueLight>(Vec(184, 168), &elements->lights[0]));
-	addChild(createValueLight<MediumValueLight>(Vec(395, 168), &elements->lights[1]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(184, 165), &module->lights[0]));
+	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(395, 165), &module->lights[1]));
 }

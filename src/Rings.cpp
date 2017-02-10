@@ -196,7 +196,9 @@ void Rings::step() {
 }
 
 
-RingsWidget::RingsWidget() : ModuleWidget(new Rings()) {
+RingsWidget::RingsWidget() {
+	Rings *module = new Rings();
+	setModule(module);
 	box.size = Vec(15*14, 380);
 
 	{
@@ -206,10 +208,10 @@ RingsWidget::RingsWidget() : ModuleWidget(new Rings()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(180, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(180, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(180, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(180, 365)));
 
 	addParam(createParam<MediumToggleSwitch>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 2.0, 0.0));
 	addParam(createParam<MediumToggleSwitch>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 2.0, 0.0));
@@ -239,7 +241,6 @@ RingsWidget::RingsWidget() : ModuleWidget(new Rings()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(128, 313), module, Rings::ODD_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(166, 313), module, Rings::EVEN_OUTPUT));
 
-	Rings *rings = dynamic_cast<Rings*>(module);
-	addChild(createValueLight<SmallModeLight>(Vec(39, 45), &rings->params[Rings::POLYPHONY_PARAM]));
-	addChild(createValueLight<SmallModeLight>(Vec(164, 45), &rings->params[Rings::RESONATOR_PARAM]));
+	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(38, 44), &module->params[Rings::POLYPHONY_PARAM]));
+	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(163, 44), &module->params[Rings::RESONATOR_PARAM]));
 }

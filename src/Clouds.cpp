@@ -156,7 +156,9 @@ void Clouds::step() {
 }
 
 
-CloudsWidget::CloudsWidget() : ModuleWidget(new Clouds()) {
+CloudsWidget::CloudsWidget() {
+	Clouds *module = new Clouds();
+	setModule(module);
 	box.size = Vec(15*18, 380);
 
 	{
@@ -166,10 +168,10 @@ CloudsWidget::CloudsWidget() : ModuleWidget(new Clouds()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(240, 0)));
-	addChild(createScrew(Vec(15, 365)));
-	addChild(createScrew(Vec(240, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(240, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(240, 365)));
 
 	// TODO
 	// addParam(createParam<MediumMomentarySwitch>(Vec(211, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));

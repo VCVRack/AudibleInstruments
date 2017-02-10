@@ -48,13 +48,15 @@ void Links::step() {
 	setf(outputs[B2_OUTPUT], in2);
 	setf(outputs[C1_OUTPUT], in3);
 
-	lights[0] = in1;
-	lights[1] = in2;
-	lights[2] = in3;
+	lights[0] = in1 / 5.0;
+	lights[1] = in2 / 5.0;
+	lights[2] = in3 / 5.0;
 }
 
 
-LinksWidget::LinksWidget() : ModuleWidget(new Links()) {
+LinksWidget::LinksWidget() {
+	Links *module = new Links();
+	setModule(module);
 	box.size = Vec(15*4, 380);
 
 	{
@@ -64,8 +66,8 @@ LinksWidget::LinksWidget() : ModuleWidget(new Links()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 
 	addInput(createInput<InputPortPJ3410>(Vec(0, 72), module, Links::A1_INPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 72), module, Links::A1_OUTPUT));
@@ -82,8 +84,7 @@ LinksWidget::LinksWidget() : ModuleWidget(new Links()) {
 	addInput(createInput<InputPortPJ3410>(Vec(0, 313), module, Links::C3_INPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 313), module, Links::C1_OUTPUT));
 
-	Links *links = dynamic_cast<Links*>(module);
-	addChild(createValueLight<SmallValueLight>(Vec(26, 61), &links->lights[0]));
-	addChild(createValueLight<SmallValueLight>(Vec(26, 164), &links->lights[1]));
-	addChild(createValueLight<SmallValueLight>(Vec(26, 264), &links->lights[2]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(26, 59), &module->lights[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(26, 161), &module->lights[1]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(26, 262), &module->lights[2]));
 }

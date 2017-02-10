@@ -85,7 +85,9 @@ void Kinks::step() {
 }
 
 
-KinksWidget::KinksWidget() : ModuleWidget(new Kinks()) {
+KinksWidget::KinksWidget() {
+	Kinks *module = new Kinks();
+	setModule(module);
 	box.size = Vec(15*4, 380);
 
 	{
@@ -95,8 +97,8 @@ KinksWidget::KinksWidget() : ModuleWidget(new Kinks()) {
 		addChild(panel);
 	}
 
-	addChild(createScrew(Vec(15, 0)));
-	addChild(createScrew(Vec(15, 365)));
+	addChild(createScrew<SilverScrew>(Vec(15, 0)));
+	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 
 	addInput(createInput<InputPortPJ3410>(Vec(0, 72), module, Kinks::SIGN_INPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 72), module, Kinks::INVERT_OUTPUT));
@@ -113,8 +115,7 @@ KinksWidget::KinksWidget() : ModuleWidget(new Kinks()) {
 	addOutput(createOutput<OutputPortPJ3410>(Vec(0, 313), module, Kinks::NOISE_OUTPUT));
 	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 313), module, Kinks::SH_OUTPUT));
 
-	Kinks *kinks = dynamic_cast<Kinks*>(module);
-	addChild(createValueLight<SmallValueLight>(Vec(12, 61), &kinks->lights[0]));
-	addChild(createValueLight<SmallValueLight>(Vec(12, 164), &kinks->lights[1]));
-	addChild(createValueLight<SmallValueLight>(Vec(12, 264), &kinks->lights[2]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 59), &module->lights[0]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 161), &module->lights[1]));
+	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 262), &module->lights[2]));
 }
