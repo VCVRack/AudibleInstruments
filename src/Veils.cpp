@@ -110,30 +110,30 @@ VeilsWidget::VeilsWidget() {
 	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 	addChild(createScrew<SilverScrew>(Vec(150, 365)));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 210), module, Veils::GAIN3_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 288), module, Veils::GAIN4_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 210), module, Veils::GAIN3_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 288), module, Veils::GAIN4_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<TinyBlackKnob>(Vec(72, 56), module, Veils::RESPONSE1_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<TinyBlackKnob>(Vec(72, 135), module, Veils::RESPONSE2_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<TinyBlackKnob>(Vec(72, 214), module, Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<TinyBlackKnob>(Vec(72, 292), module, Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(72, 56), module, Veils::RESPONSE1_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(72, 135), module, Veils::RESPONSE2_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(72, 214), module, Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(72, 292), module, Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput<InputPortPJ3410>(Vec(107, 38), module, Veils::IN1_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 117), module, Veils::IN2_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 195), module, Veils::IN3_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 274), module, Veils::IN4_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 38), module, Veils::IN1_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 117), module, Veils::IN2_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 195), module, Veils::IN3_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 274), module, Veils::IN4_INPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(107, 77), module, Veils::CV1_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 156), module, Veils::CV2_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 235), module, Veils::CV3_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 313), module, Veils::CV4_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 77), module, Veils::CV1_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 156), module, Veils::CV2_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 235), module, Veils::CV3_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 313), module, Veils::CV4_INPUT));
 
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 38), module, Veils::OUT1_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 117), module, Veils::OUT2_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 195), module, Veils::OUT3_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 274), module, Veils::OUT4_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 38), module, Veils::OUT1_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 117), module, Veils::OUT2_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 195), module, Veils::OUT3_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 274), module, Veils::OUT4_OUTPUT));
 
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));

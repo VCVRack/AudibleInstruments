@@ -100,20 +100,20 @@ KinksWidget::KinksWidget() {
 	addChild(createScrew<SilverScrew>(Vec(15, 0)));
 	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 
-	addInput(createInput<InputPortPJ3410>(Vec(0, 72), module, Kinks::SIGN_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 72), module, Kinks::INVERT_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(0, 110), module, Kinks::HALF_RECTIFY_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 110), module, Kinks::FULL_RECTIFY_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(0, 72), module, Kinks::SIGN_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(29, 72), module, Kinks::INVERT_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(0, 110), module, Kinks::HALF_RECTIFY_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(29, 110), module, Kinks::FULL_RECTIFY_OUTPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(0, 174), module, Kinks::LOGIC_A_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(29, 174), module, Kinks::LOGIC_B_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(0, 211), module, Kinks::MAX_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 211), module, Kinks::MIN_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(0, 174), module, Kinks::LOGIC_A_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(29, 174), module, Kinks::LOGIC_B_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(0, 211), module, Kinks::MAX_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(29, 211), module, Kinks::MIN_OUTPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(0, 275), module, Kinks::SH_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(29, 275), module, Kinks::TRIG_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(0, 313), module, Kinks::NOISE_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(29, 313), module, Kinks::SH_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(0, 275), module, Kinks::SH_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(29, 275), module, Kinks::TRIG_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(0, 313), module, Kinks::NOISE_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(29, 313), module, Kinks::SH_OUTPUT));
 
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 59), &module->lights[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 161), &module->lights[1]));

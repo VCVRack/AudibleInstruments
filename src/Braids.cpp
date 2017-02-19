@@ -204,20 +204,20 @@ BraidsWidget::BraidsWidget() {
 	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 	addChild(createScrew<SilverScrew>(Vec(210, 365)));
 
-	addParam(createParam<MediumWhiteKnob>(Vec(187-10, 71-11), module, Braids::SHAPE_PARAM, 0.0, braids::MACRO_OSC_SHAPE_LAST-2, 0.0));
+	addParam(createParam<Rogan2SGray>(Vec(177, 60), module, Braids::SHAPE_PARAM, 0.0, braids::MACRO_OSC_SHAPE_LAST-2, 0.0));
 
-	addParam(createParam<MediumWhiteKnob>(Vec(20, 139), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<MediumWhiteKnob>(Vec(98, 139), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
-	addParam(createParam<MediumWhiteKnob>(Vec(177, 139), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan2PSWhite>(Vec(20, 139), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan2PSWhite>(Vec(98, 139), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<Rogan2PSWhite>(Vec(177, 139), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<MediumGreenKnob>(Vec(20, 218), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<MediumGreenKnob>(Vec(98, 218), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<MediumRedKnob>(Vec(177, 218), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan2PSGreen>(Vec(20, 218), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan2PSGreen>(Vec(98, 218), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan2PSRed>(Vec(177, 218), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
 
-	addInput(createInput<InputPortPJ3410>(Vec(7, 313), module, Braids::TRIG_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(45, 313), module, Braids::PITCH_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(82, 313), module, Braids::FM_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(120, 313), module, Braids::TIMBRE_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(157, 313), module, Braids::COLOR_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(202, 313), module, Braids::OUT_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(7, 313), module, Braids::TRIG_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(45, 313), module, Braids::PITCH_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(82, 313), module, Braids::FM_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(120, 313), module, Braids::TIMBRE_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(157, 313), module, Braids::COLOR_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(202, 313), module, Braids::OUT_OUTPUT));
 }

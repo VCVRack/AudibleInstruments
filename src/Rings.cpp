@@ -216,31 +216,31 @@ RingsWidget::RingsWidget() {
 	addParam(createParam<MediumToggleSwitch>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 2.0, 0.0));
 	addParam(createParam<MediumToggleSwitch>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 2.0, 0.0));
 
-	addParam(createParam<LargeWhiteKnob>(Vec(30, 73), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
-	addParam(createParam<LargeWhiteKnob>(Vec(127, 73), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan3PSWhite>(Vec(30, 73), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
+	addParam(createParam<Rogan3PSWhite>(Vec(127, 73), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(14, 159), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(84, 159), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(155, 159), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(14, 159), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(84, 159), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(155, 159), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<TinyBlackKnob>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(95, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(172, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(95, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(172, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<InputPortPJ3410>(Vec(12, 270), module, Rings::BRIGHTNESS_MOD_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(51, 270), module, Rings::FREQUENCY_MOD_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(89, 270), module, Rings::DAMPING_MOD_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(128, 270), module, Rings::STRUCTURE_MOD_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(166, 270), module, Rings::POSITION_MOD_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(12, 270), module, Rings::BRIGHTNESS_MOD_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(51, 270), module, Rings::FREQUENCY_MOD_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(89, 270), module, Rings::DAMPING_MOD_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(128, 270), module, Rings::STRUCTURE_MOD_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(166, 270), module, Rings::POSITION_MOD_INPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(12, 313), module, Rings::STRUM_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(51, 313), module, Rings::PITCH_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(89, 313), module, Rings::IN_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(128, 313), module, Rings::ODD_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(166, 313), module, Rings::EVEN_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(12, 313), module, Rings::STRUM_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(51, 313), module, Rings::PITCH_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(89, 313), module, Rings::IN_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(128, 313), module, Rings::ODD_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(166, 313), module, Rings::EVEN_OUTPUT));
 
-	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(38, 44), &module->params[Rings::POLYPHONY_PARAM]));
-	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(163, 44), &module->params[Rings::RESONATOR_PARAM]));
+	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(38, 43.8), &module->params[Rings::POLYPHONY_PARAM]));
+	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(163, 43.8), &module->params[Rings::RESONATOR_PARAM]));
 }

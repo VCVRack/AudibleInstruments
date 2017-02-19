@@ -90,21 +90,21 @@ ShadesWidget::ShadesWidget() {
 	addChild(createScrew<SilverScrew>(Vec(15, 0)));
 	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 
-	addParam(createParam<SmallRedKnob>(Vec(40, 41), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(40, 107), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallGreenKnob>(Vec(40, 173), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSRed>(Vec(40, 41), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(40, 107), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSGreen>(Vec(40, 173), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
 
 	addParam(createParam<SlideSwitch>(Vec(11, 52), module, Shades::MODE1_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<SlideSwitch>(Vec(11, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<SlideSwitch>(Vec(11, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<InputPortPJ3410>(Vec(5, 242), module, Shades::IN1_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(5, 278), module, Shades::IN2_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(5, 314), module, Shades::IN3_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(5, 242), module, Shades::IN1_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(5, 278), module, Shades::IN2_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(5, 314), module, Shades::IN3_INPUT));
 
-	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 242), module, Shades::OUT1_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 278), module, Shades::OUT2_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(52, 314), module, Shades::OUT3_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(52, 242), module, Shades::OUT1_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(52, 278), module, Shades::OUT2_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(52, 314), module, Shades::OUT3_OUTPUT));
 
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 254), &module->lights[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 290), &module->lights[1]));

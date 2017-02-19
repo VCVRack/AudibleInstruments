@@ -101,30 +101,30 @@ BlindsWidget::BlindsWidget() {
 	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 	addChild(createScrew<SilverScrew>(Vec(150, 365)));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 52), module, Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 131), module, Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 210), module, Blinds::GAIN3_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<SmallWhiteKnob>(Vec(8, 288), module, Blinds::GAIN4_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 52), module, Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 131), module, Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 210), module, Blinds::GAIN3_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(8, 288), module, Blinds::GAIN4_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<TinyBlackKnob>(Vec(72, 63), module, Blinds::MOD1_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(72, 142), module, Blinds::MOD2_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(72, 221), module, Blinds::MOD3_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(72, 300), module, Blinds::MOD4_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(72, 63), module, Blinds::MOD1_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(72, 142), module, Blinds::MOD2_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(72, 221), module, Blinds::MOD3_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(72, 300), module, Blinds::MOD4_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<InputPortPJ3410>(Vec(107, 38), module, Blinds::IN1_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 117), module, Blinds::IN2_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 195), module, Blinds::IN3_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 274), module, Blinds::IN4_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 38), module, Blinds::IN1_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 117), module, Blinds::IN2_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 195), module, Blinds::IN3_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 274), module, Blinds::IN4_INPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(107, 77), module, Blinds::CV1_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 156), module, Blinds::CV2_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 235), module, Blinds::CV3_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(107, 313), module, Blinds::CV4_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 77), module, Blinds::CV1_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 156), module, Blinds::CV2_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 235), module, Blinds::CV3_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(107, 313), module, Blinds::CV4_INPUT));
 
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 38), module, Blinds::OUT1_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 117), module, Blinds::OUT2_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 195), module, Blinds::OUT3_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(141, 274), module, Blinds::OUT4_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 38), module, Blinds::OUT1_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 117), module, Blinds::OUT2_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 195), module, Blinds::OUT3_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(141, 274), module, Blinds::OUT4_OUTPUT));
 
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));

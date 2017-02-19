@@ -177,26 +177,26 @@ CloudsWidget::CloudsWidget() {
 	// addParam(createParam<MediumMomentarySwitch>(Vec(211, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
 	// addParam(createParam<MediumMomentarySwitch>(Vec(239, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<LargeRedKnob>(Vec(28, 94), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeGreenKnob>(Vec(109, 94), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<LargeWhiteKnob>(Vec(191, 94), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<Rogan3PSRed>(Vec(28, 94), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan3PSGreen>(Vec(109, 94), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan3PSWhite>(Vec(191, 94), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
 
-	addParam(createParam<SmallRedKnob>(Vec(15, 181), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallRedKnob>(Vec(82, 181), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallGreenKnob>(Vec(147, 181), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<SmallWhiteKnob>(Vec(214, 181), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSRed>(Vec(15, 181), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSRed>(Vec(82, 181), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSGreen>(Vec(147, 181), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(214, 181), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5));
 
-	addInput(createInput<InputPortPJ3410>(Vec(11, 270), module, Clouds::FREEZE_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(54, 270), module, Clouds::TRIG_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(97, 270), module, Clouds::POSITION_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(140, 270), module, Clouds::SIZE_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(184, 270), module, Clouds::PITCH_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(227, 270), module, Clouds::BLEND_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(11, 270), module, Clouds::FREEZE_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(54, 270), module, Clouds::TRIG_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(97, 270), module, Clouds::POSITION_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(140, 270), module, Clouds::SIZE_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(184, 270), module, Clouds::PITCH_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(227, 270), module, Clouds::BLEND_INPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(11, 313), module, Clouds::IN_L_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(54, 313), module, Clouds::IN_R_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(97, 313), module, Clouds::DENSITY_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(140, 313), module, Clouds::TEXTURE_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(184, 313), module, Clouds::OUT_L_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(227, 313), module, Clouds::OUT_R_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(11, 313), module, Clouds::IN_L_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(54, 313), module, Clouds::IN_R_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(97, 313), module, Clouds::DENSITY_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(140, 313), module, Clouds::TEXTURE_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(184, 313), module, Clouds::OUT_L_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(227, 313), module, Clouds::OUT_R_OUTPUT));
 }

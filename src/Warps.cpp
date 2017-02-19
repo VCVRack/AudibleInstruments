@@ -93,22 +93,22 @@ WarpsWidget::WarpsWidget() {
 	addChild(createScrew<SilverScrew>(Vec(15, 365)));
 	addChild(createScrew<SilverScrew>(Vec(120, 365)));
 
-	addParam(createParam<HugeGlowKnob>(Vec(30, 53), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
+	addParam(createParam<Rogan6PSWhite>(Vec(30, 53), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
-	addParam(createParam<SmallWhiteKnob>(Vec(95, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(95, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<MediumToggleSwitch>(Vec(17, 182), module, Warps::STATE_PARAM, 0.0, 3.0, 0.0));
-	addParam(createParam<TinyBlackKnob>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<TinyBlackKnob>(Vec(53, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(54, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput<InputPortPJ3410>(Vec(5, 270), module, Warps::LEVEL1_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(41, 270), module, Warps::LEVEL2_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(77, 270), module, Warps::ALGORITHM_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(113, 270), module, Warps::TIMBRE_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(5, 270), module, Warps::LEVEL1_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(41, 270), module, Warps::LEVEL2_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(77, 270), module, Warps::ALGORITHM_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(113, 270), module, Warps::TIMBRE_INPUT));
 
-	addInput(createInput<InputPortPJ3410>(Vec(5, 313), module, Warps::CARRIER_INPUT));
-	addInput(createInput<InputPortPJ3410>(Vec(41, 313), module, Warps::MODULATOR_INPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(77, 313), module, Warps::MODULATOR_OUTPUT));
-	addOutput(createOutput<OutputPortPJ3410>(Vec(113, 313), module, Warps::AUX_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(5, 313), module, Warps::CARRIER_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(41, 313), module, Warps::MODULATOR_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(77, 313), module, Warps::MODULATOR_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(113, 313), module, Warps::AUX_OUTPUT));
 
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(20, 167), &module->lights[0]));
 }
