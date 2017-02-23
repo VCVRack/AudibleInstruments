@@ -167,15 +167,27 @@ struct BraidsDisplay : TransparentWidget {
 	void draw(NVGcontext *vg) {
 		int shape = roundf(getf(value));
 
+		// Background
+		NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38);
+		NVGcolor borderColor = nvgRGB(0x10, 0x10, 0x10);
+		nvgBeginPath(vg);
+		nvgRoundedRect(vg, 0.0, 0.0, box.size.x, box.size.y, 5.0);
+		nvgFillColor(vg, backgroundColor);
+		nvgFill(vg);
+		nvgStrokeWidth(vg, 1.0);
+		nvgStrokeColor(vg, borderColor);
+		nvgStroke(vg);
+
 		nvgFontSize(vg, 36);
 		nvgFontFaceId(vg, font->handle);
 		nvgTextLetterSpacing(vg, 2.5);
 
-		NVGcolor color = nvgRGB(0xaf, 0xd2, 0x2c);
-		nvgFillColor(vg, nvgTransRGBA(color, 16));
-		nvgText(vg, 0.0, 0.0, "~~~~", NULL);
-		nvgFillColor(vg, color);
-		nvgText(vg, 0.0, 0.0, algo_values[shape], NULL);
+		Vec textPos = Vec(10, 48);
+		NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
+		nvgFillColor(vg, nvgTransRGBA(textColor, 16));
+		nvgText(vg, textPos.x, textPos.y, "~~~~", NULL);
+		nvgFillColor(vg, textColor);
+		nvgText(vg, textPos.x, textPos.y, algo_values[shape], NULL);
 	}
 };
 
@@ -194,7 +206,8 @@ BraidsWidget::BraidsWidget() {
 
 	{
 		BraidsDisplay *display = new BraidsDisplay();
-		display->box.pos = Vec(24, 101);
+		display->box.pos = Vec(14, 53);
+		display->box.size = Vec(148, 56);
 		display->value = &module->params[Braids::SHAPE_PARAM];
 		addChild(display);
 	}
