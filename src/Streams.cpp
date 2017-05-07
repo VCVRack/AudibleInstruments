@@ -58,10 +58,10 @@ StreamsWidget::StreamsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(150, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(150, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(150, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(150, 365)));
 
 	// addParam(createParam<HugeGlowKnob>(Vec(30, 53), module, Streams::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 

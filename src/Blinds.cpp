@@ -96,10 +96,10 @@ BlindsWidget::BlindsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(150, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(150, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(150, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(150, 365)));
 
 	addParam(createParam<Rogan1PSWhite>(Vec(8, 52), module, Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Rogan1PSWhite>(Vec(8, 131), module, Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0));

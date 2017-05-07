@@ -114,6 +114,7 @@ void Clouds::step() {
 
 		clouds::Parameters* p = processor->mutable_parameters();
 		p->trigger = triggered;
+		p->gate = triggered;
 		p->freeze = (getf(inputs[FREEZE_INPUT]) >= 1.0);
 		p->position = clampf(params[POSITION_PARAM] + getf(inputs[POSITION_INPUT]) / 5.0, 0.0, 1.0);
 		p->size = clampf(params[SIZE_PARAM] + getf(inputs[SIZE_INPUT]) / 5.0, 0.0, 1.0);
@@ -122,9 +123,9 @@ void Clouds::step() {
 		p->texture = clampf(params[TEXTURE_PARAM] + getf(inputs[TEXTURE_INPUT]) / 5.0, 0.0, 1.0);
 		float blend = clampf(params[BLEND_PARAM] + getf(inputs[BLEND_INPUT]) / 5.0, 0.0, 1.0);
 		p->dry_wet = blend;
-		p->stereo_spread = 0.0f;
-		p->feedback = 0.0f;
-		p->reverb = 0.0f;
+		p->stereo_spread = 0.0;
+		p->feedback = 0.0;
+		p->reverb = 0.0;
 
 		clouds::ShortFrame output[32];
 		processor->Process(input, output, 32);
@@ -168,10 +169,10 @@ CloudsWidget::CloudsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(240, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(240, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(240, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(240, 365)));
 
 	// TODO
 	// addParam(createParam<MediumMomentarySwitch>(Vec(211, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));

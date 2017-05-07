@@ -208,13 +208,13 @@ RingsWidget::RingsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(180, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(180, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(180, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(180, 365)));
 
-	addParam(createParam<MediumToggleSwitch>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 2.0, 0.0));
-	addParam(createParam<MediumToggleSwitch>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 2.0, 0.0));
+	addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 2.0, 0.0));
+	addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 2.0, 0.0));
 
 	addParam(createParam<Rogan3PSWhite>(Vec(30, 73), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
 	addParam(createParam<Rogan3PSWhite>(Vec(127, 73), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));

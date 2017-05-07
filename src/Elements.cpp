@@ -201,10 +201,10 @@ ElementsWidget::ElementsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(480, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(480, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(480, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(480, 365)));
 
 	addParam(createParam<Rogan1PSWhite>(Vec(29, 43), module, Elements::CONTOUR_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<Rogan1PSWhite>(Vec(100, 43), module, Elements::BOW_PARAM, 0.0, 1.0, 0.0));
@@ -260,7 +260,7 @@ ElementsWidget::ElementsWidget() {
 	addInput(createInput<PJ3410Port>(Vec(424, 313), module, Elements::BRIGHTNESS_MOD_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(463, 313), module, Elements::SPACE_MOD_INPUT));
 
-	addParam(createParam<LargeMomentarySwitch>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 2.0, 0.0));
+	addParam(createParam<CKD6>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 1.0, 0.0));
 
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(184, 165), &module->lights[0]));
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(395, 165), &module->lights[1]));

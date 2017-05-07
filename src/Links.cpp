@@ -66,8 +66,8 @@ LinksWidget::LinksWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 
 	addInput(createInput<PJ3410Port>(Vec(0, 72), module, Links::A1_INPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(29, 72), module, Links::A1_OUTPUT));

@@ -40,7 +40,7 @@ Shades::Shades() {
 
 static float getChannelOutput(const float *in, float gain, float mode) {
 	float out = getf(in, 5.0);
-	if (mode < 0.5) {
+	if (roundf(mode) == 1) {
 		// attenuverter
 		out *= 2.0*gain - 1.0;
 	}
@@ -87,16 +87,16 @@ ShadesWidget::ShadesWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 
 	addParam(createParam<Rogan1PSRed>(Vec(40, 41), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<Rogan1PSWhite>(Vec(40, 107), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<Rogan1PSGreen>(Vec(40, 173), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<SlideSwitch>(Vec(11, 52), module, Shades::MODE1_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SlideSwitch>(Vec(11, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<SlideSwitch>(Vec(11, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<CKSS>(Vec(10, 52), module, Shades::MODE1_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<CKSS>(Vec(10, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<CKSS>(Vec(10, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 1.0));
 
 	addInput(createInput<PJ3410Port>(Vec(5, 242), module, Shades::IN1_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(5, 278), module, Shades::IN2_INPUT));

@@ -153,13 +153,13 @@ TidesWidget::TidesWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(180, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(180, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(180, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(180, 365)));
 
-	addParam(createParam<LargeToggleSwitch>(Vec(19, 52), module, Tides::MODE_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<LargeToggleSwitch>(Vec(19, 93), module, Tides::RANGE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM, -1.0, 1.0, 0.0));
 
 	addParam(createParam<Rogan3PSGreen>(Vec(79, 60), module, Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0));
 	addParam(createParam<Rogan1PSGreen>(Vec(156, 66), module, Tides::FM_PARAM, -12.0, 12.0, 0.0));

@@ -64,7 +64,7 @@ void Warps::step() {
 		p->note += log2f(96000.0 / gSampleRate) * 12.0;
 		float state = roundf(params[STATE_PARAM]);
 		p->carrier_shape = (int32_t)state;
-		lights[0] = state - 1.0;
+		lights[0] = state;
 
 		modulator.Process(inputFrames, outputFrames, 60);
 	}
@@ -88,15 +88,15 @@ WarpsWidget::WarpsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<SilverScrew>(Vec(15, 0)));
-	addChild(createScrew<SilverScrew>(Vec(120, 0)));
-	addChild(createScrew<SilverScrew>(Vec(15, 365)));
-	addChild(createScrew<SilverScrew>(Vec(120, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(120, 0)));
+	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(createScrew<ScrewSilver>(Vec(120, 365)));
 
 	addParam(createParam<Rogan6PSWhite>(Vec(30, 53), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
 	addParam(createParam<Rogan1PSWhite>(Vec(95, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<MediumToggleSwitch>(Vec(17, 182), module, Warps::STATE_PARAM, 0.0, 3.0, 0.0));
+	addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 3.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<Trimpot>(Vec(54, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
