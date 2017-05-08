@@ -40,7 +40,7 @@ Shades::Shades() {
 
 static float getChannelOutput(const float *in, float gain, float mode) {
 	float out = getf(in, 5.0);
-	if (roundf(mode) == 1) {
+	if ((int)roundf(mode) == 1) {
 		// attenuverter
 		out *= 2.0*gain - 1.0;
 	}
@@ -54,21 +54,21 @@ static float getChannelOutput(const float *in, float gain, float mode) {
 void Shades::step() {
 	float out = 0.0;
 	out += getChannelOutput(inputs[IN1_INPUT], params[GAIN1_PARAM], params[MODE1_PARAM]);
-	lights[0] = out;
+	lights[0] = out / 5.0;
 	if (outputs[OUT1_OUTPUT]) {
 		*outputs[OUT1_OUTPUT] = out;
 		out = 0.0;
 	}
 
 	out += getChannelOutput(inputs[IN2_INPUT], params[GAIN2_PARAM], params[MODE2_PARAM]);
-	lights[1] = out;
+	lights[1] = out / 5.0;
 	if (outputs[OUT2_OUTPUT]) {
 		*outputs[OUT2_OUTPUT] = out;
 		out = 0.0;
 	}
 
 	out += getChannelOutput(inputs[IN3_INPUT], params[GAIN3_PARAM], params[MODE3_PARAM]);
-	lights[2] = out;
+	lights[2] = out / 5.0;
 	if (outputs[OUT3_OUTPUT]) {
 		*outputs[OUT3_OUTPUT] = out;
 	}

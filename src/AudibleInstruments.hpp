@@ -6,13 +6,13 @@ using namespace rack;
 
 struct TripleModeLight : ValueLight {
 	void step() {
-		float v = roundf(getf(value));
-		if (v == 0.0)
-			color = colors[COLOR_CYAN];
-		else if (v == 1.0)
-			color = colors[COLOR_ORANGE];
+		int mode = (int)roundf(getf(value));
+		if (mode == 0)
+			color = nvgRGB(0x22, 0xe6, 0xef);
+		else if (mode == 1)
+			color = nvgRGB(0xf2, 0xb1, 0x20);
 		else
-			color = colors[COLOR_RED];
+			color = nvgRGB(0xed, 0x2c, 0x24);
 	}
 };
 
