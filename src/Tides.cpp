@@ -42,9 +42,31 @@ struct Tides : Module {
 	float lights[3] = {};
 	int frame = 0;
 	uint8_t lastGate;
+	Trigger modeTrigger;
+	Trigger rangeTrigger;
 
 	Tides();
 	void step();
+
+	json_t *toJsonData() {
+		json_t *root = json_object();
+
+		json_object_set_new(root, "mode", json_integer((int)generator.mode()));
+		json_object_set_new(root, "range", json_integer((int)generator.range()));
+
+		return root;
+	}
+	void fromJsonData(json_t *root) {
+		json_t *modeJ = json_object_get(root, "mode");
+		if (modeJ) {
+			generator.set_mode((tides::GeneratorMode)json_integer_value(modeJ));
+		}
+
+		json_t *rangeJ = json_object_get(root, "range");
+		if (rangeJ) {
+			generator.set_range((tides::GeneratorRange)json_integer_value(rangeJ));
+		}
+	}
 };
 
 
@@ -55,27 +77,30 @@ Tides::Tides() {
 
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
-	generator.set_range(tides::GENERATOR_RANGE_LOW);
-	generator.set_mode(tides::GENERATOR_MODE_AD);
+	generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
+	generator.set_mode(tides::GENERATOR_MODE_LOOPING);
 	generator.set_sync(false);
 }
 
 void Tides::step() {
+	// TODO Save / load the state of MODE and RANGE to JSON
+	tides::GeneratorMode mode = generator.mode();
+	if (modeTrigger.process(params[MODE_PARAM])) {
+		mode = (tides::GeneratorMode) (((int)mode + 2) % 3);
+		generator.set_mode(mode);
+	}
+	lights[0] = (float)mode;
+
+	tides::GeneratorRange range = generator.range();
+	if (rangeTrigger.process(params[RANGE_PARAM])) {
+		range = (tides::GeneratorRange) (((int)range + 2) % 3);
+		generator.set_range(range);
+	}
+	lights[2] = (float)range;
+
+	// Buffer loop
 	if (++frame >= 16) {
 		frame = 0;
-
-		// Mode and range
-		tides::GeneratorMode mode = (tides::GeneratorMode) roundf(1.0 - params[MODE_PARAM]);
-		if (mode != generator.mode()) {
-			generator.set_mode(mode);
-		}
-		lights[0] = -params[MODE_PARAM];
-
-		tides::GeneratorRange range = (tides::GeneratorRange) roundf(1.0 - params[RANGE_PARAM]);
-		if (range != generator.range()) {
-			generator.set_range(range);
-		}
-		lights[2] = -params[RANGE_PARAM];
 
 		// Pitch
 		float pitch = params[FREQUENCY_PARAM];
@@ -141,6 +166,15 @@ void Tides::step() {
 }
 
 
+struct TidesModeLight : ModeValueLight {
+	TidesModeLight() {
+		addColor(COLOR_RED);
+		addColor(COLOR_BLACK_TRANSPARENT);
+		addColor(COLOR_CYAN);
+	}
+};
+
+
 TidesWidget::TidesWidget() {
 	Tides *module = new Tides();
 	setModule(module);
@@ -158,8 +192,8 @@ TidesWidget::TidesWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(180, 365)));
 
-	addParam(createParam<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<Rogan3PSGreen>(Vec(79, 60), module, Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0));
 	addParam(createParam<Rogan1PSGreen>(Vec(156, 66), module, Tides::FM_PARAM, -12.0, 12.0, 0.0));
@@ -184,7 +218,7 @@ TidesWidget::TidesWidget() {
 	addOutput(createOutput<PJ3410Port>(Vec(125, 313), module, Tides::UNI_OUTPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(161, 313), module, Tides::BI_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 62), &module->lights[0]));
+	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 62), &module->lights[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 83), &module->lights[1]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 103), &module->lights[2]));
+	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 103), &module->lights[2]));
 }

@@ -4,18 +4,6 @@
 using namespace rack;
 
 
-struct TripleModeLight : ValueLight {
-	void step() {
-		int mode = (int)roundf(getf(value));
-		if (mode == 0)
-			color = nvgRGB(0x22, 0xe6, 0xef);
-		else if (mode == 1)
-			color = nvgRGB(0xf2, 0xb1, 0x20);
-		else
-			color = nvgRGB(0xed, 0x2c, 0x24);
-	}
-};
-
 ////////////////////
 // module widgets
 ////////////////////

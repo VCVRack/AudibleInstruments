@@ -53,10 +53,34 @@ struct Rings : Module {
 	rings::Strummer strummer;
 	bool strum = false;
 	bool lastStrum = false;
+	float lights[2] = {};
+	Trigger polyphonyTrigger;
+	Trigger modelTrigger;
+	int polyphonyMode = 0;
+	int model = 0;
 
 	Rings();
-	~Rings();
 	void step();
+
+	json_t *toJsonData() {
+		json_t *root = json_object();
+
+		json_object_set_new(root, "polyphony", json_integer(polyphonyMode));
+		json_object_set_new(root, "model", json_integer(model));
+
+		return root;
+	}
+	void fromJsonData(json_t *root) {
+		json_t *polyphonyJ = json_object_get(root, "polyphony");
+		if (polyphonyJ) {
+			polyphonyMode = json_integer_value(polyphonyJ);
+		}
+
+		json_t *modelJ = json_object_get(root, "model");
+		if (modelJ) {
+			model = json_integer_value(modelJ);
+		}
+	}
 };
 
 
@@ -74,9 +98,6 @@ Rings::Rings() {
 	string_synth.Init(reverb_buffer);
 }
 
-Rings::~Rings() {
-}
-
 void Rings::step() {
 	// TODO
 	// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
@@ -91,6 +112,17 @@ void Rings::step() {
 		strum = getf(inputs[STRUM_INPUT]) >= 1.0;
 	}
 
+	// Polyphony / model
+	if (polyphonyTrigger.process(params[POLYPHONY_PARAM])) {
+		polyphonyMode = (polyphonyMode + 1) % 3;
+	}
+	lights[0] = (float)polyphonyMode;
+
+	if (modelTrigger.process(params[RESONATOR_PARAM])) {
+		model = (model + 1) % 3;
+	}
+	lights[1] = (float)model;
+
 	// Render frames
 	if (outputBuffer.empty()) {
 		float in[24] = {};
@@ -103,21 +135,11 @@ void Rings::step() {
 			inputBuffer.startIncr(inLen);
 		}
 
-		// modes
-		int polyphony;
-		switch ((int) roundf(params[POLYPHONY_PARAM])) {
-			case 1: polyphony = 2; break;
-			case 2: polyphony = 4; break;
-			default: polyphony = 1;
-		}
-		if (polyphony != part.polyphony()) {
+		// Polyphony / model
+		int polyphony = 1<<polyphonyMode;
+		if (part.polyphony() != polyphony)
 			part.set_polyphony(polyphony);
-		}
-
-		int model = (int) roundf(params[RESONATOR_PARAM]);
-		if (0 <= model && model < rings::RESONATOR_MODEL_LAST) {
-			part.set_model((rings::ResonatorModel) model);
-		}
+		part.set_model((rings::ResonatorModel)model);
 
 		// Patch
 		rings::Patch patch;
@@ -192,8 +214,16 @@ void Rings::step() {
 			setf(outputs[EVEN_OUTPUT], v);
 		}
 	}
-
 }
+
+
+struct RingsModeLight : ModeValueLight {
+	RingsModeLight() {
+		addColor(COLOR_CYAN);
+		addColor(COLOR_ORANGE);
+		addColor(COLOR_RED);
+	}
+};
 
 
 RingsWidget::RingsWidget() {
@@ -213,8 +243,8 @@ RingsWidget::RingsWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(180, 365)));
 
-	addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 2.0, 0.0));
-	addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 2.0, 0.0));
+	addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<Rogan3PSWhite>(Vec(30, 73), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
 	addParam(createParam<Rogan3PSWhite>(Vec(127, 73), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
@@ -225,9 +255,9 @@ RingsWidget::RingsWidget() {
 
 	addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(95, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(172, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 
 	addInput(createInput<PJ3410Port>(Vec(12, 270), module, Rings::BRIGHTNESS_MOD_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(51, 270), module, Rings::FREQUENCY_MOD_INPUT));
@@ -241,6 +271,6 @@ RingsWidget::RingsWidget() {
 	addOutput(createOutput<PJ3410Port>(Vec(128, 313), module, Rings::ODD_OUTPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(166, 313), module, Rings::EVEN_OUTPUT));
 
-	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(38, 43.8), &module->params[Rings::POLYPHONY_PARAM]));
-	addChild(createValueLight<SmallLight<TripleModeLight>>(Vec(163, 43.8), &module->params[Rings::RESONATOR_PARAM]));
+	addChild(createValueLight<SmallLight<RingsModeLight>>(Vec(38, 43.8), &module->lights[0]));
+	addChild(createValueLight<SmallLight<RingsModeLight>>(Vec(163, 43.8), &module->lights[1]));
 }

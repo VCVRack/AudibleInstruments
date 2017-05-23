@@ -32,9 +32,24 @@ struct Warps : Module {
 	warps::ShortFrame inputFrames[60] = {};
 	warps::ShortFrame outputFrames[60] = {};
 	float lights[1] = {};
+	Trigger stateTrigger;
 
 	Warps();
 	void step();
+
+	json_t *toJsonData() {
+		json_t *root = json_object();
+		warps::Parameters *p = modulator.mutable_parameters();
+		json_object_set_new(root, "shape", json_integer(p->carrier_shape));
+		return root;
+	}
+	void fromJsonData(json_t *root) {
+		json_t *shapeJ = json_object_get(root, "shape");
+		warps::Parameters *p = modulator.mutable_parameters();
+		if (shapeJ) {
+			p->carrier_shape = json_integer_value(shapeJ);
+		}
+	}
 };
 
 
@@ -48,10 +63,17 @@ Warps::Warps() {
 }
 
 void Warps::step() {
+	// State trigger
+	warps::Parameters *p = modulator.mutable_parameters();
+	if (stateTrigger.process(params[STATE_PARAM])) {
+		p->carrier_shape = (p->carrier_shape + 1) % 4;
+	}
+	lights[0] = p->carrier_shape;
+
+	// Buffer loop
 	if (++frame >= 60) {
 		frame = 0;
 
-		warps::Parameters *p = modulator.mutable_parameters();
 		p->channel_drive[0] = clampf(params[LEVEL1_PARAM] + getf(inputs[LEVEL1_INPUT]) / 5.0, 0.0, 1.0);
 		p->channel_drive[1] = clampf(params[LEVEL2_PARAM] + getf(inputs[LEVEL2_INPUT]) / 5.0, 0.0, 1.0);
 		p->modulation_algorithm = clampf(params[ALGORITHM_PARAM] / 8.0 + getf(inputs[ALGORITHM_PARAM]) / 5.0, 0.0, 1.0);
@@ -62,9 +84,6 @@ void Warps::step() {
 		p->phase_shift = p->modulation_algorithm;
 		p->note = 60.0 * params[LEVEL1_PARAM] + 12.0 * getf(inputs[LEVEL1_INPUT], 2.0) + 12.0;
 		p->note += log2f(96000.0 / gSampleRate) * 12.0;
-		float state = roundf(params[STATE_PARAM]);
-		p->carrier_shape = (int32_t)state;
-		lights[0] = state;
 
 		modulator.Process(inputFrames, outputFrames, 60);
 	}
@@ -75,6 +94,15 @@ void Warps::step() {
 	setf(outputs[AUX_OUTPUT], (float)outputFrames[frame].r / 0x8000 * 5.0);
 }
 
+
+struct WarpsModeLight : ModeValueLight {
+	WarpsModeLight() {
+		addColor(COLOR_BLACK_TRANSPARENT);
+		addColor(COLOR_GREEN);
+		addColor(COLOR_YELLOW);
+		addColor(COLOR_RED);
+	}
+};
 
 WarpsWidget::WarpsWidget() {
 	Warps *module = new Warps();
@@ -96,7 +124,7 @@ WarpsWidget::WarpsWidget() {
 	addParam(createParam<Rogan6PSWhite>(Vec(30, 53), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
 	addParam(createParam<Rogan1PSWhite>(Vec(95, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 3.0, 0.0));
+	addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<Trimpot>(Vec(54, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
@@ -110,5 +138,5 @@ WarpsWidget::WarpsWidget() {
 	addOutput(createOutput<PJ3410Port>(Vec(77, 313), module, Warps::MODULATOR_OUTPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(113, 313), module, Warps::AUX_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(20, 167), &module->lights[0]));
+	addChild(createValueLight<SmallLight<WarpsModeLight>>(Vec(20, 167), &module->lights[0]));
 }
