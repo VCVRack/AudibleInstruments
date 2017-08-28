@@ -1,107 +1,63 @@
 
 # Audible Instruments
 
-Ports of [Mutable Instruments](http://mutable-instruments.net/modules) modules to Virtuoso Rack
+Ports of [Mutable Instruments](http://mutable-instruments.net/modules) modules to [VCV](https://vcvrack.com/)
 
-## TODO
+Percentages are progress of completion, X means won't port.
 
-Percentages are progress amounts, X means won't port
+#### [100%] [Braids](https://mutable-instruments.net/modules/braids) (Macro Oscillator)
 
-#### [90%] Braids (Macro Oscillator)
-- sample rate converter
-
-#### [X] Edges (Chiptune Generator)
+#### [X] [Edges](https://mutable-instruments.net/modules/edges) (Chiptune Generator)
 - GPL, will not port
 
-#### [70%] Elements (Modal Synthesizer)
-- fix weird audio stability bug
+#### [100%] [Elements](https://mutable-instruments.net/modules/elements) (Modal Synthesizer)
 
-- sample rate converter
+#### [100%] [Tides](https://mutable-instruments.net/modules/tides) (Tidal Modulator)
 
-#### [100%] Tides (Tidal Modulator)
-#### [X] Sheep (Wavetable Oscillator)
+#### [X] [Sheep](https://mutable-instruments.net/modules/tides/firmware/) (Wavetable Oscillator)
 - based on Tides
-
 - cannot find source, will not port
 
-#### [0%] Peaks
-#### [X] Ripples
+#### [0%] [Peaks](https://mutable-instruments.net/modules/peaks)
+
+#### [0%] [Ripples](https://mutable-instruments.net/modules/ripples)
+- analog, but I own a unit. need a free afternoon to port
+
+#### [X] [Shelves](https://mutable-instruments.net/modules/shelves)
 - analog, will not port unless I buy/borrow one or someone contributes a technical model
 
-#### [X] Shelves
-- analog, will not port unless I buy/borrow one or someone contributes a technical model
+#### [10%] [Streams](https://mutable-instruments.net/modules/streams)
+- analog, but it's possible to fake the filter with schematic analysis, need to buy/borrow a unit
 
-#### [10%] Streams
-- analog, but it's possible to fake the filter with schematic analysis
-
-#### [70%] Clouds (Texture Synthesizer)
+#### [70%] [Clouds](https://mutable-instruments.net/modules/clouds) (Texture Synthesizer)
 - edit buttons and lights
+- freeze button
+- right-click context menus to replace menu diving
 
-#### [100%] Warps (Meta Modulator)
-#### [90%] Rings (Resonator)
-- performance issue with first mode
+#### [100%] [Warps](https://mutable-instruments.net/modules/warps) (Meta Modulator)
 
-#### [X] Grids (Drum Sequencer)
+#### [100%] [Rings](https://mutable-instruments.net/modules/rings) (Resonator)
+- detected performance issue with first mode. Is anyone experiencing this issue?
+
+#### [X] [Grids](https://mutable-instruments.net/modules/grids) (Drum Sequencer)
 - GPL, will not port
 
-#### [0%] Frames
-#### [X] Yarns
+#### [0%] [Frames](https://mutable-instruments.net/modules/frames)
+
+#### [X] [Yarns](https://mutable-instruments.net/modules/yarns)
 - functionality covered by the MIDI Interface from core, will not port
 
-#### [X] Ears
+#### [X] [Ears](https://mutable-instruments.net/modules/ears)
 - a microphone, will not port
 
-#### [100%] Links (Multiples)
-#### [100%] Kinks (Utilities)
-#### [100%] Shades (Mixer)
-#### [100%] Branches (Bernoulli Gate)
-#### [100%] Blinds (Quad VC-polarizer)
-#### [100%] Veils (Quad VCA)
+#### [100%] [Links](https://mutable-instruments.net/modules/links) (Multiples)
 
+#### [100%] [Kinks](https://mutable-instruments.net/modules/kinks) (Utilities)
 
+#### [100%] [Shades](https://mutable-instruments.net/modules/shades) (Mixer)
 
+#### [100%] [Branches](https://mutable-instruments.net/modules/branches) (Bernoulli Gate)
 
-### Sound sources
-- [[Macro Oscillator]] (based on [Braids](http://mutable-instruments.net/modules/braids))
-- [[Modal Synthesizer]] (based on [Elements](http://mutable-instruments.net/modules/elements))
+#### [100%] [Blinds](https://mutable-instruments.net/modules/blinds) (Quad VC-polarizer)
 
-### Modulation sources
-- [[Tidal Modulator]] (based on [Tides](http://mutable-instruments.net/modules/tides))
-
-### Sound modifiers
-- [[Texture Synthesizer]] (based on [Clouds](http://mutable-instruments.net/modules/clouds))
-- [[Meta Modulator]] (based on [Warps](http://mutable-instruments.net/modules/warps))
-- [[Resonator]] (based on [Rings](http://mutable-instruments.net/modules/rings))
-
-### Plumbing
-- [[Multiples]] (based on [Links](http://mutable-instruments.net/modules/links))
-- [[Utilities]] (based on [Kinks](http://mutable-instruments.net/modules/kinks))
-- [[Mixer]] (based on [Shades](http://mutable-instruments.net/modules/shades))
-- [[Bernoulli Gate]] (based on [Branches](http://mutable-instruments.net/modules/branches))
-- [[Quad VC-polarizer]] (based on [Blinds](http://mutable-instruments.net/modules/blinds))
-- [[Quad VCA]] (based on [Veils](http://mutable-instruments.net/modules/veils))
-
-
-![](http://virtuoso.audio/images/AudibleInstruments/macro oscillator.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/modal synthesizer.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/tidal modulator.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/texture synthesizer.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/meta modulator.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/resonator.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/multiples.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/utilities.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/mixer.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/bernoulli gate.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/quad VC-polarizer.png)
-
-![](http://virtuoso.audio/images/AudibleInstruments/quad VCA.png)
+#### [100%] [Veils](https://mutable-instruments.net/modules/veils) (Quad VCA)
