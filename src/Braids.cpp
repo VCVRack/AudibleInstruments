@@ -113,6 +113,8 @@ static const char *algo_values[] = {
 	"//-_",
 	"FOLD",
 	"uuuu",
+	"SUB-",
+	"SUB/",
 	"SYN-",
 	"SYN/",
 	"//x3",
