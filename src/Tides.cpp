@@ -42,30 +42,41 @@ struct Tides : Module {
 	float lights[3] = {};
 	int frame = 0;
 	uint8_t lastGate;
-	Trigger modeTrigger;
-	Trigger rangeTrigger;
+	SchmittTrigger modeTrigger;
+	SchmittTrigger rangeTrigger;
 
 	Tides();
 	void step();
 
-	json_t *toJsonData() {
-		json_t *root = json_object();
+	json_t *toJson() {
+		json_t *rootJ = json_object();
 
-		json_object_set_new(root, "mode", json_integer((int)generator.mode()));
-		json_object_set_new(root, "range", json_integer((int)generator.range()));
+		json_object_set_new(rootJ, "mode", json_integer((int) generator.mode()));
+		json_object_set_new(rootJ, "range", json_integer((int) generator.range()));
 
-		return root;
+		return rootJ;
 	}
-	void fromJsonData(json_t *root) {
-		json_t *modeJ = json_object_get(root, "mode");
+
+	void fromJson(json_t *rootJ) {
+		json_t *modeJ = json_object_get(rootJ, "mode");
 		if (modeJ) {
-			generator.set_mode((tides::GeneratorMode)json_integer_value(modeJ));
+			generator.set_mode((tides::GeneratorMode) json_integer_value(modeJ));
 		}
 
-		json_t *rangeJ = json_object_get(root, "range");
+		json_t *rangeJ = json_object_get(rootJ, "range");
 		if (rangeJ) {
-			generator.set_range((tides::GeneratorRange)json_integer_value(rangeJ));
+			generator.set_range((tides::GeneratorRange) json_integer_value(rangeJ));
 		}
+	}
+
+	void initialize() {
+		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
+		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
+	}
+
+	void randomize() {
+		generator.set_range((tides::GeneratorRange) (randomu32() % 3));
+		generator.set_mode((tides::GeneratorMode) (randomu32() % 3));
 	}
 };
 
@@ -77,23 +88,22 @@ Tides::Tides() {
 
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
-	generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
-	generator.set_mode(tides::GENERATOR_MODE_LOOPING);
 	generator.set_sync(false);
+	initialize();
 }
 
 void Tides::step() {
 	// TODO Save / load the state of MODE and RANGE to JSON
 	tides::GeneratorMode mode = generator.mode();
 	if (modeTrigger.process(params[MODE_PARAM])) {
-		mode = (tides::GeneratorMode) (((int)mode + 2) % 3);
+		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
 		generator.set_mode(mode);
 	}
 	lights[0] = (float)mode;
 
 	tides::GeneratorRange range = generator.range();
 	if (rangeTrigger.process(params[RANGE_PARAM])) {
-		range = (tides::GeneratorRange) (((int)range + 2) % 3);
+		range = (tides::GeneratorRange) (((int)range - 1 + 3) % 3);
 		generator.set_range(range);
 	}
 	lights[2] = (float)range;
@@ -104,12 +114,12 @@ void Tides::step() {
 
 		// Pitch
 		float pitch = params[FREQUENCY_PARAM];
-		pitch += 12.0*getf(inputs[PITCH_INPUT]);
+		pitch += 12.0 * getf(inputs[PITCH_INPUT]);
 		pitch += params[FM_PARAM] * getf(inputs[FM_INPUT], 0.1) / 5.0;
 		pitch += 60.0;
 		// Scale to the global sample rate
 		pitch += log2f(48000.0 / gSampleRate) * 12.0;
-		generator.set_pitch(clampf(pitch*0x80, -0x8000, 0x7fff));
+		generator.set_pitch(clampf(pitch * 0x80, -0x8000, 0x7fff));
 
 		// Slope, smoothness, pitch
 		int16_t shape = clampf(params[SHAPE_PARAM] + getf(inputs[SHAPE_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
@@ -154,8 +164,8 @@ void Tides::step() {
 
 	uni = uni * level >> 16;
 	bi = -bi * level >> 16;
-	float unif = mapf(uni, 0, 0xffff, 0.0, 8.0);
-	float bif = mapf(bi, -0x8000, 0x7fff, -5.0, 5.0);
+	float unif = rescalef(uni, 0, 0xffff, 0.0, 8.0);
+	float bif = rescalef(bi, -0x8000, 0x7fff, -5.0, 5.0);
 
 	setf(outputs[HIGH_OUTPUT], sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0);
 	setf(outputs[LOW_OUTPUT], sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0);
@@ -178,7 +188,7 @@ struct TidesModeLight : ModeValueLight {
 TidesWidget::TidesWidget() {
 	Tides *module = new Tides();
 	setModule(module);
-	box.size = Vec(15*14, 380);
+	box.size = Vec(15 * 14, 380);
 
 	{
 		Panel *panel = new LightPanel();

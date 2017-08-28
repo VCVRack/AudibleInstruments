@@ -32,23 +32,34 @@ struct Warps : Module {
 	warps::ShortFrame inputFrames[60] = {};
 	warps::ShortFrame outputFrames[60] = {};
 	float lights[1] = {};
-	Trigger stateTrigger;
+	SchmittTrigger stateTrigger;
 
 	Warps();
 	void step();
 
-	json_t *toJsonData() {
-		json_t *root = json_object();
+	json_t *toJson() {
+		json_t *rootJ = json_object();
 		warps::Parameters *p = modulator.mutable_parameters();
-		json_object_set_new(root, "shape", json_integer(p->carrier_shape));
-		return root;
+		json_object_set_new(rootJ, "shape", json_integer(p->carrier_shape));
+		return rootJ;
 	}
-	void fromJsonData(json_t *root) {
-		json_t *shapeJ = json_object_get(root, "shape");
+
+	void fromJson(json_t *rootJ) {
+		json_t *shapeJ = json_object_get(rootJ, "shape");
 		warps::Parameters *p = modulator.mutable_parameters();
 		if (shapeJ) {
 			p->carrier_shape = json_integer_value(shapeJ);
 		}
+	}
+
+	void initialize() {
+		warps::Parameters *p = modulator.mutable_parameters();
+		p->carrier_shape = 0;
+	}
+
+	void randomize() {
+		warps::Parameters *p = modulator.mutable_parameters();
+		p->carrier_shape = randomu32() % 4;
 	}
 };
 
@@ -60,6 +71,8 @@ Warps::Warps() {
 
 	memset(&modulator, 0, sizeof(modulator));
 	modulator.Init(96000.0f);
+
+	stateTrigger.setThresholds(0.0, 1.0);
 }
 
 void Warps::step() {

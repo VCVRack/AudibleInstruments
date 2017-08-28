@@ -71,8 +71,8 @@ void Braids::step() {
 		// Set timbre/modulation
 		float timbre = params[TIMBRE_PARAM] + params[MODULATION_PARAM] * getf(inputs[TIMBRE_INPUT]) / 5.0;
 		float modulation = params[COLOR_PARAM] + getf(inputs[COLOR_INPUT]) / 5.0;
-		int16_t param1 = mapf(clampf(timbre, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
-		int16_t param2 = mapf(clampf(modulation, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
+		int16_t param1 = rescalef(clampf(timbre, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
+		int16_t param2 = rescalef(clampf(modulation, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
 		osc->set_parameters(param1, param2);
 
 		// Set pitch

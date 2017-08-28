@@ -1,8 +1,7 @@
 
-ARCH ?= lin
-FLAGS = -fPIC -g -Wall -O3 -msse -mfpmath=sse -ffast-math \
+FLAGS += \
 	-fshort-enums -DTEST \
-	-I./src -I../../include -I./eurorack \
+	-I./eurorack \
 	-Wno-unused-local-typedefs
 
 
@@ -45,33 +44,4 @@ SOURCES = $(wildcard src/*.cpp) \
 	eurorack/warps/dsp/filter_bank.cc \
 	eurorack/warps/resources.cc
 
-
-ifeq ($(ARCH), lin)
-LDFLAGS += -shared
-TARGET = plugin.so
-endif
-
-ifeq ($(ARCH), mac)
-LDFLAGS += -shared -undefined dynamic_lookup
-TARGET = plugin.dylib
-endif
-
-ifeq ($(ARCH), win)
-LDFLAGS += -shared -L../../ -lRack
-TARGET = plugin.dll
-endif
-
-
-all: $(TARGET)
-
-dist: $(TARGET)
-	mkdir -p dist/AudibleInstruments
-	cp LICENSE* dist/AudibleInstruments/
-	cp plugin.* dist/AudibleInstruments/
-	cp -R res dist/AudibleInstruments/
-
-clean:
-	rm -rfv build $(TARGET) dist
-
-
-include ../../Makefile.inc
+include ../../plugin.mk

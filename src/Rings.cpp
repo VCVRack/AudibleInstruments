@@ -54,32 +54,43 @@ struct Rings : Module {
 	bool strum = false;
 	bool lastStrum = false;
 	float lights[2] = {};
-	Trigger polyphonyTrigger;
-	Trigger modelTrigger;
+	SchmittTrigger polyphonyTrigger;
+	SchmittTrigger modelTrigger;
 	int polyphonyMode = 0;
 	int model = 0;
 
 	Rings();
 	void step();
 
-	json_t *toJsonData() {
-		json_t *root = json_object();
+	json_t *toJson() {
+		json_t *rootJ = json_object();
 
-		json_object_set_new(root, "polyphony", json_integer(polyphonyMode));
-		json_object_set_new(root, "model", json_integer(model));
+		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
+		json_object_set_new(rootJ, "model", json_integer(model));
 
-		return root;
+		return rootJ;
 	}
-	void fromJsonData(json_t *root) {
-		json_t *polyphonyJ = json_object_get(root, "polyphony");
+
+	void fromJson(json_t *rootJ) {
+		json_t *polyphonyJ = json_object_get(rootJ, "polyphony");
 		if (polyphonyJ) {
 			polyphonyMode = json_integer_value(polyphonyJ);
 		}
 
-		json_t *modelJ = json_object_get(root, "model");
+		json_t *modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
 			model = json_integer_value(modelJ);
 		}
+	}
+
+	void initialize() {
+		polyphonyMode = 0;
+		model = 0;
+	}
+
+	void randomize() {
+		polyphonyMode = randomu32() % 3;
+		model = randomu32() % 3;
 	}
 };
 
@@ -96,6 +107,9 @@ Rings::Rings() {
 	strummer.Init(0.01, 44100.0 / 24);
 	part.Init(reverb_buffer);
 	string_synth.Init(reverb_buffer);
+
+	polyphonyTrigger.setThresholds(0.0, 1.0);
+	modelTrigger.setThresholds(0.0, 1.0);
 }
 
 void Rings::step() {
