@@ -48,7 +48,7 @@ Blinds::Blinds() {
 }
 
 static float getChannelOutput(const float *in, float gain, const float *cv, float mod, float *light) {
-	gain += mod * getf(cv) / 5.0;
+	gain += mod * fmaxf(getf(cv) / 5.0, 0.0);
 	*light = gain * 5.0;
 	return gain * getf(in, 5.0);
 }

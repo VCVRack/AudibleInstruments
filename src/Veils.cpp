@@ -56,7 +56,7 @@ static float getChannelOutput(float *in, float gain, float *cv, float response) 
 		if (linear == 0.0)
 			return 0.0;
 		const float ex = 200.0;
-		float exponential = (powf(ex, linear) - 1.0) / (ex - 1.0);
+		float exponential = rescalef(powf(ex, linear), 1.0, ex, 0.0, 1.0);
 		out *= crossf(exponential, linear, response);
 	}
 	return out;
