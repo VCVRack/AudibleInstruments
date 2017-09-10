@@ -45,3 +45,14 @@ SOURCES = $(wildcard src/*.cpp) \
 	eurorack/warps/resources.cc
 
 include ../../plugin.mk
+
+
+dist: all
+ifndef VERSION
+	$(error VERSION is not set.)
+endif
+	mkdir -p dist/AudibleInstruments
+	cp LICENSE* dist/AudibleInstruments/
+	cp plugin.* dist/AudibleInstruments/
+	cp -R res dist/AudibleInstruments/
+	cd dist && zip -5 -r AudibleInstruments-$(VERSION)-$(ARCH).zip AudibleInstruments
