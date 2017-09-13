@@ -126,15 +126,15 @@ struct WarpsAlgoLight : ValueLight {
 	void step() {
 		// TODO Set these to Warps' actual colors
 		static NVGcolor colors[9] = {
-			nvgHSL(0.0, 0.5, 0.7),
-			nvgHSL(0.1, 0.5, 0.7),
-			nvgHSL(0.2, 0.5, 0.7),
-			nvgHSL(0.3, 0.5, 0.7),
-			nvgHSL(0.4, 0.5, 0.7),
 			nvgHSL(0.5, 0.5, 0.7),
 			nvgHSL(0.6, 0.5, 0.7),
 			nvgHSL(0.7, 0.5, 0.7),
 			nvgHSL(0.8, 0.5, 0.7),
+			nvgHSL(0.9, 0.5, 0.7),
+			nvgHSL(0.0, 0.5, 0.7),
+			nvgHSL(0.1, 0.5, 0.7),
+			nvgHSL(0.2, 0.5, 0.7),
+			nvgHSL(0.3, 0.5, 0.7),
 		};
 		int i = clampi((int) *value, 0, 7);
 		NVGcolor color0 = colors[i];
