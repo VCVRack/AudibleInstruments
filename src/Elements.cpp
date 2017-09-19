@@ -78,6 +78,27 @@ struct Elements : Module {
 	Elements();
 	~Elements();
 	void step();
+
+	json_t *toJson() {
+		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "model", json_integer(getModel()));
+		return rootJ;
+	}
+
+	void fromJson(json_t *rootJ) {
+		json_t *modelJ = json_object_get(rootJ, "model");
+		if (modelJ) {
+			setModel(json_integer_value(modelJ));
+		}
+	}
+
+	int getModel() {
+		return (int)part->resonator_model();
+	}
+
+	void setModel(int model) {
+		part->set_resonator_model((elements::ResonatorModel)model);
+	}
 };
 
 
@@ -264,4 +285,50 @@ ElementsWidget::ElementsWidget() {
 
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(184, 165), &module->lights[0]));
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(395, 165), &module->lights[1]));
+}
+
+struct ModelItem : MenuItem {
+	ModuleWidget *moduleWidget;
+	int model;
+	void onAction() {
+		Elements *module = dynamic_cast<Elements*>(moduleWidget->module);
+		assert(module);
+		module->setModel(model);
+	}
+	void step() {
+		Elements *module = dynamic_cast<Elements*>(moduleWidget->module);
+		assert(module);
+		rightText = (module->getModel() == model) ? "Enabled" : "";
+	}
+};
+
+Menu *ElementsWidget::createContextMenu() {
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->pushChild(spacerLabel);
+
+	MenuLabel *modeLabel = new MenuLabel();
+	modeLabel->text = "Alternative Models";
+	menu->pushChild(modeLabel);
+
+	ModelItem *originalItem = new ModelItem();
+	originalItem->text = "Original";
+	originalItem->moduleWidget = this;
+	originalItem->model = 0;
+	menu->pushChild(originalItem);
+
+	ModelItem *stringItem = new ModelItem();
+	stringItem->text = "Non-linear string";
+	stringItem->moduleWidget = this;
+	stringItem->model = 1;
+	menu->pushChild(stringItem);
+
+	ModelItem *chordsItem = new ModelItem();
+	chordsItem->text = "Chords";
+	chordsItem->moduleWidget = this;
+	chordsItem->model = 2;
+	menu->pushChild(chordsItem);
+
+	return menu;
 }

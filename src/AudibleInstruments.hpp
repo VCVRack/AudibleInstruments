@@ -14,6 +14,7 @@ struct BraidsWidget : ModuleWidget {
 
 struct ElementsWidget : ModuleWidget {
 	ElementsWidget();
+	Menu *createContextMenu();
 };
 
 struct TidesWidget : ModuleWidget {
