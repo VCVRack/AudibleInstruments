@@ -93,7 +93,6 @@ Tides::Tides() {
 }
 
 void Tides::step() {
-	// TODO Save / load the state of MODE and RANGE to JSON
 	tides::GeneratorMode mode = generator.mode();
 	if (modeTrigger.process(params[MODE_PARAM])) {
 		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);

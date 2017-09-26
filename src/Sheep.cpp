@@ -7,34 +7,34 @@
 
 struct Sheep : Module {
 	enum ParamIds {
-		MODE_PARAM,
+		BANK_PARAM,
 		RANGE_PARAM,
 
 		FREQUENCY_PARAM,
 		FM_PARAM,
 
-		SHAPE_PARAM,
-		SLOPE_PARAM,
+		ROW_PARAM,
+		COLUMN_PARAM,
 		SMOOTHNESS_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
-		SHAPE_INPUT,
-		SLOPE_INPUT,
+		ROW_INPUT,
+		COLUMN_INPUT,
 		SMOOTHNESS_INPUT,
 
-		TRIG_INPUT,
+		SYNC_INPUT,
 		FREEZE_INPUT,
 		PITCH_INPUT,
 		FM_INPUT,
 		LEVEL_INPUT,
 
-		CLOCK_INPUT,
+		BANK_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
-		HIGH_OUTPUT,
-		LOW_OUTPUT,
+		BIT_OUTPUT,
+		SUB_OUTPUT,
 		UNI_OUTPUT,
 		BI_OUTPUT,
 		NUM_OUTPUTS
@@ -53,16 +53,16 @@ struct Sheep : Module {
 	json_t *toJson() {
 		json_t *rootJ = json_object();
 
-		json_object_set_new(rootJ, "mode", json_integer((int) generator.mode()));
+		json_object_set_new(rootJ, "bank", json_integer((int) generator.mode()));
 		json_object_set_new(rootJ, "range", json_integer((int) generator.range()));
 
 		return rootJ;
 	}
 
 	void fromJson(json_t *rootJ) {
-		json_t *modeJ = json_object_get(rootJ, "mode");
-		if (modeJ) {
-			generator.set_mode((tides::GeneratorMode) json_integer_value(modeJ));
+		json_t *bankJ = json_object_get(rootJ, "bank");
+		if (bankJ) {
+			generator.set_mode((tides::GeneratorMode) json_integer_value(bankJ));
 		}
 
 		json_t *rangeJ = json_object_get(rootJ, "range");
@@ -95,9 +95,8 @@ Sheep::Sheep() {
 }
 
 void Sheep::step() {
-	// TODO Save / load the state of MODE and RANGE to JSON
 	tides::GeneratorMode mode = generator.mode();
-	if (modeTrigger.process(params[MODE_PARAM])) {
+	if (modeTrigger.process(params[BANK_PARAM])) {
 		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
 		generator.set_mode(mode);
 	}
@@ -124,8 +123,8 @@ void Sheep::step() {
 		generator.set_pitch(clampf(pitch * 0x80, -0x8000, 0x7fff));
 
 		// Slope, smoothness, pitch
-		int16_t shape = clampf(params[SHAPE_PARAM] + getf(inputs[SHAPE_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
-		int16_t slope = clampf(params[SLOPE_PARAM] + getf(inputs[SLOPE_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
+		int16_t shape = clampf(params[ROW_PARAM] + getf(inputs[ROW_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
+		int16_t slope = clampf(params[COLUMN_PARAM] + getf(inputs[COLUMN_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
 		int16_t smoothness = clampf(params[SMOOTHNESS_PARAM] + getf(inputs[SMOOTHNESS_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
 		generator.set_shape(shape);
 		generator.set_slope(slope);
@@ -134,7 +133,7 @@ void Sheep::step() {
 		// Sync
 		// Slight deviation from spec here.
 		// Instead of toggling sync by holding the range button, just enable it if the clock port is plugged in.
-		generator.set_sync(inputs[CLOCK_INPUT]);
+		generator.set_sync(inputs[BANK_INPUT]);
 
 		// Generator
 		generator.Process();
@@ -148,9 +147,9 @@ void Sheep::step() {
 	uint8_t gate = 0;
 	if (getf(inputs[FREEZE_INPUT]) >= 0.7)
 		gate |= tides::CONTROL_FREEZE;
-	if (getf(inputs[TRIG_INPUT]) >= 0.7)
+	if (getf(inputs[SYNC_INPUT]) >= 0.7)
 		gate |= tides::CONTROL_GATE;
-	if (getf(inputs[CLOCK_INPUT]) >= 0.7)
+	if (getf(inputs[BANK_INPUT]) >= 0.7)
 		gate |= tides::CONTROL_CLOCK;
 	if (!(lastGate & tides::CONTROL_CLOCK) && (gate & tides::CONTROL_CLOCK))
 		gate |= tides::CONTROL_GATE_RISING;
@@ -169,8 +168,8 @@ void Sheep::step() {
 	float unif = rescalef(uni, 0, 0xffff, 0.0, 8.0);
 	float bif = rescalef(bi, -0x8000, 0x7fff, -5.0, 5.0);
 
-	setf(outputs[HIGH_OUTPUT], sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0);
-	setf(outputs[LOW_OUTPUT], sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0);
+	setf(outputs[BIT_OUTPUT], sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0);
+	setf(outputs[SUB_OUTPUT], sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0);
 	setf(outputs[UNI_OUTPUT], unif);
 	setf(outputs[BI_OUTPUT], bif);
 
@@ -194,7 +193,7 @@ SheepWidget::SheepWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Tides.png");
+		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Sheep.png");
 		panel->box.size = box.size;
 		addChild(panel);
 	}
@@ -204,29 +203,29 @@ SheepWidget::SheepWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(180, 365)));
 
-	addParam(createParam<CKD6>(Vec(19, 52), module, Sheep::MODE_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<CKD6>(Vec(19, 52), module, Sheep::BANK_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<CKD6>(Vec(19, 93), module, Sheep::RANGE_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<Rogan3PSGreen>(Vec(79, 60), module, Sheep::FREQUENCY_PARAM, -48.0, 48.0, 0.0));
 	addParam(createParam<Rogan1PSGreen>(Vec(156, 66), module, Sheep::FM_PARAM, -12.0, 12.0, 0.0));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(13, 155), module, Sheep::SHAPE_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(85, 155), module, Sheep::SLOPE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(13, 155), module, Sheep::ROW_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(85, 155), module, Sheep::COLUMN_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Rogan1PSWhite>(Vec(156, 155), module, Sheep::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(18, 216), module, Sheep::SHAPE_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(90, 216), module, Sheep::SLOPE_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(18, 216), module, Sheep::ROW_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(90, 216), module, Sheep::COLUMN_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(161, 216), module, Sheep::SMOOTHNESS_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(18, 271), module, Sheep::TRIG_INPUT));
+	addInput(createInput<PJ3410Port>(Vec(18, 271), module, Sheep::SYNC_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(54, 271), module, Sheep::FREEZE_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(90, 271), module, Sheep::PITCH_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(125, 271), module, Sheep::FM_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(161, 271), module, Sheep::LEVEL_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(18, 313), module, Sheep::CLOCK_INPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(54, 313), module, Sheep::HIGH_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(90, 313), module, Sheep::LOW_OUTPUT));
+	addInput(createInput<PJ3410Port>(Vec(18, 313), module, Sheep::BANK_INPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(54, 313), module, Sheep::BIT_OUTPUT));
+	addOutput(createOutput<PJ3410Port>(Vec(90, 313), module, Sheep::SUB_OUTPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(125, 313), module, Sheep::UNI_OUTPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(161, 313), module, Sheep::BI_OUTPUT));
 

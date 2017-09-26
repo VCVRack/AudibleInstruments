@@ -1,17 +1,6 @@
 #include "AudibleInstruments.hpp"
 
 
-// void ModeLight::step() {
-// 	int mode = (int) roundf(getf(value));
-// 	switch (mode) {
-// 		case 0: color = nvgHSL(0.36, 0.7, 0.7); break;
-// 		case 1: color = nvgHSL(0.18, 0.7, 0.7); break;
-// 		case 2: color = nvgHSL(0.0, 0.7, 0.7); break;
-// 		default: color = nvgRGBAf(0.0, 0.0, 0.0, 0.0); break;
-// 	}
-// }
-
-
 struct AudibleInstrumentsPlugin : Plugin {
 	AudibleInstrumentsPlugin() {
 		slug = "AudibleInstruments";
@@ -19,7 +8,7 @@ struct AudibleInstrumentsPlugin : Plugin {
 		createModel<BraidsWidget>(this, "Braids", "Macro Oscillator");
 		createModel<ElementsWidget>(this, "Elements", "Modal Synthesizer");
 		createModel<TidesWidget>(this, "Tides", "Tidal Modulator");
-		// createModel<SheepWidget>(this, "Sheep", "Wavetable Oscillator");
+		createModel<SheepWidget>(this, "Sheep", "Wavetable Oscillator");
 		// createModel<StreamsWidget>(this, "Streams", "Dual Dynamics Gate");
 		createModel<CloudsWidget>(this, "Clouds", "Texture Synthesizer");
 		createModel<WarpsWidget>(this, "Warps", "Meta Modulator");
