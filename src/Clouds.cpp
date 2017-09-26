@@ -164,7 +164,7 @@ CloudsWidget::CloudsWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Clouds.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Clouds.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

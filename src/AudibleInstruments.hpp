@@ -4,6 +4,8 @@
 using namespace rack;
 
 
+extern Plugin *plugin;
+
 ////////////////////
 // module widgets
 ////////////////////
@@ -63,4 +65,8 @@ struct BlindsWidget : ModuleWidget {
 
 struct VeilsWidget : ModuleWidget {
 	VeilsWidget();
+};
+
+struct FramesWidget : ModuleWidget {
+	FramesWidget();
 };

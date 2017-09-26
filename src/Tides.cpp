@@ -191,7 +191,7 @@ TidesWidget::TidesWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Tides.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

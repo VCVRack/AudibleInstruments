@@ -61,7 +61,7 @@ LinksWidget::LinksWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Links.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Links.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

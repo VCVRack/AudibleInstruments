@@ -53,7 +53,7 @@ StreamsWidget::StreamsWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Streams.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Streams.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

@@ -80,7 +80,7 @@ BranchesWidget::BranchesWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Branches.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Branches.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

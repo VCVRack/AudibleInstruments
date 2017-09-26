@@ -82,7 +82,7 @@ ShadesWidget::ShadesWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Shades.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Shades.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

@@ -144,6 +144,7 @@ struct WarpsAlgoLight : ValueLight {
 	}
 };
 
+
 WarpsWidget::WarpsWidget() {
 	Warps *module = new Warps();
 	setModule(module);
@@ -151,7 +152,7 @@ WarpsWidget::WarpsWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Warps.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Warps.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

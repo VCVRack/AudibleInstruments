@@ -163,7 +163,7 @@ struct BraidsDisplay : TransparentWidget {
 	std::shared_ptr<Font> font;
 
 	BraidsDisplay() {
-		font = Font::load("plugins/AudibleInstruments/res/hdad-segment14-1.002/Segment14.ttf");
+		font = Font::load(assetPlugin(plugin, "res/hdad-segment14-1.002/Segment14.ttf"));
 	}
 
 	void draw(NVGcontext *vg) {
@@ -201,7 +201,7 @@ BraidsWidget::BraidsWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Braids.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Braids.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

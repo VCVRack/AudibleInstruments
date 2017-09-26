@@ -1,28 +1,25 @@
 #include "AudibleInstruments.hpp"
 
 
-struct AudibleInstrumentsPlugin : Plugin {
-	AudibleInstrumentsPlugin() {
-		slug = "AudibleInstruments";
-		name = "Audible Instruments";
-		createModel<BraidsWidget>(this, "Braids", "Macro Oscillator");
-		createModel<ElementsWidget>(this, "Elements", "Modal Synthesizer");
-		createModel<TidesWidget>(this, "Tides", "Tidal Modulator");
-		createModel<SheepWidget>(this, "Sheep", "Wavetable Oscillator");
-		// createModel<StreamsWidget>(this, "Streams", "Dual Dynamics Gate");
-		createModel<CloudsWidget>(this, "Clouds", "Texture Synthesizer");
-		createModel<WarpsWidget>(this, "Warps", "Meta Modulator");
-		createModel<RingsWidget>(this, "Rings", "Resonator");
-		createModel<LinksWidget>(this, "Links", "Multiples");
-		createModel<KinksWidget>(this, "Kinks", "Utilities");
-		createModel<ShadesWidget>(this, "Shades", "Mixer");
-		createModel<BranchesWidget>(this, "Branches", "Bernoulli Gate");
-		createModel<BlindsWidget>(this, "Blinds", "Quad VC-polarizer");
-		createModel<VeilsWidget>(this, "Veils", "Quad VCA");
-	}
-};
+Plugin *plugin;
 
-
-Plugin *init() {
-	return new AudibleInstrumentsPlugin();
+void init(rack::Plugin *p) {
+	plugin = p;
+	plugin->slug = "AudibleInstruments";
+	plugin->name = "Audible Instruments";
+	createModel<BraidsWidget>(plugin, "Braids", "Macro Oscillator");
+	createModel<ElementsWidget>(plugin, "Elements", "Modal Synthesizer");
+	createModel<TidesWidget>(plugin, "Tides", "Tidal Modulator");
+	createModel<SheepWidget>(plugin, "Sheep", "Wavetable Oscillator");
+	// createModel<StreamsWidget>(plugin, "Streams", "Dual Dynamics Gate");
+	createModel<CloudsWidget>(plugin, "Clouds", "Texture Synthesizer");
+	createModel<WarpsWidget>(plugin, "Warps", "Meta Modulator");
+	createModel<RingsWidget>(plugin, "Rings", "Resonator");
+	createModel<LinksWidget>(plugin, "Links", "Multiples");
+	createModel<KinksWidget>(plugin, "Kinks", "Utilities");
+	createModel<ShadesWidget>(plugin, "Shades", "Mixer");
+	createModel<BranchesWidget>(plugin, "Branches", "Bernoulli Gate");
+	createModel<BlindsWidget>(plugin, "Blinds", "Quad VC-polarizer");
+	createModel<VeilsWidget>(plugin, "Veils", "Quad VCA");
+	createModel<FramesWidget>(plugin, "Frames", "Keyframer");
 }

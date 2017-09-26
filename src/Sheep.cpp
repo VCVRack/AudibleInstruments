@@ -193,7 +193,7 @@ SheepWidget::SheepWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Sheep.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

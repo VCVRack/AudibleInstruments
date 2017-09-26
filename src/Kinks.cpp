@@ -92,7 +92,7 @@ KinksWidget::KinksWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Kinks.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Kinks.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}

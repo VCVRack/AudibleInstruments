@@ -247,7 +247,7 @@ RingsWidget::RingsWidget() {
 
 	{
 		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load("plugins/AudibleInstruments/res/Rings.png");
+		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Rings.png"));
 		panel->box.size = box.size;
 		addChild(panel);
 	}
