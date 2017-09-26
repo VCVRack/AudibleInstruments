@@ -14,9 +14,7 @@ Percentages are progress of completion, X means won't port.
 
 #### [100%] [Tides](https://mutable-instruments.net/modules/tides) (Tidal Modulator)
 
-#### [X] [Sheep](https://mutable-instruments.net/modules/tides/firmware/) (Wavetable Oscillator)
-- based on Tides
-- cannot find source, will not port
+#### [100%] [Sheep](https://mutable-instruments.net/modules/tides/firmware/) (Wavetable Oscillator)
 
 #### [0%] [Peaks](https://mutable-instruments.net/modules/peaks)
 
