@@ -19,6 +19,7 @@ struct AudibleInstrumentsPlugin : Plugin {
 		createModel<BraidsWidget>(this, "Braids", "Macro Oscillator");
 		createModel<ElementsWidget>(this, "Elements", "Modal Synthesizer");
 		createModel<TidesWidget>(this, "Tides", "Tidal Modulator");
+		createModel<SheepWidget>(this, "Sheep", "Wavetable Oscillator");
 		// createModel<StreamsWidget>(this, "Streams", "Dual Dynamics Gate");
 		createModel<CloudsWidget>(this, "Clouds", "Texture Synthesizer");
 		createModel<WarpsWidget>(this, "Warps", "Meta Modulator");

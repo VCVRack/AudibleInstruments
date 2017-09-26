@@ -21,6 +21,10 @@ struct TidesWidget : ModuleWidget {
 	TidesWidget();
 };
 
+struct SheepWidget : ModuleWidget {
+	SheepWidget();
+};
+
 struct StreamsWidget : ModuleWidget {
 	StreamsWidget();
 };
