@@ -77,7 +77,11 @@ void Clouds::step() {
 	if (!inputBuffer.full()) {
 		Frame<2> inputFrame;
 		inputFrame.samples[0] = getf(inputs[IN_L_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
-		inputFrame.samples[1] = getf(inputs[IN_R_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
+		if(inputs[IN_R_INPUT])
+			inputFrame.samples[1] = getf(inputs[IN_R_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
+		else
+			inputFrame.samples[1] = getf(inputs[IN_L_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
+
 		inputBuffer.push(inputFrame);
 	}
 
