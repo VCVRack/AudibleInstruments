@@ -48,9 +48,6 @@ include ../../plugin.mk
 
 
 dist: all
-ifndef VERSION
-	$(error VERSION is not set.)
-endif
 	mkdir -p dist/AudibleInstruments
 	cp LICENSE* dist/AudibleInstruments/
 	cp plugin.* dist/AudibleInstruments/

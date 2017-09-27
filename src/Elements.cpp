@@ -287,18 +287,14 @@ ElementsWidget::ElementsWidget() {
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(395, 165), &module->lights[1]));
 }
 
-struct ModelItem : MenuItem {
-	ModuleWidget *moduleWidget;
+struct ElementsModalItem : MenuItem {
+	Elements *elements;
 	int model;
 	void onAction() {
-		Elements *module = dynamic_cast<Elements*>(moduleWidget->module);
-		assert(module);
-		module->setModel(model);
+		elements->setModel(model);
 	}
 	void step() {
-		Elements *module = dynamic_cast<Elements*>(moduleWidget->module);
-		assert(module);
-		rightText = (module->getModel() == model) ? "Enabled" : "";
+		rightText = (elements->getModel() == model) ? "✔" : "";
 	}
 };
 
@@ -308,25 +304,28 @@ Menu *ElementsWidget::createContextMenu() {
 	MenuLabel *spacerLabel = new MenuLabel();
 	menu->pushChild(spacerLabel);
 
+	Elements *elements = dynamic_cast<Elements*>(module);
+	assert(elements);
+
 	MenuLabel *modeLabel = new MenuLabel();
 	modeLabel->text = "Alternative Models";
 	menu->pushChild(modeLabel);
 
-	ModelItem *originalItem = new ModelItem();
+	ElementsModalItem *originalItem = new ElementsModalItem();
 	originalItem->text = "Original";
-	originalItem->moduleWidget = this;
+	originalItem->elements = elements;
 	originalItem->model = 0;
 	menu->pushChild(originalItem);
 
-	ModelItem *stringItem = new ModelItem();
+	ElementsModalItem *stringItem = new ElementsModalItem();
 	stringItem->text = "Non-linear string";
-	stringItem->moduleWidget = this;
+	stringItem->elements = elements;
 	stringItem->model = 1;
 	menu->pushChild(stringItem);
 
-	ModelItem *chordsItem = new ModelItem();
+	ElementsModalItem *chordsItem = new ElementsModalItem();
 	chordsItem->text = "Chords";
-	chordsItem->moduleWidget = this;
+	chordsItem->elements = elements;
 	chordsItem->model = 2;
 	menu->pushChild(chordsItem);
 

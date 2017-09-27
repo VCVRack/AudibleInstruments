@@ -5,7 +5,9 @@ Ports of [Mutable Instruments](http://mutable-instruments.net/modules) modules t
 
 Percentages are progress of completion, X means won't port.
 
-#### [100%] [Braids](https://mutable-instruments.net/modules/braids) (Macro Oscillator)
+#### [90%] [Braids](https://mutable-instruments.net/modules/braids) (Macro Oscillator)
+- Sync input doesn't work
+- More settings could be supported
 
 #### [X] [Edges](https://mutable-instruments.net/modules/edges) (Chiptune Generator)
 - GPL, will not port

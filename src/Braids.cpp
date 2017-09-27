@@ -2,6 +2,8 @@
 #include "AudibleInstruments.hpp"
 #include "dsp.hpp"
 #include "braids/macro_oscillator.h"
+#include "braids/vco_jitter_source.h"
+#include "braids/signature_waveshaper.h"
 
 
 struct Braids : Module {
@@ -28,15 +30,42 @@ struct Braids : Module {
 		NUM_OUTPUTS
 	};
 
-	braids::MacroOscillator *osc;
+	braids::MacroOscillator osc;
+	braids::SettingsData settings;
+	braids::VcoJitterSource jitter_source;
+	braids::SignatureWaveshaper ws;
+
 	SampleRateConverter<1> src;
 	DoubleRingBuffer<Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
 
 	Braids();
-	~Braids();
 	void step();
 	void setShape(int shape);
+
+	json_t *toJson() {
+		json_t *rootJ = json_object();
+		json_t *settingsJ = json_array();
+		uint8_t *settingsArray = &settings.shape;
+		for (int i = 0; i < 20; i++) {
+			json_t *settingJ = json_integer(settingsArray[i]);
+			json_array_insert_new(settingsJ, i, settingJ);
+		}
+		json_object_set_new(rootJ, "settings", settingsJ);
+		return rootJ;
+	}
+
+	void fromJson(json_t *rootJ) {
+		json_t *settingsJ = json_object_get(rootJ, "settings");
+		if (settingsJ) {
+			uint8_t *settingsArray = &settings.shape;
+			for (int i = 0; i < 20; i++) {
+				json_t *settingJ = json_array_get(settingsJ, i);
+				if (settingJ)
+					settingsArray[i] = json_integer_value(settingJ);
+			}
+		}
+	}
 };
 
 
@@ -45,46 +74,72 @@ Braids::Braids() {
 	inputs.resize(NUM_INPUTS);
 	outputs.resize(NUM_OUTPUTS);
 
-	osc = new braids::MacroOscillator();
-	memset(osc, 0, sizeof(*osc));
-	osc->Init();
-}
+	memset(&osc, 0, sizeof(osc));
+	osc.Init();
+	memset(&jitter_source, 0, sizeof(jitter_source));
+	jitter_source.Init();
+	memset(&ws, 0, sizeof(ws));
+	ws.Init(0x0000);
+	memset(&settings, 0, sizeof(settings));
 
-Braids::~Braids() {
-	delete osc;
+	// List of supported settings
+	settings.meta_modulation = 0;
+	settings.vco_drift = 0;
+	settings.signature = 255;
 }
 
 void Braids::step() {
 	// Trigger
 	bool trig = getf(inputs[TRIG_INPUT]) >= 1.0;
 	if (!lastTrig && trig) {
-		osc->Strike();
+		osc.Strike();
 	}
 	lastTrig = trig;
 
 	// Render frames
 	if (outputBuffer.empty()) {
+		float fm = params[FM_PARAM] * getf(inputs[FM_INPUT]);
+
 		// Set shape
-		int shape = roundf(params[SHAPE_PARAM]);
-		osc->set_shape((braids::MacroOscillatorShape) shape);
+		int shape = roundf(params[SHAPE_PARAM] * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
+		if (settings.meta_modulation) {
+			shape += roundf(fm / 10.0 * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
+		}
+		settings.shape = clampi(shape, 0, braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
+
+		// Setup oscillator from settings
+		osc.set_shape((braids::MacroOscillatorShape) settings.shape);
 
 		// Set timbre/modulation
 		float timbre = params[TIMBRE_PARAM] + params[MODULATION_PARAM] * getf(inputs[TIMBRE_INPUT]) / 5.0;
 		float modulation = params[COLOR_PARAM] + getf(inputs[COLOR_INPUT]) / 5.0;
 		int16_t param1 = rescalef(clampf(timbre, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
 		int16_t param2 = rescalef(clampf(modulation, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
-		osc->set_parameters(param1, param2);
+		osc.set_parameters(param1, param2);
 
 		// Set pitch
-		float pitch = getf(inputs[PITCH_INPUT]) + params[COARSE_PARAM] + params[FINE_PARAM] / 12.0 + params[FM_PARAM] * getf(inputs[FM_INPUT]);
-		int16_t p = clampf((pitch * 12.0 + 60) * 128, 0, INT16_MAX);
-		osc->set_pitch(p);
+		float pitchV = getf(inputs[PITCH_INPUT]) + params[COARSE_PARAM] + params[FINE_PARAM] / 12.0;
+		if (!settings.meta_modulation)
+			pitchV += fm;
+		int32_t pitch = (pitchV * 12.0 + 60) * 128;
+		pitch += jitter_source.Render(settings.vco_drift);
+		pitch = clampi(pitch, 0, 16383);
+		osc.set_pitch(pitch);
 
 		// TODO: add a sync input buffer (must be sample rate converted)
 		uint8_t sync_buffer[24] = {};
 
 		int16_t render_buffer[24];
-		osc->Render(sync_buffer, render_buffer, 24);
+		osc.Render(sync_buffer, render_buffer, 24);
+
+		// Signature waveshaping, decimation (not yet supported), and bit reduction (not yet supported)
+		uint16_t signature = settings.signature * settings.signature * 4095;
+		for (size_t i = 0; i < 24; i++) {
+			const int16_t bit_mask = 0xffff;
+			int16_t sample = render_buffer[i] & bit_mask;
+			int16_t warped = ws.Transform(sample);
+			render_buffer[i] = stmlib::Mix(sample, warped, signature);
+		}
 
 		// Sample rate convert
 		Frame<1> in[24];
@@ -159,7 +214,7 @@ static const char *algo_values[] = {
 };
 
 struct BraidsDisplay : TransparentWidget {
-	float *value;
+	Braids *module;
 	std::shared_ptr<Font> font;
 
 	BraidsDisplay() {
@@ -167,7 +222,7 @@ struct BraidsDisplay : TransparentWidget {
 	}
 
 	void draw(NVGcontext *vg) {
-		int shape = roundf(getf(value));
+		int shape = module->settings.shape;
 
 		// Background
 		NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38);
@@ -210,7 +265,7 @@ BraidsWidget::BraidsWidget() {
 		BraidsDisplay *display = new BraidsDisplay();
 		display->box.pos = Vec(14, 53);
 		display->box.size = Vec(148, 56);
-		display->value = &module->params[Braids::SHAPE_PARAM];
+		display->module = module;
 		addChild(display);
 	}
 
@@ -219,7 +274,7 @@ BraidsWidget::BraidsWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(210, 365)));
 
-	addParam(createParam<Rogan2SGray>(Vec(177, 60), module, Braids::SHAPE_PARAM, 0.0, braids::MACRO_OSC_SHAPE_LAST-2, 0.0));
+	addParam(createParam<Rogan2SGray>(Vec(177, 60), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
 
 	addParam(createParam<Rogan2PSWhite>(Vec(20, 139), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Rogan2PSWhite>(Vec(98, 139), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
@@ -235,4 +290,50 @@ BraidsWidget::BraidsWidget() {
 	addInput(createInput<PJ3410Port>(Vec(120, 313), module, Braids::TIMBRE_INPUT));
 	addInput(createInput<PJ3410Port>(Vec(157, 313), module, Braids::COLOR_INPUT));
 	addOutput(createOutput<PJ3410Port>(Vec(202, 313), module, Braids::OUT_OUTPUT));
+}
+
+struct BraidsSettingItem : MenuItem {
+	uint8_t *setting = NULL;
+	uint8_t offValue = 0;
+	uint8_t onValue = 1;
+	void onAction() {
+		// Toggle setting
+		*setting = (*setting == onValue) ? offValue : onValue;
+	}
+	void step() {
+		rightText = (*setting == onValue) ? "✔" : "";
+	}
+};
+
+Menu *BraidsWidget::createContextMenu() {
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	MenuLabel *spacerLabel = new MenuLabel();
+	menu->pushChild(spacerLabel);
+
+	MenuLabel *optionsLabel = new MenuLabel();
+	optionsLabel->text = "Options";
+	menu->pushChild(optionsLabel);
+
+	Braids *braids = dynamic_cast<Braids*>(module);
+	assert(braids);
+
+	BraidsSettingItem *metaItem = new BraidsSettingItem();
+	metaItem->text = "META";
+	metaItem->setting = &braids->settings.meta_modulation;
+	menu->pushChild(metaItem);
+
+	BraidsSettingItem *drftItem = new BraidsSettingItem();
+	drftItem->text = "DRFT";
+	drftItem->setting = &braids->settings.vco_drift;
+	drftItem->onValue = 4;
+	menu->pushChild(drftItem);
+
+	BraidsSettingItem *signItem = new BraidsSettingItem();
+	signItem->text = "SIGN";
+	signItem->setting = &braids->settings.signature;
+	signItem->onValue = 4;
+	menu->pushChild(signItem);
+
+	return menu;
 }

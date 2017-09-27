@@ -12,6 +12,7 @@ extern Plugin *plugin;
 
 struct BraidsWidget : ModuleWidget {
 	BraidsWidget();
+	Menu *createContextMenu();
 };
 
 struct ElementsWidget : ModuleWidget {
