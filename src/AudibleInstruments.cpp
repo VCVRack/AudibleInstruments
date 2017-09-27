@@ -7,6 +7,7 @@ void init(rack::Plugin *p) {
 	plugin = p;
 	plugin->slug = "AudibleInstruments";
 	plugin->name = "Audible Instruments";
+	plugin->homepageUrl = "https://github.com/VCVRack/AudibleInstruments";
 	createModel<BraidsWidget>(plugin, "Braids", "Macro Oscillator");
 	createModel<ElementsWidget>(plugin, "Elements", "Modal Synthesizer");
 	createModel<TidesWidget>(plugin, "Tides", "Tidal Modulator");
