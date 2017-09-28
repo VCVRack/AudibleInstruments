@@ -1,5 +1,7 @@
 #include "AudibleInstruments.hpp"
 #include <string.h>
+// Disable encapsulation. Might not be ABI compatible, but if it works then it works.
+#define private public
 #include "tides/generator.h"
 
 
@@ -38,6 +40,7 @@ struct Tides : Module {
 		NUM_OUTPUTS
 	};
 
+	bool wavetableHack = false;
 	tides::Generator generator;
 	float lights[3] = {};
 	int frame = 0;
@@ -130,7 +133,24 @@ void Tides::step() {
 		generator.set_sync(inputs[CLOCK_INPUT].active);
 
 		// Generator
-		generator.Process();
+		// Stolen code from the private `generator.Process()` method
+		while (generator.render_block_ != generator.playback_block_) {
+			uint8_t* in = generator.input_samples_[generator.render_block_];
+			tides::GeneratorSample* out = generator.output_samples_[generator.render_block_];
+			if (!wavetableHack) {
+				if (generator.range_ == tides::GENERATOR_RANGE_HIGH) {
+					generator.ProcessAudioRate(in, out, tides::kBlockSize);
+				}
+				else {
+					generator.ProcessControlRate(in, out, tides::kBlockSize);
+				}
+				generator.ProcessFilterWavefolder(out, tides::kBlockSize);
+			}
+			else {
+				generator.ProcessWavetable(in, out, tides::kBlockSize);
+			}
+			generator.render_block_ = (generator.render_block_ + 1) % tides::kNumBlocks;
+		}
 	}
 
 	// Level
@@ -226,4 +246,15 @@ TidesWidget::TidesWidget() {
 	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 62), &module->lights[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 83), &module->lights[1]));
 	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 103), &module->lights[2]));
+}
+
+
+SheepWidget::SheepWidget() {
+	Tides *tides = dynamic_cast<Tides*>(module);
+	assert(tides);
+	tides->wavetableHack = true;
+
+	Panel *panel = getFirstDescendantOfType<Panel>();
+	assert(panel);
+	panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
 }

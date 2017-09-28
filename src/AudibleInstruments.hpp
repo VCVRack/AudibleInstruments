@@ -24,7 +24,7 @@ struct TidesWidget : ModuleWidget {
 	TidesWidget();
 };
 
-struct SheepWidget : ModuleWidget {
+struct SheepWidget : TidesWidget {
 	SheepWidget();
 };
 
