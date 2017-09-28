@@ -64,11 +64,7 @@ struct Warps : Module {
 };
 
 
-Warps::Warps() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+Warps::Warps() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	memset(&modulator, 0, sizeof(modulator));
 	modulator.Init(96000.0f);
 
@@ -78,7 +74,7 @@ Warps::Warps() {
 void Warps::step() {
 	// State trigger
 	warps::Parameters *p = modulator.mutable_parameters();
-	if (stateTrigger.process(params[STATE_PARAM])) {
+	if (stateTrigger.process(params[STATE_PARAM].value)) {
 		p->carrier_shape = (p->carrier_shape + 1) % 4;
 	}
 	lights[0] = p->carrier_shape;
@@ -87,25 +83,25 @@ void Warps::step() {
 	if (++frame >= 60) {
 		frame = 0;
 
-		p->channel_drive[0] = clampf(params[LEVEL1_PARAM] + getf(inputs[LEVEL1_INPUT]) / 5.0, 0.0, 1.0);
-		p->channel_drive[1] = clampf(params[LEVEL2_PARAM] + getf(inputs[LEVEL2_INPUT]) / 5.0, 0.0, 1.0);
-		p->modulation_algorithm = clampf(params[ALGORITHM_PARAM] / 8.0 + getf(inputs[ALGORITHM_INPUT]) / 5.0, 0.0, 1.0);
+		p->channel_drive[0] = clampf(params[LEVEL1_PARAM].value + inputs[LEVEL1_INPUT].value / 5.0, 0.0, 1.0);
+		p->channel_drive[1] = clampf(params[LEVEL2_PARAM].value + inputs[LEVEL2_INPUT].value / 5.0, 0.0, 1.0);
+		p->modulation_algorithm = clampf(params[ALGORITHM_PARAM].value / 8.0 + inputs[ALGORITHM_INPUT].value / 5.0, 0.0, 1.0);
 		lights[1] = p->modulation_algorithm * 8.0;
-		p->modulation_parameter = clampf(params[TIMBRE_PARAM] + getf(inputs[TIMBRE_INPUT]) / 5.0, 0.0, 1.0);
+		p->modulation_parameter = clampf(params[TIMBRE_PARAM].value + inputs[TIMBRE_INPUT].value / 5.0, 0.0, 1.0);
 
-		p->frequency_shift_pot = params[ALGORITHM_PARAM] / 8.0;
-		p->frequency_shift_cv = clampf(getf(inputs[ALGORITHM_INPUT]) / 5.0, -1.0, 1.0);
+		p->frequency_shift_pot = params[ALGORITHM_PARAM].value / 8.0;
+		p->frequency_shift_cv = clampf(inputs[ALGORITHM_INPUT].value / 5.0, -1.0, 1.0);
 		p->phase_shift = p->modulation_algorithm;
-		p->note = 60.0 * params[LEVEL1_PARAM] + 12.0 * getf(inputs[LEVEL1_INPUT], 2.0) + 12.0;
+		p->note = 60.0 * params[LEVEL1_PARAM].value + 12.0 * inputs[LEVEL1_INPUT].normalize(2.0) + 12.0;
 		p->note += log2f(96000.0 / gSampleRate) * 12.0;
 
 		modulator.Process(inputFrames, outputFrames, 60);
 	}
 
-	inputFrames[frame].l = clampf(getf(inputs[CARRIER_INPUT]) / 16.0 * 0x8000, -0x8000, 0x7fff);
-	inputFrames[frame].r = clampf(getf(inputs[MODULATOR_INPUT]) / 16.0 * 0x8000, -0x8000, 0x7fff);
-	setf(outputs[MODULATOR_OUTPUT], (float)outputFrames[frame].l / 0x8000 * 5.0);
-	setf(outputs[AUX_OUTPUT], (float)outputFrames[frame].r / 0x8000 * 5.0);
+	inputFrames[frame].l = clampf(inputs[CARRIER_INPUT].value / 16.0 * 0x8000, -0x8000, 0x7fff);
+	inputFrames[frame].r = clampf(inputs[MODULATOR_INPUT].value / 16.0 * 0x8000, -0x8000, 0x7fff);
+	outputs[MODULATOR_OUTPUT].value = (float)outputFrames[frame].l / 0x8000 * 5.0;
+	outputs[AUX_OUTPUT].value = (float)outputFrames[frame].r / 0x8000 * 5.0;
 }
 
 

@@ -35,60 +35,54 @@ struct Veils : Module {
 
 	float lights[4] = {};
 
-	Veils();
+	Veils() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
 
-Veils::Veils() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
-
-static float getChannelOutput(float *in, float gain, float *cv, float response) {
-	float out = getf(in) * gain;
+static float processChannel(Input &in, Param &gain, Input &cv, Param &response) {
+	float out = in.value * gain.value;
 	if (out == 0.0)
 		return 0.0;
 
-	if (cv) {
-		float linear = fmaxf(getf(cv) / 5.0, 0.0);
+	if (cv.active) {
+		float linear = fmaxf(cv.value / 5.0, 0.0);
 		if (linear == 0.0)
 			return 0.0;
 		const float ex = 200.0;
 		float exponential = rescalef(powf(ex, linear), 1.0, ex, 0.0, 1.0);
-		out *= crossf(exponential, linear, response);
+		out *= crossf(exponential, linear, response.value);
 	}
 	return out;
 }
 
 void Veils::step() {
 	float out = 0.0;
-	out += getChannelOutput(inputs[IN1_INPUT], params[GAIN1_PARAM], inputs[CV1_INPUT], params[RESPONSE1_PARAM]);
+	out += processChannel(inputs[IN1_INPUT], params[GAIN1_PARAM], inputs[CV1_INPUT], params[RESPONSE1_PARAM]);
 	lights[0] = out;
-	if (outputs[OUT1_OUTPUT]) {
-		*outputs[OUT1_OUTPUT] = out;
+	if (outputs[OUT1_OUTPUT].active) {
+		outputs[OUT1_OUTPUT].value = out;
 		out = 0.0;
 	}
 
-	out += getChannelOutput(inputs[IN2_INPUT], params[GAIN2_PARAM], inputs[CV2_INPUT], params[RESPONSE2_PARAM]);
+	out += processChannel(inputs[IN2_INPUT], params[GAIN2_PARAM], inputs[CV2_INPUT], params[RESPONSE2_PARAM]);
 	lights[1] = out;
-	if (outputs[OUT2_OUTPUT]) {
-		*outputs[OUT2_OUTPUT] = out;
+	if (outputs[OUT2_OUTPUT].active) {
+		outputs[OUT2_OUTPUT].value = out;
 		out = 0.0;
 	}
 
-	out += getChannelOutput(inputs[IN3_INPUT], params[GAIN3_PARAM], inputs[CV3_INPUT], params[RESPONSE3_PARAM]);
+	out += processChannel(inputs[IN3_INPUT], params[GAIN3_PARAM], inputs[CV3_INPUT], params[RESPONSE3_PARAM]);
 	lights[2] = out;
-	if (outputs[OUT3_OUTPUT]) {
-		*outputs[OUT3_OUTPUT] = out;
+	if (outputs[OUT3_OUTPUT].active) {
+		outputs[OUT3_OUTPUT].value = out;
 		out = 0.0;
 	}
 
-	out += getChannelOutput(inputs[IN4_INPUT], params[GAIN4_PARAM], inputs[CV4_INPUT], params[RESPONSE4_PARAM]);
+	out += processChannel(inputs[IN4_INPUT], params[GAIN4_PARAM], inputs[CV4_INPUT], params[RESPONSE4_PARAM]);
 	lights[3] = out;
-	if (outputs[OUT4_OUTPUT]) {
-		*outputs[OUT4_OUTPUT] = out;
+	if (outputs[OUT4_OUTPUT].active) {
+		outputs[OUT4_OUTPUT].value = out;
 	}
 }
 

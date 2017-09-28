@@ -81,11 +81,7 @@ struct Tides : Module {
 };
 
 
-Tides::Tides() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+Tides::Tides() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
 	generator.set_sync(false);
@@ -94,14 +90,14 @@ Tides::Tides() {
 
 void Tides::step() {
 	tides::GeneratorMode mode = generator.mode();
-	if (modeTrigger.process(params[MODE_PARAM])) {
+	if (modeTrigger.process(params[MODE_PARAM].value)) {
 		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
 		generator.set_mode(mode);
 	}
 	lights[0] = (float)mode;
 
 	tides::GeneratorRange range = generator.range();
-	if (rangeTrigger.process(params[RANGE_PARAM])) {
+	if (rangeTrigger.process(params[RANGE_PARAM].value)) {
 		range = (tides::GeneratorRange) (((int)range - 1 + 3) % 3);
 		generator.set_range(range);
 	}
@@ -112,18 +108,18 @@ void Tides::step() {
 		frame = 0;
 
 		// Pitch
-		float pitch = params[FREQUENCY_PARAM];
-		pitch += 12.0 * getf(inputs[PITCH_INPUT]);
-		pitch += params[FM_PARAM] * getf(inputs[FM_INPUT], 0.1) / 5.0;
+		float pitch = params[FREQUENCY_PARAM].value;
+		pitch += 12.0 * inputs[PITCH_INPUT].value;
+		pitch += params[FM_PARAM].value * inputs[FM_INPUT].normalize(0.1) / 5.0;
 		pitch += 60.0;
 		// Scale to the global sample rate
 		pitch += log2f(48000.0 / gSampleRate) * 12.0;
 		generator.set_pitch(clampf(pitch * 0x80, -0x8000, 0x7fff));
 
 		// Slope, smoothness, pitch
-		int16_t shape = clampf(params[SHAPE_PARAM] + getf(inputs[SHAPE_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
-		int16_t slope = clampf(params[SLOPE_PARAM] + getf(inputs[SLOPE_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
-		int16_t smoothness = clampf(params[SMOOTHNESS_PARAM] + getf(inputs[SMOOTHNESS_INPUT]) / 5.0, -1.0, 1.0) * 0x7fff;
+		int16_t shape = clampf(params[SHAPE_PARAM].value + inputs[SHAPE_INPUT].value / 5.0, -1.0, 1.0) * 0x7fff;
+		int16_t slope = clampf(params[SLOPE_PARAM].value + inputs[SLOPE_INPUT].value / 5.0, -1.0, 1.0) * 0x7fff;
+		int16_t smoothness = clampf(params[SMOOTHNESS_PARAM].value + inputs[SMOOTHNESS_INPUT].value / 5.0, -1.0, 1.0) * 0x7fff;
 		generator.set_shape(shape);
 		generator.set_slope(slope);
 		generator.set_smoothness(smoothness);
@@ -131,23 +127,23 @@ void Tides::step() {
 		// Sync
 		// Slight deviation from spec here.
 		// Instead of toggling sync by holding the range button, just enable it if the clock port is plugged in.
-		generator.set_sync(inputs[CLOCK_INPUT]);
+		generator.set_sync(inputs[CLOCK_INPUT].active);
 
 		// Generator
 		generator.Process();
 	}
 
 	// Level
-	uint16_t level = clampf(getf(inputs[LEVEL_INPUT], 8.0) / 8.0, 0.0, 1.0) * 0xffff;
+	uint16_t level = clampf(inputs[LEVEL_INPUT].normalize(8.0) / 8.0, 0.0, 1.0) * 0xffff;
 	if (level < 32)
 		level = 0;
 
 	uint8_t gate = 0;
-	if (getf(inputs[FREEZE_INPUT]) >= 0.7)
+	if (inputs[FREEZE_INPUT].value >= 0.7)
 		gate |= tides::CONTROL_FREEZE;
-	if (getf(inputs[TRIG_INPUT]) >= 0.7)
+	if (inputs[TRIG_INPUT].value >= 0.7)
 		gate |= tides::CONTROL_GATE;
-	if (getf(inputs[CLOCK_INPUT]) >= 0.7)
+	if (inputs[CLOCK_INPUT].value >= 0.7)
 		gate |= tides::CONTROL_CLOCK;
 	if (!(lastGate & tides::CONTROL_CLOCK) && (gate & tides::CONTROL_CLOCK))
 		gate |= tides::CONTROL_GATE_RISING;
@@ -166,10 +162,10 @@ void Tides::step() {
 	float unif = rescalef(uni, 0, 0xffff, 0.0, 8.0);
 	float bif = rescalef(bi, -0x8000, 0x7fff, -5.0, 5.0);
 
-	setf(outputs[HIGH_OUTPUT], sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0);
-	setf(outputs[LOW_OUTPUT], sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0);
-	setf(outputs[UNI_OUTPUT], unif);
-	setf(outputs[BI_OUTPUT], bif);
+	outputs[HIGH_OUTPUT].value = sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0;
+	outputs[LOW_OUTPUT].value = sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0;
+	outputs[UNI_OUTPUT].value = unif;
+	outputs[BI_OUTPUT].value = bif;
 
 	lights[1] = (sample.flags & tides::FLAG_END_OF_ATTACK ? -unif : unif) / 8.0;
 }

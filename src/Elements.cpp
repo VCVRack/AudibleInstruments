@@ -102,11 +102,7 @@ struct Elements : Module {
 };
 
 
-Elements::Elements() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+Elements::Elements() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	part = new elements::Part();
 	// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.
 	memset(part, 0, sizeof(*part));
@@ -124,8 +120,8 @@ void Elements::step() {
 	// Get input
 	if (!inputBuffer.full()) {
 		Frame<2> inputFrame;
-		inputFrame.samples[0] = getf(inputs[BLOW_INPUT]) / 5.0;
-		inputFrame.samples[1] = getf(inputs[STRIKE_INPUT]) / 5.0;
+		inputFrame.samples[0] = inputs[BLOW_INPUT].value / 5.0;
+		inputFrame.samples[1] = inputs[STRIKE_INPUT].value / 5.0;
 		inputBuffer.push(inputFrame);
 	}
 
@@ -153,12 +149,12 @@ void Elements::step() {
 
 		// Set patch from parameters
 		elements::Patch* p = part->mutable_patch();
-		p->exciter_envelope_shape = params[CONTOUR_PARAM];
-		p->exciter_bow_level = params[BOW_PARAM];
-		p->exciter_blow_level = params[BLOW_PARAM];
-		p->exciter_strike_level = params[STRIKE_PARAM];
+		p->exciter_envelope_shape = params[CONTOUR_PARAM].value;
+		p->exciter_bow_level = params[BOW_PARAM].value;
+		p->exciter_blow_level = params[BLOW_PARAM].value;
+		p->exciter_strike_level = params[STRIKE_PARAM].value;
 
-#define BIND(_p, _m, _i) clampf(params[_p] + 3.3*quadraticBipolar(params[_m])*getf(inputs[_i])/5.0, 0.0, 0.9995)
+#define BIND(_p, _m, _i) clampf(params[_p].value + 3.3*quadraticBipolar(params[_m].value)*inputs[_i].value/5.0, 0.0, 0.9995)
 
 		p->exciter_bow_timbre = BIND(BOW_TIMBRE_PARAM, BOW_TIMBRE_MOD_PARAM, BOW_TIMBRE_MOD_INPUT);
 		p->exciter_blow_meta = BIND(FLOW_PARAM, FLOW_MOD_PARAM, FLOW_MOD_INPUT);
@@ -169,14 +165,14 @@ void Elements::step() {
 		p->resonator_brightness = BIND(BRIGHTNESS_PARAM, BRIGHTNESS_MOD_PARAM, BRIGHTNESS_MOD_INPUT);
 		p->resonator_damping = BIND(DAMPING_PARAM, DAMPING_MOD_PARAM, DAMPING_MOD_INPUT);
 		p->resonator_position = BIND(POSITION_PARAM, POSITION_MOD_PARAM, POSITION_MOD_INPUT);
-		p->space = clampf(params[SPACE_PARAM] + params[SPACE_MOD_PARAM]*getf(inputs[SPACE_MOD_INPUT])/5.0, 0.0, 2.0);
+		p->space = clampf(params[SPACE_PARAM].value + params[SPACE_MOD_PARAM].value*inputs[SPACE_MOD_INPUT].value/5.0, 0.0, 2.0);
 
 		// Get performance inputs
 		elements::PerformanceState performance;
-		performance.note = 12.0*getf(inputs[NOTE_INPUT]) + roundf(params[COARSE_PARAM]) + params[FINE_PARAM] + 69.0;
-		performance.modulation = 3.3*quarticBipolar(params[FM_PARAM]) * 49.5 * getf(inputs[FM_INPUT])/5.0;
-		performance.gate = params[PLAY_PARAM] >= 1.0 || getf(inputs[GATE_INPUT]) >= 1.0;
-		performance.strength = clampf(1.0 - getf(inputs[STRENGTH_INPUT])/5.0, 0.0, 1.0);
+		performance.note = 12.0*inputs[NOTE_INPUT].value + roundf(params[COARSE_PARAM].value) + params[FINE_PARAM].value + 69.0;
+		performance.modulation = 3.3*quarticBipolar(params[FM_PARAM].value) * 49.5 * inputs[FM_INPUT].value/5.0;
+		performance.gate = params[PLAY_PARAM].value >= 1.0 || inputs[GATE_INPUT].value >= 1.0;
+		performance.strength = clampf(1.0 - inputs[STRENGTH_INPUT].value/5.0, 0.0, 1.0);
 
 		// Generate audio
 		part->Process(performance, blow, strike, main, aux, 16);
@@ -204,8 +200,8 @@ void Elements::step() {
 	// Set output
 	if (!outputBuffer.empty()) {
 		Frame<2> outputFrame = outputBuffer.shift();
-		setf(outputs[AUX_OUTPUT], 5.0 * outputFrame.samples[0]);
-		setf(outputs[MAIN_OUTPUT], 5.0 * outputFrame.samples[1]);
+		outputs[AUX_OUTPUT].value = 5.0 * outputFrame.samples[0];
+		outputs[MAIN_OUTPUT].value = 5.0 * outputFrame.samples[1];
 	}
 }
 

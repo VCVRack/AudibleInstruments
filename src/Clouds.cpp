@@ -51,11 +51,7 @@ struct Clouds : Module {
 };
 
 
-Clouds::Clouds() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+Clouds::Clouds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	const int memLen = 118784;
 	const int ccmLen = 65536 - 128;
 	block_mem = new uint8_t[memLen]();
@@ -76,13 +72,13 @@ void Clouds::step() {
 	// Get input
 	if (!inputBuffer.full()) {
 		Frame<2> inputFrame;
-		inputFrame.samples[0] = getf(inputs[IN_L_INPUT]) * params[IN_GAIN_PARAM] / 5.0;
-		inputFrame.samples[1] = inputs[IN_R_INPUT] ? getf(inputs[IN_R_INPUT]) * params[IN_GAIN_PARAM] / 5.0 : inputFrame.samples[0];
+		inputFrame.samples[0] = inputs[IN_L_INPUT].value * params[IN_GAIN_PARAM].value / 5.0;
+		inputFrame.samples[1] = inputs[IN_R_INPUT].active ? inputs[IN_R_INPUT].value * params[IN_GAIN_PARAM].value / 5.0 : inputFrame.samples[0];
 		inputBuffer.push(inputFrame);
 	}
 
 	// Trigger
-	if (getf(inputs[TRIG_INPUT]) >= 1.0) {
+	if (inputs[TRIG_INPUT].value >= 1.0) {
 		triggered = true;
 	}
 
@@ -115,13 +111,13 @@ void Clouds::step() {
 		clouds::Parameters* p = processor->mutable_parameters();
 		p->trigger = triggered;
 		p->gate = triggered;
-		p->freeze = (getf(inputs[FREEZE_INPUT]) >= 1.0);
-		p->position = clampf(params[POSITION_PARAM] + getf(inputs[POSITION_INPUT]) / 5.0, 0.0, 1.0);
-		p->size = clampf(params[SIZE_PARAM] + getf(inputs[SIZE_INPUT]) / 5.0, 0.0, 1.0);
-		p->pitch = clampf((params[PITCH_PARAM] + getf(inputs[PITCH_INPUT])) * 12.0, -48.0, 48.0);
-		p->density = clampf(params[DENSITY_PARAM] + getf(inputs[DENSITY_INPUT]) / 5.0, 0.0, 1.0);
-		p->texture = clampf(params[TEXTURE_PARAM] + getf(inputs[TEXTURE_INPUT]) / 5.0, 0.0, 1.0);
-		float blend = clampf(params[BLEND_PARAM] + getf(inputs[BLEND_INPUT]) / 5.0, 0.0, 1.0);
+		p->freeze = (inputs[FREEZE_INPUT].value >= 1.0);
+		p->position = clampf(params[POSITION_PARAM].value + inputs[POSITION_INPUT].value / 5.0, 0.0, 1.0);
+		p->size = clampf(params[SIZE_PARAM].value + inputs[SIZE_INPUT].value / 5.0, 0.0, 1.0);
+		p->pitch = clampf((params[PITCH_PARAM].value + inputs[PITCH_INPUT].value) * 12.0, -48.0, 48.0);
+		p->density = clampf(params[DENSITY_PARAM].value + inputs[DENSITY_INPUT].value / 5.0, 0.0, 1.0);
+		p->texture = clampf(params[TEXTURE_PARAM].value + inputs[TEXTURE_INPUT].value / 5.0, 0.0, 1.0);
+		float blend = clampf(params[BLEND_PARAM].value + inputs[BLEND_INPUT].value / 5.0, 0.0, 1.0);
 		p->dry_wet = blend;
 		p->stereo_spread = 0.0;
 		p->feedback = 0.0;
@@ -151,8 +147,8 @@ void Clouds::step() {
 	// Set output
 	if (!outputBuffer.empty()) {
 		Frame<2> outputFrame = outputBuffer.shift();
-		setf(outputs[OUT_L_OUTPUT], 5.0 * outputFrame.samples[0]);
-		setf(outputs[OUT_R_OUTPUT], 5.0 * outputFrame.samples[1]);
+		outputs[OUT_L_OUTPUT].value = 5.0 * outputFrame.samples[0];
+		outputs[OUT_R_OUTPUT].value = 5.0 * outputFrame.samples[1];
 	}
 }
 

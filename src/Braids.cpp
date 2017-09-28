@@ -69,11 +69,7 @@ struct Braids : Module {
 };
 
 
-Braids::Braids() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+Braids::Braids() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	memset(&osc, 0, sizeof(osc));
 	osc.Init();
 	memset(&jitter_source, 0, sizeof(jitter_source));
@@ -90,7 +86,7 @@ Braids::Braids() {
 
 void Braids::step() {
 	// Trigger
-	bool trig = getf(inputs[TRIG_INPUT]) >= 1.0;
+	bool trig = inputs[TRIG_INPUT].value >= 1.0;
 	if (!lastTrig && trig) {
 		osc.Strike();
 	}
@@ -98,10 +94,10 @@ void Braids::step() {
 
 	// Render frames
 	if (outputBuffer.empty()) {
-		float fm = params[FM_PARAM] * getf(inputs[FM_INPUT]);
+		float fm = params[FM_PARAM].value * inputs[FM_INPUT].value;
 
 		// Set shape
-		int shape = roundf(params[SHAPE_PARAM] * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
+		int shape = roundf(params[SHAPE_PARAM].value * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 		if (settings.meta_modulation) {
 			shape += roundf(fm / 10.0 * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 		}
@@ -111,14 +107,14 @@ void Braids::step() {
 		osc.set_shape((braids::MacroOscillatorShape) settings.shape);
 
 		// Set timbre/modulation
-		float timbre = params[TIMBRE_PARAM] + params[MODULATION_PARAM] * getf(inputs[TIMBRE_INPUT]) / 5.0;
-		float modulation = params[COLOR_PARAM] + getf(inputs[COLOR_INPUT]) / 5.0;
+		float timbre = params[TIMBRE_PARAM].value + params[MODULATION_PARAM].value * inputs[TIMBRE_INPUT].value / 5.0;
+		float modulation = params[COLOR_PARAM].value + inputs[COLOR_INPUT].value / 5.0;
 		int16_t param1 = rescalef(clampf(timbre, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
 		int16_t param2 = rescalef(clampf(modulation, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
 		osc.set_parameters(param1, param2);
 
 		// Set pitch
-		float pitchV = getf(inputs[PITCH_INPUT]) + params[COARSE_PARAM] + params[FINE_PARAM] / 12.0;
+		float pitchV = inputs[PITCH_INPUT].value + params[COARSE_PARAM].value + params[FINE_PARAM].value / 12.0;
 		if (!settings.meta_modulation)
 			pitchV += fm;
 		int32_t pitch = (pitchV * 12.0 + 60) * 128;
@@ -157,7 +153,7 @@ void Braids::step() {
 	// Output
 	if (!outputBuffer.empty()) {
 		Frame<1> f = outputBuffer.shift();
-		setf(outputs[OUT_OUTPUT], 5.0 * f.samples[0]);
+		outputs[OUT_OUTPUT].value = 5.0 * f.samples[0];
 	}
 }
 

@@ -36,50 +36,44 @@ struct Blinds : Module {
 	float lights[4] = {};
 	float gainLights[4] = {};
 
-	Blinds();
+	Blinds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
 
-Blinds::Blinds() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
-
-static float getChannelOutput(const float *in, float gain, const float *cv, float mod, float *light) {
-	gain += mod * fmaxf(getf(cv) / 5.0, 0.0);
-	*light = gain * 5.0;
-	return gain * getf(in, 5.0);
+static float processChannel(Input &in, Param &gain, Input &cv, Param &mod, float *light) {
+	float g = gain.value + mod.value * cv.value / 5.0;
+	*light = g * 5.0;
+	return g * in.normalize(5.0);
 }
 
 void Blinds::step() {
 	float out = 0.0;
-	out += getChannelOutput(inputs[IN1_INPUT], params[GAIN1_PARAM], inputs[CV1_INPUT], params[MOD1_PARAM], &gainLights[0]);
+	out += processChannel(inputs[IN1_INPUT], params[GAIN1_PARAM], inputs[CV1_INPUT], params[MOD1_PARAM], &gainLights[0]);
 	lights[0] = out;
-	if (outputs[OUT1_OUTPUT]) {
-		*outputs[OUT1_OUTPUT] = out;
+	if (outputs[OUT1_OUTPUT].active) {
+		outputs[OUT1_OUTPUT].value = out;
 		out = 0.0;
 	}
 
-	out += getChannelOutput(inputs[IN2_INPUT], params[GAIN2_PARAM], inputs[CV2_INPUT], params[MOD2_PARAM], &gainLights[1]);
+	out += processChannel(inputs[IN2_INPUT], params[GAIN2_PARAM], inputs[CV2_INPUT], params[MOD2_PARAM], &gainLights[1]);
 	lights[1] = out;
-	if (outputs[OUT2_OUTPUT]) {
-		*outputs[OUT2_OUTPUT] = out;
+	if (outputs[OUT2_OUTPUT].active) {
+		outputs[OUT2_OUTPUT].value = out;
 		out = 0.0;
 	}
 
-	out += getChannelOutput(inputs[IN3_INPUT], params[GAIN3_PARAM], inputs[CV3_INPUT], params[MOD3_PARAM], &gainLights[2]);
+	out += processChannel(inputs[IN3_INPUT], params[GAIN3_PARAM], inputs[CV3_INPUT], params[MOD3_PARAM], &gainLights[2]);
 	lights[2] = out;
-	if (outputs[OUT3_OUTPUT]) {
-		*outputs[OUT3_OUTPUT] = out;
+	if (outputs[OUT3_OUTPUT].active) {
+		outputs[OUT3_OUTPUT].value = out;
 		out = 0.0;
 	}
 
-	out += getChannelOutput(inputs[IN4_INPUT], params[GAIN4_PARAM], inputs[CV4_INPUT], params[MOD4_PARAM], &gainLights[3]);
+	out += processChannel(inputs[IN4_INPUT], params[GAIN4_PARAM], inputs[CV4_INPUT], params[MOD4_PARAM], &gainLights[3]);
 	lights[3] = out;
-	if (outputs[OUT4_OUTPUT]) {
-		*outputs[OUT4_OUTPUT] = out;
+	if (outputs[OUT4_OUTPUT].active) {
+		outputs[OUT4_OUTPUT].value = out;
 	}
 }
 

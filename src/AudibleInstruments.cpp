@@ -22,5 +22,5 @@ void init(rack::Plugin *p) {
 	createModel<BranchesWidget>(plugin, "Branches", "Bernoulli Gate");
 	createModel<BlindsWidget>(plugin, "Blinds", "Quad VC-polarizer");
 	createModel<VeilsWidget>(plugin, "Veils", "Quad VCA");
-	createModel<FramesWidget>(plugin, "Frames", "Keyframer");
+	// createModel<FramesWidget>(plugin, "Frames", "Keyframer");
 }

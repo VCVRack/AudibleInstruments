@@ -95,11 +95,7 @@ struct Rings : Module {
 };
 
 
-Rings::Rings() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-
+Rings::Rings() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	memset(&strummer, 0, sizeof(strummer));
 	memset(&part, 0, sizeof(part));
 	memset(&string_synth, 0, sizeof(string_synth));
@@ -118,21 +114,21 @@ void Rings::step() {
 	// Get input
 	if (!inputBuffer.full()) {
 		Frame<1> f;
-		f.samples[0] = getf(inputs[IN_INPUT]) / 5.0;
+		f.samples[0] = inputs[IN_INPUT].value / 5.0;
 		inputBuffer.push(f);
 	}
 
 	if (!strum) {
-		strum = getf(inputs[STRUM_INPUT]) >= 1.0;
+		strum = inputs[STRUM_INPUT].value >= 1.0;
 	}
 
 	// Polyphony / model
-	if (polyphonyTrigger.process(params[POLYPHONY_PARAM])) {
+	if (polyphonyTrigger.process(params[POLYPHONY_PARAM].value)) {
 		polyphonyMode = (polyphonyMode + 1) % 3;
 	}
 	lights[0] = (float)polyphonyMode;
 
-	if (modelTrigger.process(params[RESONATOR_PARAM])) {
+	if (modelTrigger.process(params[RESONATOR_PARAM].value)) {
 		model = (model + 1) % 3;
 	}
 	lights[1] = (float)model;
@@ -157,26 +153,26 @@ void Rings::step() {
 
 		// Patch
 		rings::Patch patch;
-		float structure = params[STRUCTURE_PARAM] + 3.3*quadraticBipolar(params[STRUCTURE_MOD_PARAM])*getf(inputs[STRUCTURE_MOD_INPUT])/5.0;
+		float structure = params[STRUCTURE_PARAM].value + 3.3*quadraticBipolar(params[STRUCTURE_MOD_PARAM].value)*inputs[STRUCTURE_MOD_INPUT].value/5.0;
 		patch.structure = clampf(structure, 0.0, 0.9995);
-		patch.brightness = clampf(params[BRIGHTNESS_PARAM] + 3.3*quadraticBipolar(params[BRIGHTNESS_MOD_PARAM])*getf(inputs[BRIGHTNESS_MOD_INPUT])/5.0, 0.0, 1.0);
-		patch.damping = clampf(params[DAMPING_PARAM] + 3.3*quadraticBipolar(params[DAMPING_MOD_PARAM])*getf(inputs[DAMPING_MOD_INPUT])/5.0, 0.0, 0.9995);
-		patch.position = clampf(params[POSITION_PARAM] + 3.3*quadraticBipolar(params[POSITION_MOD_PARAM])*getf(inputs[POSITION_MOD_INPUT])/5.0, 0.0, 0.9995);
+		patch.brightness = clampf(params[BRIGHTNESS_PARAM].value + 3.3*quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].value)*inputs[BRIGHTNESS_MOD_INPUT].value/5.0, 0.0, 1.0);
+		patch.damping = clampf(params[DAMPING_PARAM].value + 3.3*quadraticBipolar(params[DAMPING_MOD_PARAM].value)*inputs[DAMPING_MOD_INPUT].value/5.0, 0.0, 0.9995);
+		patch.position = clampf(params[POSITION_PARAM].value + 3.3*quadraticBipolar(params[POSITION_MOD_PARAM].value)*inputs[POSITION_MOD_INPUT].value/5.0, 0.0, 0.9995);
 
 		// Performance
 		rings::PerformanceState performance_state;
-		performance_state.note = 12.0*getf(inputs[PITCH_INPUT], 1/12.0);
-		float transpose = params[FREQUENCY_PARAM];
+		performance_state.note = 12.0*inputs[PITCH_INPUT].normalize(1/12.0);
+		float transpose = params[FREQUENCY_PARAM].value;
 		// Quantize transpose if pitch input is connected
-		if (inputs[PITCH_INPUT]) {
+		if (inputs[PITCH_INPUT].active) {
 			transpose = roundf(transpose);
 		}
 		performance_state.tonic = 12.0 + clampf(transpose, 0, 60.0);
-		performance_state.fm = clampf(48.0 * 3.3*quarticBipolar(params[FREQUENCY_MOD_PARAM]) * getf(inputs[FREQUENCY_MOD_INPUT], 1.0)/5.0, -48.0, 48.0);
+		performance_state.fm = clampf(48.0 * 3.3*quarticBipolar(params[FREQUENCY_MOD_PARAM].value) * inputs[FREQUENCY_MOD_INPUT].normalize(1.0)/5.0, -48.0, 48.0);
 
-		performance_state.internal_exciter = !inputs[IN_INPUT];
-		performance_state.internal_strum = !inputs[STRUM_INPUT];
-		performance_state.internal_note = !inputs[PITCH_INPUT];
+		performance_state.internal_exciter = !inputs[IN_INPUT].active;
+		performance_state.internal_strum = !inputs[STRUM_INPUT].active;
+		performance_state.internal_note = !inputs[PITCH_INPUT].active;
 
 		// TODO
 		// "Normalized to a step detector on the V/OCT input and a transient detector on the IN input."
@@ -218,14 +214,14 @@ void Rings::step() {
 	if (!outputBuffer.empty()) {
 		Frame<2> outputFrame = outputBuffer.shift();
 		// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
-		if (outputs[ODD_OUTPUT] && outputs[EVEN_OUTPUT]) {
-			setf(outputs[ODD_OUTPUT], clampf(outputFrame.samples[0], -1.0, 1.0)*5.0);
-			setf(outputs[EVEN_OUTPUT], clampf(outputFrame.samples[1], -1.0, 1.0)*5.0);
+		if (outputs[ODD_OUTPUT].active && outputs[EVEN_OUTPUT].active) {
+			outputs[ODD_OUTPUT].value = clampf(outputFrame.samples[0], -1.0, 1.0)*5.0;
+			outputs[EVEN_OUTPUT].value = clampf(outputFrame.samples[1], -1.0, 1.0)*5.0;
 		}
 		else {
 			float v = clampf(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0)*5.0;
-			setf(outputs[ODD_OUTPUT], v);
-			setf(outputs[EVEN_OUTPUT], v);
+			outputs[ODD_OUTPUT].value = v;
+			outputs[EVEN_OUTPUT].value = v;
 		}
 	}
 }

@@ -28,26 +28,20 @@ struct Branches : Module {
 	bool outcome[2] = {};
 	float light[2] = {};
 
-	Branches();
+	Branches() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 	float getOutput(int outputId);
 };
 
 
-Branches::Branches() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
-
-static void computeChannel(const float *in, const float *p, float threshold, float mode, bool *lastGate, bool *outcome, float *out1, float *out2, float *light) {
-	float out = getf(in);
+static void processChannel(Input &in, Input &p, Param &threshold, Param &mode, bool *lastGate, bool *outcome, Output &out1, Output &out2, float *light) {
+	float out = in.value;
 	bool gate = (out >= 1.0);
 	if (gate && !*lastGate) {
 		// trigger
 		float r = randomf();
-		bool toss = (r < threshold + getf(p));
-		if (mode < 0.5) {
+		bool toss = (r < threshold.value + p.value);
+		if (mode.value < 0.5) {
 			// direct mode
 			*outcome = toss;
 		}
@@ -59,17 +53,13 @@ static void computeChannel(const float *in, const float *p, float threshold, flo
 	*lastGate = gate;
 	*light = *outcome ? out : -out;
 
-	if (out1) {
-		*out1 = *outcome ? 0.0 : out;
-	}
-	if (out2) {
-		*out2 = *outcome ? out : 0.0;
-	}
+	out1.value = *outcome ? 0.0 : out;
+	out2.value = *outcome ? out : 0.0;
 }
 
 void Branches::step() {
-	computeChannel(inputs[IN1_INPUT], inputs[P1_INPUT], params[THRESHOLD1_PARAM], params[MODE1_PARAM], &lastGate[0], &outcome[0], outputs[OUT1A_OUTPUT], outputs[OUT1B_OUTPUT], &light[0]);
-	computeChannel(inputs[IN2_INPUT] ? inputs[IN2_INPUT] : inputs[IN1_INPUT], inputs[P2_INPUT], params[THRESHOLD2_PARAM], params[MODE2_PARAM], &lastGate[1], &outcome[1], outputs[OUT2A_OUTPUT], outputs[OUT2B_OUTPUT], &light[1]);
+	processChannel(inputs[IN1_INPUT], inputs[P1_INPUT], params[THRESHOLD1_PARAM], params[MODE1_PARAM], &lastGate[0], &outcome[0], outputs[OUT1A_OUTPUT], outputs[OUT1B_OUTPUT], &light[0]);
+	processChannel(inputs[IN2_INPUT].active ? inputs[IN2_INPUT] : inputs[IN1_INPUT], inputs[P2_INPUT], params[THRESHOLD2_PARAM], params[MODE2_PARAM], &lastGate[1], &outcome[1], outputs[OUT2A_OUTPUT], outputs[OUT2B_OUTPUT], &light[1]);
 }
 
 

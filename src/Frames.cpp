@@ -36,16 +36,10 @@ struct Frames : Module {
 
 	float lights[1] = {};
 
-	Frames();
+	Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
-
-Frames::Frames() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
 
 void Frames::step() {
 }

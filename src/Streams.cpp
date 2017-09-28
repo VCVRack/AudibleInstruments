@@ -31,16 +31,10 @@ struct Streams : Module {
 		NUM_OUTPUTS
 	};
 
-	Streams();
+	Streams() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
-
-Streams::Streams() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
 
 void Streams::step() {
 }

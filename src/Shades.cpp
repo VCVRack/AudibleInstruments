@@ -27,26 +27,20 @@ struct Shades : Module {
 
 	float lights[3] = {};
 
-	Shades();
+	Shades() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
 
-Shades::Shades() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
-
-static float getChannelOutput(const float *in, float gain, float mode) {
-	float out = getf(in, 5.0);
-	if ((int)roundf(mode) == 1) {
+static float getChannelOutput(Input &in, Param &gain, Param &mode) {
+	float out = in.normalize(5.0);
+	if ((int)roundf(mode.value) == 1) {
 		// attenuverter
-		out *= 2.0*gain - 1.0;
+		out *= 2.0*gain.value - 1.0;
 	}
 	else {
 		// attenuator
-		out *= gain;
+		out *= gain.value;
 	}
 	return out;
 }
@@ -55,22 +49,22 @@ void Shades::step() {
 	float out = 0.0;
 	out += getChannelOutput(inputs[IN1_INPUT], params[GAIN1_PARAM], params[MODE1_PARAM]);
 	lights[0] = out / 5.0;
-	if (outputs[OUT1_OUTPUT]) {
-		*outputs[OUT1_OUTPUT] = out;
+	if (outputs[OUT1_OUTPUT].active) {
+		outputs[OUT1_OUTPUT].value = out;
 		out = 0.0;
 	}
 
 	out += getChannelOutput(inputs[IN2_INPUT], params[GAIN2_PARAM], params[MODE2_PARAM]);
 	lights[1] = out / 5.0;
-	if (outputs[OUT2_OUTPUT]) {
-		*outputs[OUT2_OUTPUT] = out;
+	if (outputs[OUT2_OUTPUT].active) {
+		outputs[OUT2_OUTPUT].value = out;
 		out = 0.0;
 	}
 
 	out += getChannelOutput(inputs[IN3_INPUT], params[GAIN3_PARAM], params[MODE3_PARAM]);
 	lights[2] = out / 5.0;
-	if (outputs[OUT3_OUTPUT]) {
-		*outputs[OUT3_OUTPUT] = out;
+	if (outputs[OUT3_OUTPUT].active) {
+		outputs[OUT3_OUTPUT].value = out;
 	}
 }
 

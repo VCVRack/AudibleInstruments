@@ -25,28 +25,22 @@ struct Links : Module {
 	};
 
 	float lights[3] = {};
-	Links();
+	Links() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
 
-Links::Links() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
-
 void Links::step() {
-	float in1 = getf(inputs[A1_INPUT]);
-	float in2 = getf(inputs[B1_INPUT]) + getf(inputs[B2_INPUT]);
-	float in3 = getf(inputs[C1_INPUT]) + getf(inputs[C2_INPUT]) + getf(inputs[C3_INPUT]);
+	float in1 = inputs[A1_INPUT].value;
+	float in2 = inputs[B1_INPUT].value + inputs[B2_INPUT].value;
+	float in3 = inputs[C1_INPUT].value + inputs[C2_INPUT].value + inputs[C3_INPUT].value;
 
-	setf(outputs[A1_OUTPUT], in1);
-	setf(outputs[A2_OUTPUT], in1);
-	setf(outputs[A3_OUTPUT], in1);
-	setf(outputs[B1_OUTPUT], in2);
-	setf(outputs[B2_OUTPUT], in2);
-	setf(outputs[C1_OUTPUT], in3);
+	outputs[A1_OUTPUT].value = in1;
+	outputs[A2_OUTPUT].value = in1;
+	outputs[A3_OUTPUT].value = in1;
+	outputs[B1_OUTPUT].value = in2;
+	outputs[B2_OUTPUT].value = in2;
+	outputs[C1_OUTPUT].value = in3;
 
 	lights[0] = in1 / 5.0;
 	lights[1] = in2 / 5.0;

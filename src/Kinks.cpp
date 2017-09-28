@@ -32,56 +32,36 @@ struct Kinks : Module {
 	float sample = 0.0;
 	float lights[3] = {};
 
-	Kinks();
+	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
 	void step();
 };
 
-
-Kinks::Kinks() {
-	params.resize(NUM_PARAMS);
-	inputs.resize(NUM_INPUTS);
-	outputs.resize(NUM_OUTPUTS);
-}
 
 void Kinks::step() {
 	// Gaussian noise generator
 	float noise = 2.0 * randomNormal();
 
 	// S&H
-	float trig = getf(inputs[TRIG_INPUT]);
+	float trig = inputs[TRIG_INPUT].value;
 	float dtrig = (trig - lastTrig) * gSampleRate;
 	if (dtrig > DTRIG) {
-		sample = getf(inputs[SH_INPUT], noise);
+		sample = inputs[SH_INPUT].normalize(noise);
 	}
 	lastTrig = trig;
 
 	// lights
-	lights[0] = getf(inputs[SIGN_INPUT]);
-	lights[1] = getf(inputs[LOGIC_A_INPUT]) + getf(inputs[LOGIC_B_INPUT]);
+	lights[0] = inputs[SIGN_INPUT].value;
+	lights[1] = inputs[LOGIC_A_INPUT].value + inputs[LOGIC_B_INPUT].value;
 	lights[2] = sample;
 
 	// outputs
-	if (outputs[INVERT_OUTPUT]) {
-		*outputs[INVERT_OUTPUT] = -getf(inputs[SIGN_INPUT]);
-	}
-	if (outputs[HALF_RECTIFY_OUTPUT]) {
-		*outputs[HALF_RECTIFY_OUTPUT] = fmaxf(0.0, getf(inputs[SIGN_INPUT]));
-	}
-	if (outputs[FULL_RECTIFY_OUTPUT]) {
-		*outputs[FULL_RECTIFY_OUTPUT] = fabsf(getf(inputs[SIGN_INPUT]));
-	}
-	if (outputs[MAX_OUTPUT]) {
-		*outputs[MAX_OUTPUT] = fmaxf(getf(inputs[LOGIC_A_INPUT]), getf(inputs[LOGIC_B_INPUT]));
-	}
-	if (outputs[MIN_OUTPUT]) {
-		*outputs[MIN_OUTPUT] = fminf(getf(inputs[LOGIC_A_INPUT]), getf(inputs[LOGIC_B_INPUT]));
-	}
-	if (outputs[NOISE_OUTPUT]) {
-		*outputs[NOISE_OUTPUT] = noise;
-	}
-	if (outputs[SH_OUTPUT]) {
-		*outputs[SH_OUTPUT] = sample;
-	}
+	outputs[INVERT_OUTPUT].value = -inputs[SIGN_INPUT].value;
+	outputs[HALF_RECTIFY_OUTPUT].value = fmaxf(0.0, inputs[SIGN_INPUT].value);
+	outputs[FULL_RECTIFY_OUTPUT].value = fabsf(inputs[SIGN_INPUT].value);
+	outputs[MAX_OUTPUT].value = fmaxf(inputs[LOGIC_A_INPUT].value, inputs[LOGIC_B_INPUT].value);
+	outputs[MIN_OUTPUT].value = fminf(inputs[LOGIC_A_INPUT].value, inputs[LOGIC_B_INPUT].value);
+	outputs[NOISE_OUTPUT].value = noise;
+	outputs[SH_OUTPUT].value = sample;
 }
 
 
