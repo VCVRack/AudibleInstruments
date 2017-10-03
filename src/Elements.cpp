@@ -297,33 +297,14 @@ struct ElementsModalItem : MenuItem {
 Menu *ElementsWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->pushChild(spacerLabel);
-
 	Elements *elements = dynamic_cast<Elements*>(module);
 	assert(elements);
 
-	MenuLabel *modeLabel = new MenuLabel();
-	modeLabel->text = "Alternative Models";
-	menu->pushChild(modeLabel);
-
-	ElementsModalItem *originalItem = new ElementsModalItem();
-	originalItem->text = "Original";
-	originalItem->elements = elements;
-	originalItem->model = 0;
-	menu->pushChild(originalItem);
-
-	ElementsModalItem *stringItem = new ElementsModalItem();
-	stringItem->text = "Non-linear string";
-	stringItem->elements = elements;
-	stringItem->model = 1;
-	menu->pushChild(stringItem);
-
-	ElementsModalItem *chordsItem = new ElementsModalItem();
-	chordsItem->text = "Chords";
-	chordsItem->elements = elements;
-	chordsItem->model = 2;
-	menu->pushChild(chordsItem);
+	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative Models"));
+	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
+	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Non-Linear String", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
+	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
 
 	return menu;
 }

@@ -304,32 +304,14 @@ struct BraidsSettingItem : MenuItem {
 Menu *BraidsWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 
-	MenuLabel *spacerLabel = new MenuLabel();
-	menu->pushChild(spacerLabel);
-
-	MenuLabel *optionsLabel = new MenuLabel();
-	optionsLabel->text = "Options";
-	menu->pushChild(optionsLabel);
-
 	Braids *braids = dynamic_cast<Braids*>(module);
 	assert(braids);
 
-	BraidsSettingItem *metaItem = new BraidsSettingItem();
-	metaItem->text = "META";
-	metaItem->setting = &braids->settings.meta_modulation;
-	menu->pushChild(metaItem);
-
-	BraidsSettingItem *drftItem = new BraidsSettingItem();
-	drftItem->text = "DRFT";
-	drftItem->setting = &braids->settings.vco_drift;
-	drftItem->onValue = 4;
-	menu->pushChild(drftItem);
-
-	BraidsSettingItem *signItem = new BraidsSettingItem();
-	signItem->text = "SIGN";
-	signItem->setting = &braids->settings.signature;
-	signItem->onValue = 4;
-	menu->pushChild(signItem);
+	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Options"));
+	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
+	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
+	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
 
 	return menu;
 }

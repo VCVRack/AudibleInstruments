@@ -42,7 +42,10 @@ SOURCES = $(wildcard src/*.cpp) \
 	eurorack/warps/dsp/oscillator.cc \
 	eurorack/warps/dsp/vocoder.cc \
 	eurorack/warps/dsp/filter_bank.cc \
-	eurorack/warps/resources.cc
+	eurorack/warps/resources.cc \
+	eurorack/frames/keyframer.cc \
+	eurorack/frames/resources.cc \
+	eurorack/frames/poly_lfo.cc
 
 include ../../plugin.mk
 

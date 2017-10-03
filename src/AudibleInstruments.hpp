@@ -70,4 +70,5 @@ struct VeilsWidget : ModuleWidget {
 
 struct FramesWidget : ModuleWidget {
 	FramesWidget();
+	Menu *createContextMenu();
 };

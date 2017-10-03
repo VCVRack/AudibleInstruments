@@ -1,7 +1,5 @@
 #include "AudibleInstruments.hpp"
 #include <string.h>
-// Disable encapsulation. Might not be ABI compatible, but if it works then it works.
-#define private public
 #include "tides/generator.h"
 
 
@@ -133,24 +131,7 @@ void Tides::step() {
 		generator.set_sync(inputs[CLOCK_INPUT].active);
 
 		// Generator
-		// Stolen code from the private `generator.Process()` method
-		while (generator.render_block_ != generator.playback_block_) {
-			uint8_t* in = generator.input_samples_[generator.render_block_];
-			tides::GeneratorSample* out = generator.output_samples_[generator.render_block_];
-			if (!wavetableHack) {
-				if (generator.range_ == tides::GENERATOR_RANGE_HIGH) {
-					generator.ProcessAudioRate(in, out, tides::kBlockSize);
-				}
-				else {
-					generator.ProcessControlRate(in, out, tides::kBlockSize);
-				}
-				generator.ProcessFilterWavefolder(out, tides::kBlockSize);
-			}
-			else {
-				generator.ProcessWavetable(in, out, tides::kBlockSize);
-			}
-			generator.render_block_ = (generator.render_block_ + 1) % tides::kNumBlocks;
-		}
+		generator.Process(wavetableHack);
 	}
 
 	// Level
