@@ -1,10 +1,6 @@
 #include "AudibleInstruments.hpp"
 
 
-// If the trigger input is rising at a rate of at least DTRIG, the S&H will be triggered
-#define DTRIG 5000.0
-
-
 struct Kinks : Module {
 	enum ParamIds {
 		NUM_PARAMS
@@ -28,11 +24,13 @@ struct Kinks : Module {
 		NUM_OUTPUTS
 	};
 
-	float lastTrig = 0.0;
+	SchmittTrigger trigger;
 	float sample = 0.0;
 	float lights[3] = {};
 
-	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+		trigger.setThresholds(0.0, 0.7);
+	}
 	void step();
 };
 
@@ -42,12 +40,9 @@ void Kinks::step() {
 	float noise = 2.0 * randomNormal();
 
 	// S&H
-	float trig = inputs[TRIG_INPUT].value;
-	float dtrig = (trig - lastTrig) * gSampleRate;
-	if (dtrig > DTRIG) {
+	if (trigger.process(inputs[TRIG_INPUT].value)) {
 		sample = inputs[SH_INPUT].normalize(noise);
 	}
-	lastTrig = trig;
 
 	// lights
 	lights[0] = inputs[SIGN_INPUT].value;
