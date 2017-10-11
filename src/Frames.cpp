@@ -42,6 +42,7 @@ struct Frames : Module {
 	frames::Keyframer keyframer;
 	frames::PolyLfo poly_lfo;
 	bool poly_lfo_mode = true;
+	uint16_t lastControls[4] = {};
 
 	SchmittTrigger addTrigger;
 	SchmittTrigger delTrigger;
@@ -49,6 +50,18 @@ struct Frames : Module {
 
 	Frames();
 	void step();
+
+	json_t *toJson() {
+		json_t *rootJ = json_object();
+		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
+		return rootJ;
+	}
+
+	void fromJson(json_t *rootJ) {
+		json_t *polyLfoJ = json_object_get(rootJ, "polyLfo");
+		if (polyLfoJ)
+			poly_lfo_mode = json_boolean_value(polyLfoJ);
+	}
 };
 
 
@@ -57,46 +70,64 @@ Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	keyframer.Init();
 	memset(&poly_lfo, 0, sizeof(poly_lfo));
 	poly_lfo.Init();
+
+	for (int i = 0; i < 4; i++) {
+		keyframer.mutable_settings(i)->easing_curve = frames::EASING_CURVE_LINEAR;
+	}
 }
 
 
 void Frames::step() {
-	// Handle buttons
-	if (clearKeyframes) {
-		keyframer.Clear();
-		clearKeyframes = false;
+	// Set gain and timestamp knobs
+	uint16_t controls[4];
+	for (int i = 0; i < 4; i++) {
+		controls[i] = params[GAIN1_PARAM + i].value * 65535.0;
 	}
 
-	// Set gain knobs
-	if (poly_lfo_mode) {
-		poly_lfo.set_shape(params[GAIN1_PARAM].value * 65535.0);
-		poly_lfo.set_shape_spread(params[GAIN2_PARAM].value * 65535.0);
-		poly_lfo.set_spread(params[GAIN3_PARAM].value * 65535.0);
-		poly_lfo.set_coupling(params[GAIN4_PARAM].value * 65535.0);
+	int32_t timestamp = clampf(params[FRAME_PARAM].value + params[MODULATION_PARAM].value * inputs[FRAME_INPUT].value / 10.0, 0.0, 1.0) * 65535.0;
+	int16_t nearestIndex = -1;
+	if (!poly_lfo_mode) {
+		nearestIndex = keyframer.FindNearestKeyframe(timestamp, 2048);
 	}
-	else {
-		for (int i = 0; i < 4; i++) {
-			keyframer.set_immediate(i, params[GAIN1_PARAM + i].value * 65535.0);
-		}
-	}
-
-	int32_t frame = clampf(params[FRAME_PARAM].value + params[MODULATION_PARAM].value * inputs[FRAME_INPUT].value / 10.0, 0.0, 1.0) * 65535.0;
 
 	// Render, handle buttons
 	if (poly_lfo_mode) {
-		poly_lfo.Render(frame);
+		if (controls[0] != lastControls[0])
+			poly_lfo.set_shape(controls[0]);
+		if (controls[1] != lastControls[1])
+			poly_lfo.set_shape_spread(controls[1]);
+		if (controls[2] != lastControls[2])
+			poly_lfo.set_spread(controls[2]);
+		if (controls[3] != lastControls[3])
+			poly_lfo.set_coupling(controls[3]);
+		poly_lfo.Render(timestamp);
 	}
 	else {
-		int16_t nearestFrame = keyframer.FindNearestKeyframe(frame, 2048);
+		for (int i = 0; i < 4; i++) {
+			if (controls[i] != lastControls[i]) {
+				// Update recently moved control
+				if (keyframer.num_keyframes() == 0) {
+					keyframer.set_immediate(i, controls[i]);
+				}
+				if (nearestIndex >= 0) {
+					frames::Keyframe *nearestKeyframe = keyframer.mutable_keyframe(nearestIndex);
+					nearestKeyframe->values[i] = controls[i];
+				}
+			}
+		}
 
 		if (addTrigger.process(params[ADD_PARAM].value)) {
-			uint16_t f[4] = {65000, 30000, 20000, 10000};
-			keyframer.AddKeyframe(frame, f);
+			if (nearestIndex < 0) {
+				keyframer.AddKeyframe(timestamp, controls);
+			}
 		}
 		if (delTrigger.process(params[DEL_PARAM].value)) {
-			keyframer.RemoveKeyframe(frame);
+			if (nearestIndex >= 0) {
+				int32_t nearestTimestamp = keyframer.keyframe(nearestIndex).timestamp;
+				keyframer.RemoveKeyframe(nearestTimestamp);
+			}
 		}
-		keyframer.Evaluate(frame);
+		keyframer.Evaluate(timestamp);
 	}
 
 	// Get gains
@@ -111,48 +142,61 @@ void Frames::step() {
 			gains[i] = lin;
 		}
 	}
-	// printf("%f %f %f %f\n", gains[0], gains[1], gains[2], gains[3]);
+
+	// Update last controls
+	for (int i = 0; i < 4; i++) {
+		lastControls[i] = controls[i];
+	}
 
 	// Get inputs
 	float all = ((int)params[OFFSET_PARAM].value == 1) ? 10.0 : 0.0;
-	if (inputs[ALL_INPUT].active)
+	if (inputs[ALL_INPUT].active) {
 		all = inputs[ALL_INPUT].value;
+	}
 
 	float ins[4];
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++) {
 		ins[i] = inputs[IN1_INPUT + i].normalize(all) * gains[i];
+	}
 
 	// Set outputs
 	float mix = 0.0;
 
 	for (int i = 0; i < 4; i++) {
-		if (outputs[OUT1_OUTPUT + i].active)
+		if (outputs[OUT1_OUTPUT + i].active) {
 			outputs[OUT1_OUTPUT + i].value = ins[i];
-		else
+		}
+		else {
 			mix += ins[i];
+		}
 	}
 
 	outputs[MIX_OUTPUT].value = clampf(mix / 2.0, -10.0, 10.0);
 
 	// Set lights
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++) {
 		outputs[GAIN1_LIGHT + i].value = gains[i];
+	}
 
 	if (poly_lfo_mode) {
 		outputs[EDIT_LIGHT].value = (poly_lfo.level(0) > 128 ? 1.0 : 0.0);
 	}
 	else {
-		outputs[EDIT_LIGHT].value = 1.0;
+		// TODO
+		outputs[EDIT_LIGHT].value = (nearestIndex >= 0 ? 1.0 : 0.0);
 	}
 
 	// Set frame light colors
 	const uint8_t *colors;
-	if (poly_lfo_mode)
+	if (poly_lfo_mode) {
 		colors = poly_lfo.color();
-	else
+	}
+	else {
 		colors = keyframer.color();
-	for (int c = 0; c < 3; c++)
+	}
+	for (int c = 0; c < 3; c++) {
 		outputs[FRAME_LIGHT + c].value = colors[c] / 255.0;
+	}
 }
 
 
@@ -244,24 +288,48 @@ FramesWidget::FramesWidget() {
 }
 
 
+struct FramesCurveItem : MenuItem {
+	Frames *frames;
+	uint8_t channel;
+	frames::EasingCurve curve;
+	void onAction() {
+		frames->keyframer.mutable_settings(channel)->easing_curve = curve;
+	}
+	void step() {
+		rightText = (frames->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
+	}
+};
+
+struct FramesResponseItem : MenuItem {
+	Frames *frames;
+	uint8_t channel;
+	uint8_t response;
+	void onAction() {
+		frames->keyframer.mutable_settings(channel)->response = response;
+	}
+	void step() {
+		rightText = (frames->keyframer.mutable_settings(channel)->response = response) ? "✔" : "";
+	}
+};
+
 struct FramesChannelSettingsItem : MenuItem {
 	Frames *frames;
-	int channel;
+	uint8_t channel;
 	Menu *createChildMenu() {
 		Menu *menu = new Menu();
 
 		// TODO
 		menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Interpolation Curve"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Step"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Linear"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Accelerating"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Decelerating"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Smooth Departure/Arrival"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Bouncing"));
+		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
+		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
+		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Accelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_IN_QUARTIC));
+		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
+		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
+		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
 		menu->pushChild(construct<MenuLabel>());
 		menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Response Curve"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Linear"));
-		menu->pushChild(construct<MenuItem>(&MenuEntry::text, "Exponential"));
+		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
+		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 1));
 
 		return menu;
 	}
@@ -270,7 +338,7 @@ struct FramesChannelSettingsItem : MenuItem {
 struct FramesClearItem : MenuItem {
 	Frames *frames;
 	void onAction() {
-		frames->clearKeyframes = true;
+		frames->keyframer.Clear();
 	}
 };
 
