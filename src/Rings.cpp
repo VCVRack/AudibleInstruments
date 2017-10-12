@@ -1,6 +1,8 @@
 #include <string.h>
 #include "AudibleInstruments.hpp"
-#include "dsp.hpp"
+#include "dsp/samplerate.hpp"
+#include "dsp/ringbuffer.hpp"
+#include "dsp/digital.hpp"
 #include "rings/dsp/part.h"
 #include "rings/dsp/strummer.h"
 #include "rings/dsp/string_synth_part.h"

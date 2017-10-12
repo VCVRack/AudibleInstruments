@@ -1,5 +1,6 @@
 #include <string.h>
 #include "AudibleInstruments.hpp"
+#include "dsp/digital.hpp"
 #include "warps/dsp/modulator.h"
 
 

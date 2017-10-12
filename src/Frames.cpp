@@ -2,6 +2,7 @@
 #include <string.h>
 #include "frames/keyframer.h"
 #include "frames/poly_lfo.h"
+#include "dsp/digital.hpp"
 
 
 struct Frames : Module {
@@ -84,7 +85,10 @@ void Frames::step() {
 		controls[i] = params[GAIN1_PARAM + i].value * 65535.0;
 	}
 
-	int32_t timestamp = clampf(params[FRAME_PARAM].value + params[MODULATION_PARAM].value * inputs[FRAME_INPUT].value / 10.0, 0.0, 1.0) * 65535.0;
+	int32_t timestamp = params[FRAME_PARAM].value * 65535.0;
+	int32_t timestampMod = timestamp + params[MODULATION_PARAM].value * inputs[FRAME_INPUT].value / 10.0 * 65535.0;
+	timestamp = clampi(timestamp, 0, 65535);
+	timestampMod = clampi(timestampMod, 0, 65535);
 	int16_t nearestIndex = -1;
 	if (!poly_lfo_mode) {
 		nearestIndex = keyframer.FindNearestKeyframe(timestamp, 2048);
@@ -100,7 +104,7 @@ void Frames::step() {
 			poly_lfo.set_spread(controls[2]);
 		if (controls[3] != lastControls[3])
 			poly_lfo.set_coupling(controls[3]);
-		poly_lfo.Render(timestamp);
+		poly_lfo.Render(timestampMod);
 	}
 	else {
 		for (int i = 0; i < 4; i++) {
@@ -127,7 +131,7 @@ void Frames::step() {
 				keyframer.RemoveKeyframe(nearestTimestamp);
 			}
 		}
-		keyframer.Evaluate(timestamp);
+		keyframer.Evaluate(timestampMod);
 	}
 
 	// Get gains
@@ -248,12 +252,12 @@ FramesWidget::FramesWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<Rogan6PSWhite>(Vec(91, 117), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));

@@ -1,4 +1,5 @@
 #include "AudibleInstruments.hpp"
+#include "dsp/digital.hpp"
 
 
 struct Kinks : Module {

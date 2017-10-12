@@ -1,5 +1,7 @@
-#include "AudibleInstruments.hpp"
 #include <string.h>
+#include "AudibleInstruments.hpp"
+#include "dsp/samplerate.hpp"
+#include "dsp/digital.hpp"
 #include "tides/generator.h"
 
 

@@ -1,6 +1,7 @@
 #include <string.h>
 #include "AudibleInstruments.hpp"
-#include "dsp.hpp"
+#include "dsp/samplerate.hpp"
+#include "dsp/ringbuffer.hpp"
 #include "braids/macro_oscillator.h"
 #include "braids/vco_jitter_source.h"
 #include "braids/signature_waveshaper.h"
