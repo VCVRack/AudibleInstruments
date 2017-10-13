@@ -42,7 +42,7 @@ struct Frames : Module {
 
 	frames::Keyframer keyframer;
 	frames::PolyLfo poly_lfo;
-	bool poly_lfo_mode = true;
+	bool poly_lfo_mode = false;
 	uint16_t lastControls[4] = {};
 
 	SchmittTrigger addTrigger;
