@@ -55,6 +55,21 @@ struct Frames : Module {
 	json_t *toJson() {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
+
+		json_t *keyframesJ = json_array();
+		for (int i = 0; i < keyframer.num_keyframes(); i++) {
+			json_t *keyframeJ = json_array();
+			frames::Keyframe *keyframe = keyframer.mutable_keyframe(i);
+			json_array_append_new(keyframeJ, json_integer(keyframe->timestamp));
+			for (int k = 0; k < 4; k++) {
+				json_array_append_new(keyframeJ, json_integer(keyframe->values[k]));
+			}
+			json_array_append_new(keyframesJ, keyframeJ);
+		}
+		json_object_set_new(rootJ, "keyframes", keyframesJ);
+
+		// TODO Channel settings
+
 		return rootJ;
 	}
 
@@ -62,6 +77,31 @@ struct Frames : Module {
 		json_t *polyLfoJ = json_object_get(rootJ, "polyLfo");
 		if (polyLfoJ)
 			poly_lfo_mode = json_boolean_value(polyLfoJ);
+
+		json_t *keyframesJ = json_object_get(rootJ, "keyframes");
+		if (keyframesJ) {
+			json_t *keyframeJ;
+			size_t i;
+			json_array_foreach(keyframesJ, i, keyframeJ) {
+				uint16_t timestamp = json_integer_value(json_array_get(keyframeJ, 0));
+				uint16_t values[4];
+				for (int k = 0; k < 4; k++) {
+					values[k] = json_integer_value(json_array_get(keyframeJ, k + 1));
+				}
+				keyframer.AddKeyframe(timestamp, values);
+			}
+		}
+
+		// TODO Channel settings
+	}
+
+	void initialize() {
+		poly_lfo_mode = false;
+		keyframer.Clear();
+	}
+	void randomize() {
+		// TODO
+		// Maybe something useful should go in here??
 	}
 };
 
