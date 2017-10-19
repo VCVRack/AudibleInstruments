@@ -95,7 +95,7 @@ struct Frames : Module {
 		// TODO Channel settings
 	}
 
-	void initialize() override {
+	void reset() override {
 		poly_lfo_mode = false;
 		keyframer.Clear();
 	}

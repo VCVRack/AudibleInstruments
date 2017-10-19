@@ -85,7 +85,7 @@ struct Rings : Module {
 		}
 	}
 
-	void initialize() override {
+	void reset() override {
 		polyphonyMode = 0;
 		model = 0;
 	}

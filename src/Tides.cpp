@@ -72,7 +72,7 @@ struct Tides : Module {
 		}
 	}
 
-	void initialize() override {
+	void reset() override {
 		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
 		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
 	}

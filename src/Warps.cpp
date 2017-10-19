@@ -53,7 +53,7 @@ struct Warps : Module {
 		}
 	}
 
-	void initialize() override {
+	void reset() override {
 		warps::Parameters *p = modulator.mutable_parameters();
 		p->carrier_shape = 0;
 	}
