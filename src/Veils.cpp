@@ -114,20 +114,20 @@ VeilsWidget::VeilsWidget() {
 	addParam(createParam<Trimpot>(Vec(72, 214), module, Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<Trimpot>(Vec(72, 292), module, Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput<PJ3410Port>(Vec(107, 38), module, Veils::IN1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 117), module, Veils::IN2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 195), module, Veils::IN3_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 274), module, Veils::IN4_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 41), module, Veils::IN1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 120), module, Veils::IN2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 198), module, Veils::IN3_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 277), module, Veils::IN4_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(107, 77), module, Veils::CV1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 156), module, Veils::CV2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 235), module, Veils::CV3_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 313), module, Veils::CV4_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 80), module, Veils::CV1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 159), module, Veils::CV2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 238), module, Veils::CV3_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 316), module, Veils::CV4_INPUT));
 
-	addOutput(createOutput<PJ3410Port>(Vec(141, 38), module, Veils::OUT1_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 117), module, Veils::OUT2_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 195), module, Veils::OUT3_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 274), module, Veils::OUT4_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 41), module, Veils::OUT1_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 120), module, Veils::OUT2_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 198), module, Veils::OUT3_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 277), module, Veils::OUT4_OUTPUT));
 
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));

@@ -105,20 +105,20 @@ BlindsWidget::BlindsWidget() {
 	addParam(createParam<Trimpot>(Vec(72, 221), module, Blinds::MOD3_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(72, 300), module, Blinds::MOD4_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(107, 38), module, Blinds::IN1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 117), module, Blinds::IN2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 195), module, Blinds::IN3_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 274), module, Blinds::IN4_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 41), module, Blinds::IN1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 120), module, Blinds::IN2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 198), module, Blinds::IN3_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 277), module, Blinds::IN4_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(107, 77), module, Blinds::CV1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 156), module, Blinds::CV2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 235), module, Blinds::CV3_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(107, 313), module, Blinds::CV4_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 80), module, Blinds::CV1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 159), module, Blinds::CV2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 238), module, Blinds::CV3_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(110, 316), module, Blinds::CV4_INPUT));
 
-	addOutput(createOutput<PJ3410Port>(Vec(141, 38), module, Blinds::OUT1_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 117), module, Blinds::OUT2_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 195), module, Blinds::OUT3_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 274), module, Blinds::OUT4_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 41), module, Blinds::OUT1_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 120), module, Blinds::OUT2_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 198), module, Blinds::OUT3_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(144, 277), module, Blinds::OUT4_OUTPUT));
 
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
 	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));

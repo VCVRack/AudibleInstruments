@@ -92,13 +92,13 @@ ShadesWidget::ShadesWidget() {
 	addParam(createParam<CKSS>(Vec(10, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<CKSS>(Vec(10, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(5, 242), module, Shades::IN1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(5, 278), module, Shades::IN2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(5, 314), module, Shades::IN3_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(9, 245), module, Shades::IN1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(9, 281), module, Shades::IN2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(9, 317), module, Shades::IN3_INPUT));
 
-	addOutput(createOutput<PJ3410Port>(Vec(52, 242), module, Shades::OUT1_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(52, 278), module, Shades::OUT2_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(52, 314), module, Shades::OUT3_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(56, 245), module, Shades::OUT1_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(56, 281), module, Shades::OUT2_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(56, 317), module, Shades::OUT3_OUTPUT));
 
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 254), &module->lights[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 290), &module->lights[1]));

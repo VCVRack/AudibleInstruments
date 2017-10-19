@@ -166,15 +166,15 @@ WarpsWidget::WarpsWidget() {
 	addParam(createParam<Trimpot>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
 	addParam(createParam<Trimpot>(Vec(54, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput<PJ3410Port>(Vec(5, 270), module, Warps::LEVEL1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(41, 270), module, Warps::LEVEL2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(77, 270), module, Warps::ALGORITHM_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(113, 270), module, Warps::TIMBRE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(8, 273), module, Warps::LEVEL1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(44, 273), module, Warps::LEVEL2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(80, 273), module, Warps::ALGORITHM_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(116, 273), module, Warps::TIMBRE_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(5, 313), module, Warps::CARRIER_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(41, 313), module, Warps::MODULATOR_INPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(77, 313), module, Warps::MODULATOR_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(113, 313), module, Warps::AUX_OUTPUT));
+	addInput(createInput<PJ301MPort>(Vec(8, 316), module, Warps::CARRIER_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(44, 316), module, Warps::MODULATOR_INPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(80, 316), module, Warps::MODULATOR_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
 	addChild(createValueLight<SmallLight<WarpsModeLight>>(Vec(20, 167), &module->lights[0]));
 	addChild(createValueLight<WarpsAlgoLight>(Vec(41, 64), &module->lights[1]));

@@ -244,39 +244,39 @@ ElementsWidget::ElementsWidget() {
 	addParam(createParam<Rogan1PSWhite>(Vec(381, 203), module, Elements::POSITION_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<Rogan1PSWhite>(Vec(452, 203), module, Elements::SPACE_PARAM, 0.0, 2.0, 0.0));
 
-	addParam(createParam<Trimpot>(Vec(104, 274), module, Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(105, 274), module, Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(143, 274), module, Elements::FLOW_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(181, 274), module, Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(182, 274), module, Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(220, 274), module, Elements::MALLET_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(258, 274), module, Elements::STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(316, 274), module, Elements::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(354, 274), module, Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Trimpot>(Vec(355, 274), module, Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(393, 274), module, Elements::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(431, 274), module, Elements::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(470, 274), module, Elements::SPACE_MOD_PARAM, -2.0, 2.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(16, 175), module, Elements::NOTE_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(52, 175), module, Elements::FM_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(20, 178), module, Elements::NOTE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(55, 178), module, Elements::FM_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(16, 221), module, Elements::GATE_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(52, 221), module, Elements::STRENGTH_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(20, 224), module, Elements::GATE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(55, 224), module, Elements::STRENGTH_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(16, 267), module, Elements::BLOW_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(52, 267), module, Elements::STRIKE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(20, 270), module, Elements::BLOW_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(55, 270), module, Elements::STRIKE_INPUT));
 
-	addOutput(createOutput<PJ3410Port>(Vec(16, 313), module, Elements::AUX_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(52, 313), module, Elements::MAIN_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(20, 316), module, Elements::AUX_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(55, 316), module, Elements::MAIN_OUTPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(97, 313), module, Elements::BOW_TIMBRE_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(136, 313), module, Elements::FLOW_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(174, 313), module, Elements::BLOW_TIMBRE_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(213, 313), module, Elements::MALLET_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(251, 313), module, Elements::STRIKE_TIMBRE_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(309, 313), module, Elements::DAMPING_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(347, 313), module, Elements::GEOMETRY_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(386, 313), module, Elements::POSITION_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(424, 313), module, Elements::BRIGHTNESS_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(463, 313), module, Elements::SPACE_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(101, 316), module, Elements::BOW_TIMBRE_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(139, 316), module, Elements::FLOW_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(178, 316), module, Elements::BLOW_TIMBRE_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(216, 316), module, Elements::MALLET_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(254, 316), module, Elements::STRIKE_TIMBRE_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(312, 316), module, Elements::DAMPING_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(350, 316), module, Elements::GEOMETRY_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(389, 316), module, Elements::POSITION_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(427, 316), module, Elements::BRIGHTNESS_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(466, 316), module, Elements::SPACE_MOD_INPUT));
 
 	addParam(createParam<CKD6>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 1.0, 0.0));
 

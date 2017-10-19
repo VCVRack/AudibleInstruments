@@ -79,17 +79,17 @@ BranchesWidget::BranchesWidget() {
 
 	addParam(createParam<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
 	// addParam(createParam<MediumToggleSwitch>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<PJ3410Port>(Vec(5, 119), module, Branches::IN1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(52, 119), module, Branches::P1_INPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(5, 157), module, Branches::OUT1A_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(52, 157), module, Branches::OUT1B_OUTPUT));
+	addInput(createInput<PJ301MPort>(Vec(9, 122), module, Branches::IN1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(55, 122), module, Branches::P1_INPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(9, 160), module, Branches::OUT1A_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(55, 160), module, Branches::OUT1B_OUTPUT));
 
 	addParam(createParam<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
 	// addParam(createParam<MediumToggleSwitch>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<PJ3410Port>(Vec(5, 275), module, Branches::IN2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(52, 275), module, Branches::P2_INPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(5, 313), module, Branches::OUT2A_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(52, 313), module, Branches::OUT2B_OUTPUT));
+	addInput(createInput<PJ301MPort>(Vec(9, 278), module, Branches::IN2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(55, 278), module, Branches::P2_INPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(9, 316), module, Branches::OUT2A_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(55, 316), module, Branches::OUT2B_OUTPUT));
 
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(40, 169), &module->light[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(40, 325), &module->light[1]));

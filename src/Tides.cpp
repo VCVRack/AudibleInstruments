@@ -210,21 +210,21 @@ TidesWidget::TidesWidget() {
 	addParam(createParam<Rogan1PSWhite>(Vec(85, 155), module, Tides::SLOPE_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Rogan1PSWhite>(Vec(156, 155), module, Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(18, 216), module, Tides::SHAPE_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(90, 216), module, Tides::SLOPE_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(161, 216), module, Tides::SMOOTHNESS_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(21, 219), module, Tides::SHAPE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(93, 219), module, Tides::SLOPE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(164, 219), module, Tides::SMOOTHNESS_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(18, 271), module, Tides::TRIG_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(54, 271), module, Tides::FREEZE_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(90, 271), module, Tides::PITCH_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(125, 271), module, Tides::FM_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(161, 271), module, Tides::LEVEL_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(21, 274), module, Tides::TRIG_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(57, 274), module, Tides::FREEZE_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(93, 274), module, Tides::PITCH_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(128, 274), module, Tides::FM_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(164, 274), module, Tides::LEVEL_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(18, 313), module, Tides::CLOCK_INPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(54, 313), module, Tides::HIGH_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(90, 313), module, Tides::LOW_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(125, 313), module, Tides::UNI_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(161, 313), module, Tides::BI_OUTPUT));
+	addInput(createInput<PJ301MPort>(Vec(21, 316), module, Tides::CLOCK_INPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(57, 316), module, Tides::HIGH_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(93, 316), module, Tides::LOW_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(128, 316), module, Tides::UNI_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(164, 316), module, Tides::BI_OUTPUT));
 
 	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 62), &module->lights[0]));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 83), &module->lights[1]));

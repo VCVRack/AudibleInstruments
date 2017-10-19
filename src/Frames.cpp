@@ -302,19 +302,19 @@ FramesWidget::FramesWidget() {
 	addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(12, 271), module, Frames::ALL_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(55, 271), module, Frames::IN1_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(98, 271), module, Frames::IN2_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(141, 271), module, Frames::IN3_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(184, 271), module, Frames::IN4_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(227, 271), module, Frames::FRAME_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(16, 273), module, Frames::ALL_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(59, 273), module, Frames::IN1_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(102, 273), module, Frames::IN2_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(145, 273), module, Frames::IN3_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(188, 273), module, Frames::IN4_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(231, 273), module, Frames::FRAME_INPUT));
 
-	addOutput(createOutput<PJ3410Port>(Vec(12, 313), module, Frames::MIX_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(55, 313), module, Frames::OUT1_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(98, 313), module, Frames::OUT2_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(141, 313), module, Frames::OUT3_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(184, 313), module, Frames::OUT4_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(227, 313), module, Frames::FRAME_STEP_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(16, 315), module, Frames::MIX_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(59, 315), module, Frames::OUT1_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(102, 315), module, Frames::OUT2_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(145, 315), module, Frames::OUT3_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(188, 315), module, Frames::OUT4_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(231, 315), module, Frames::FRAME_STEP_OUTPUT));
 
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(30, 101), &module->outputs[Frames::GAIN1_LIGHT + 0].value));
 	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(97, 101), &module->outputs[Frames::GAIN1_LIGHT + 1].value));

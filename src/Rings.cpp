@@ -271,17 +271,17 @@ RingsWidget::RingsWidget() {
 	addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<PJ3410Port>(Vec(12, 270), module, Rings::BRIGHTNESS_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(51, 270), module, Rings::FREQUENCY_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(89, 270), module, Rings::DAMPING_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(128, 270), module, Rings::STRUCTURE_MOD_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(166, 270), module, Rings::POSITION_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(15, 273), module, Rings::BRIGHTNESS_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(54, 273), module, Rings::FREQUENCY_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(92, 273), module, Rings::DAMPING_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(131, 273), module, Rings::STRUCTURE_MOD_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(169, 273), module, Rings::POSITION_MOD_INPUT));
 
-	addInput(createInput<PJ3410Port>(Vec(12, 313), module, Rings::STRUM_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(51, 313), module, Rings::PITCH_INPUT));
-	addInput(createInput<PJ3410Port>(Vec(89, 313), module, Rings::IN_INPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(128, 313), module, Rings::ODD_OUTPUT));
-	addOutput(createOutput<PJ3410Port>(Vec(166, 313), module, Rings::EVEN_OUTPUT));
+	addInput(createInput<PJ301MPort>(Vec(15, 316), module, Rings::STRUM_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(54, 316), module, Rings::PITCH_INPUT));
+	addInput(createInput<PJ301MPort>(Vec(92, 316), module, Rings::IN_INPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(131, 316), module, Rings::ODD_OUTPUT));
+	addOutput(createOutput<PJ301MPort>(Vec(169, 316), module, Rings::EVEN_OUTPUT));
 
 	addChild(createValueLight<SmallLight<RingsModeLight>>(Vec(38, 43.8), &module->lights[0]));
 	addChild(createValueLight<SmallLight<RingsModeLight>>(Vec(163, 43.8), &module->lights[1]));
