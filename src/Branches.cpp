@@ -29,8 +29,7 @@ struct Branches : Module {
 	float light[2] = {};
 
 	Branches() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step();
-	float getOutput(int outputId);
+	void step() override;
 };
 
 

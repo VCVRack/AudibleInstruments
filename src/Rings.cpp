@@ -62,9 +62,9 @@ struct Rings : Module {
 	int model = 0;
 
 	Rings();
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
@@ -73,7 +73,7 @@ struct Rings : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *polyphonyJ = json_object_get(rootJ, "polyphony");
 		if (polyphonyJ) {
 			polyphonyMode = json_integer_value(polyphonyJ);
@@ -85,12 +85,12 @@ struct Rings : Module {
 		}
 	}
 
-	void initialize() {
+	void initialize() override {
 		polyphonyMode = 0;
 		model = 0;
 	}
 
-	void randomize() {
+	void randomize() override {
 		polyphonyMode = randomu32() % 3;
 		model = randomu32() % 3;
 	}
@@ -140,7 +140,7 @@ void Rings::step() {
 		float in[24] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRatio(48000.0 / gSampleRate);
+			inputSrc.setRatio(48000.0 / engineGetSampleRate());
 			int inLen = inputBuffer.size();
 			int outLen = 24;
 			inputSrc.process(inputBuffer.startData(), &inLen, (Frame<1>*) in, &outLen);
@@ -204,7 +204,7 @@ void Rings::step() {
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRatio(gSampleRate / 48000.0);
+			outputSrc.setRatio(engineGetSampleRate() / 48000.0);
 			int inLen = 24;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);

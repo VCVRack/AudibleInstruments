@@ -32,7 +32,7 @@ struct Streams : Module {
 	};
 
 	Streams() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step();
+	void step() override;
 };
 
 

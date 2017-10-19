@@ -32,7 +32,7 @@ struct Kinks : Module {
 	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 		trigger.setThresholds(0.0, 0.7);
 	}
-	void step();
+	void step() override;
 };
 
 

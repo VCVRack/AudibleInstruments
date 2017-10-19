@@ -41,10 +41,10 @@ struct Braids : Module {
 	bool lastTrig = false;
 
 	Braids();
-	void step();
+	void step() override;
 	void setShape(int shape);
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_t *settingsJ = json_array();
 		uint8_t *settingsArray = &settings.shape;
@@ -56,7 +56,7 @@ struct Braids : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *settingsJ = json_object_get(rootJ, "settings");
 		if (settingsJ) {
 			uint8_t *settingsArray = &settings.shape;
@@ -143,7 +143,7 @@ void Braids::step() {
 		for (int i = 0; i < 24; i++) {
 			in[i].samples[0] = render_buffer[i] / 32768.0;
 		}
-		src.setRatio(gSampleRate / 96000.0);
+		src.setRatio(engineGetSampleRate() / 96000.0);
 
 		int inLen = 24;
 		int outLen = outputBuffer.capacity();
@@ -218,7 +218,7 @@ struct BraidsDisplay : TransparentWidget {
 		font = Font::load(assetPlugin(plugin, "res/hdad-segment14-1.002/Segment14.ttf"));
 	}
 
-	void draw(NVGcontext *vg) {
+	void draw(NVGcontext *vg) override {
 		int shape = module->settings.shape;
 
 		// Background
@@ -293,11 +293,11 @@ struct BraidsSettingItem : MenuItem {
 	uint8_t *setting = NULL;
 	uint8_t offValue = 0;
 	uint8_t onValue = 1;
-	void onAction() {
+	void onAction() override {
 		// Toggle setting
 		*setting = (*setting == onValue) ? offValue : onValue;
 	}
-	void step() {
+	void step() override {
 		rightText = (*setting == onValue) ? "✔" : "";
 	}
 };

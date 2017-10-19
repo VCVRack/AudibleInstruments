@@ -36,7 +36,7 @@ struct Veils : Module {
 	float lights[4] = {};
 
 	Veils() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step();
+	void step() override;
 };
 
 

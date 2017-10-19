@@ -12,12 +12,12 @@ extern Plugin *plugin;
 
 struct BraidsWidget : ModuleWidget {
 	BraidsWidget();
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };
 
 struct ElementsWidget : ModuleWidget {
 	ElementsWidget();
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };
 
 struct TidesWidget : ModuleWidget {
@@ -70,5 +70,5 @@ struct VeilsWidget : ModuleWidget {
 
 struct FramesWidget : ModuleWidget {
 	FramesWidget();
-	Menu *createContextMenu();
+	Menu *createContextMenu() override;
 };

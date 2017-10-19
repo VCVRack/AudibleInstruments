@@ -36,16 +36,16 @@ struct Warps : Module {
 	SchmittTrigger stateTrigger;
 
 	Warps();
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		warps::Parameters *p = modulator.mutable_parameters();
 		json_object_set_new(rootJ, "shape", json_integer(p->carrier_shape));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *shapeJ = json_object_get(rootJ, "shape");
 		warps::Parameters *p = modulator.mutable_parameters();
 		if (shapeJ) {
@@ -53,12 +53,12 @@ struct Warps : Module {
 		}
 	}
 
-	void initialize() {
+	void initialize() override {
 		warps::Parameters *p = modulator.mutable_parameters();
 		p->carrier_shape = 0;
 	}
 
-	void randomize() {
+	void randomize() override {
 		warps::Parameters *p = modulator.mutable_parameters();
 		p->carrier_shape = randomu32() % 4;
 	}
@@ -94,7 +94,7 @@ void Warps::step() {
 		p->frequency_shift_cv = clampf(inputs[ALGORITHM_INPUT].value / 5.0, -1.0, 1.0);
 		p->phase_shift = p->modulation_algorithm;
 		p->note = 60.0 * params[LEVEL1_PARAM].value + 12.0 * inputs[LEVEL1_INPUT].normalize(2.0) + 12.0;
-		p->note += log2f(96000.0 / gSampleRate) * 12.0;
+		p->note += log2f(96000.0 / engineGetSampleRate()) * 12.0;
 
 		modulator.Process(inputFrames, outputFrames, 60);
 	}
@@ -120,7 +120,7 @@ struct WarpsAlgoLight : ValueLight {
 		box.size = Vec(67, 67);
 	}
 
-	void step() {
+	void step() override {
 		// TODO Set these to Warps' actual colors
 		static NVGcolor colors[9] = {
 			nvgHSL(0.5, 0.3, 0.85),

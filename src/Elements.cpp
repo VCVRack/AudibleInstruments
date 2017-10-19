@@ -78,15 +78,15 @@ struct Elements : Module {
 
 	Elements();
 	~Elements();
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "model", json_integer(getModel()));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
 			setModel(json_integer_value(modelJ));
@@ -135,7 +135,7 @@ void Elements::step() {
 
 		// Convert input buffer
 		{
-			inputSrc.setRatio(32000.0 / gSampleRate);
+			inputSrc.setRatio(32000.0 / engineGetSampleRate());
 			Frame<2> inputFrames[16];
 			int inLen = inputBuffer.size();
 			int outLen = 16;
@@ -186,7 +186,7 @@ void Elements::step() {
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRatio(gSampleRate / 32000.0);
+			outputSrc.setRatio(engineGetSampleRate() / 32000.0);
 			int inLen = 16;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
@@ -287,10 +287,10 @@ ElementsWidget::ElementsWidget() {
 struct ElementsModalItem : MenuItem {
 	Elements *elements;
 	int model;
-	void onAction() {
+	void onAction() override {
 		elements->setModel(model);
 	}
-	void step() {
+	void step() override {
 		rightText = (elements->getModel() == model) ? "✔" : "";
 	}
 };

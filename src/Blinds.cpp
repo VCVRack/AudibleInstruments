@@ -37,7 +37,7 @@ struct Blinds : Module {
 	float gainLights[4] = {};
 
 	Blinds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
-	void step();
+	void step() override;
 };
 
 

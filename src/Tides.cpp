@@ -49,9 +49,9 @@ struct Tides : Module {
 	SchmittTrigger rangeTrigger;
 
 	Tides();
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "mode", json_integer((int) generator.mode()));
@@ -60,7 +60,7 @@ struct Tides : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *modeJ = json_object_get(rootJ, "mode");
 		if (modeJ) {
 			generator.set_mode((tides::GeneratorMode) json_integer_value(modeJ));
@@ -72,12 +72,12 @@ struct Tides : Module {
 		}
 	}
 
-	void initialize() {
+	void initialize() override {
 		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
 		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
 	}
 
-	void randomize() {
+	void randomize() override {
 		generator.set_range((tides::GeneratorRange) (randomu32() % 3));
 		generator.set_mode((tides::GeneratorMode) (randomu32() % 3));
 	}
@@ -116,7 +116,7 @@ void Tides::step() {
 		pitch += params[FM_PARAM].value * inputs[FM_INPUT].normalize(0.1) / 5.0;
 		pitch += 60.0;
 		// Scale to the global sample rate
-		pitch += log2f(48000.0 / gSampleRate) * 12.0;
+		pitch += log2f(48000.0 / engineGetSampleRate()) * 12.0;
 		generator.set_pitch(clampf(pitch * 0x80, -0x8000, 0x7fff));
 
 		// Slope, smoothness, pitch

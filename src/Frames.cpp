@@ -50,9 +50,9 @@ struct Frames : Module {
 	bool clearKeyframes = false;
 
 	Frames();
-	void step();
+	void step() override;
 
-	json_t *toJson() {
+	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
 
@@ -73,7 +73,7 @@ struct Frames : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) {
+	void fromJson(json_t *rootJ) override {
 		json_t *polyLfoJ = json_object_get(rootJ, "polyLfo");
 		if (polyLfoJ)
 			poly_lfo_mode = json_boolean_value(polyLfoJ);
@@ -95,11 +95,11 @@ struct Frames : Module {
 		// TODO Channel settings
 	}
 
-	void initialize() {
+	void initialize() override {
 		poly_lfo_mode = false;
 		keyframer.Clear();
 	}
-	void randomize() {
+	void randomize() override {
 		// TODO
 		// Maybe something useful should go in here??
 	}
@@ -249,7 +249,7 @@ struct FramesLight : Light {
 	FramesLight() {
 		box.size = Vec(67, 67);
 	}
-	void step() {
+	void step() override {
 		const NVGcolor red = COLOR_RED;
 		const NVGcolor green = COLOR_GREEN;
 		const NVGcolor blue = COLOR_BLUE;
@@ -336,10 +336,10 @@ struct FramesCurveItem : MenuItem {
 	Frames *frames;
 	uint8_t channel;
 	frames::EasingCurve curve;
-	void onAction() {
+	void onAction() override {
 		frames->keyframer.mutable_settings(channel)->easing_curve = curve;
 	}
-	void step() {
+	void step() override {
 		rightText = (frames->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
 	}
 };
@@ -348,10 +348,10 @@ struct FramesResponseItem : MenuItem {
 	Frames *frames;
 	uint8_t channel;
 	uint8_t response;
-	void onAction() {
+	void onAction() override {
 		frames->keyframer.mutable_settings(channel)->response = response;
 	}
-	void step() {
+	void step() override {
 		rightText = (frames->keyframer.mutable_settings(channel)->response = response) ? "✔" : "";
 	}
 };
@@ -359,7 +359,7 @@ struct FramesResponseItem : MenuItem {
 struct FramesChannelSettingsItem : MenuItem {
 	Frames *frames;
 	uint8_t channel;
-	Menu *createChildMenu() {
+	Menu *createChildMenu() override {
 		Menu *menu = new Menu();
 
 		// TODO
@@ -381,7 +381,7 @@ struct FramesChannelSettingsItem : MenuItem {
 
 struct FramesClearItem : MenuItem {
 	Frames *frames;
-	void onAction() {
+	void onAction() override {
 		frames->keyframer.Clear();
 	}
 };
@@ -389,10 +389,10 @@ struct FramesClearItem : MenuItem {
 struct FramesModeItem : MenuItem {
 	Frames *frames;
 	bool poly_lfo_mode;
-	void onAction() {
+	void onAction() override {
 		frames->poly_lfo_mode = poly_lfo_mode;
 	}
-	void step() {
+	void step() override {
 		rightText = (frames->poly_lfo_mode == poly_lfo_mode) ? "✔" : "";
 	}
 };

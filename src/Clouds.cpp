@@ -48,7 +48,7 @@ struct Clouds : Module {
 
 	Clouds();
 	~Clouds();
-	void step();
+	void step() override;
 };
 
 
@@ -88,7 +88,7 @@ void Clouds::step() {
 		clouds::ShortFrame input[32] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRatio(32000.0 / gSampleRate);
+			inputSrc.setRatio(32000.0 / engineGetSampleRate());
 			Frame<2> inputFrames[32];
 			int inLen = inputBuffer.size();
 			int outLen = 32;
@@ -135,7 +135,7 @@ void Clouds::step() {
 				outputFrames[i].samples[1] = output[i].r / 32768.0;
 			}
 
-			outputSrc.setRatio(gSampleRate / 32000.0);
+			outputSrc.setRatio(engineGetSampleRate() / 32000.0);
 			int inLen = 32;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
