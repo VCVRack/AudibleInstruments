@@ -5,22 +5,23 @@ Plugin *plugin;
 
 void init(rack::Plugin *p) {
 	plugin = p;
-	plugin->slug = "AudibleInstruments";
-	plugin->name = "Audible Instruments";
-	plugin->homepageUrl = "https://github.com/VCVRack/AudibleInstruments";
-	createModel<BraidsWidget>(plugin, "Braids", "Macro Oscillator");
-	createModel<ElementsWidget>(plugin, "Elements", "Modal Synthesizer");
-	createModel<TidesWidget>(plugin, "Tides", "Tidal Modulator");
-	createModel<SheepWidget>(plugin, "Sheep", "Wavetable Oscillator");
-	// createModel<StreamsWidget>(plugin, "Streams", "Dual Dynamics Gate");
-	createModel<CloudsWidget>(plugin, "Clouds", "Texture Synthesizer");
-	createModel<WarpsWidget>(plugin, "Warps", "Meta Modulator");
-	createModel<RingsWidget>(plugin, "Rings", "Resonator");
-	createModel<LinksWidget>(plugin, "Links", "Multiples");
-	createModel<KinksWidget>(plugin, "Kinks", "Utilities");
-	createModel<ShadesWidget>(plugin, "Shades", "Mixer");
-	createModel<BranchesWidget>(plugin, "Branches", "Bernoulli Gate");
-	createModel<BlindsWidget>(plugin, "Blinds", "Quad VC-polarizer");
-	createModel<VeilsWidget>(plugin, "Veils", "Quad VCA");
-	createModel<FramesWidget>(plugin, "Frames", "Keyframer/Mixer");
+	p->slug = "AudibleInstruments";
+#ifdef VERSION
+	p->version = TOSTRING(VERSION);
+#endif
+	p->addModel(createModel<BraidsWidget>("AudibleInstruments", "Audible Instruments", "Braids", "Macro Oscillator"));
+	p->addModel(createModel<ElementsWidget>("AudibleInstruments", "Audible Instruments", "Elements", "Modal Synthesizer"));
+	p->addModel(createModel<TidesWidget>("AudibleInstruments", "Audible Instruments", "Tides", "Tidal Modulator"));
+	p->addModel(createModel<SheepWidget>("AudibleInstruments", "Audible Instruments", "Sheep", "Wavetable Oscillator"));
+	// p->addModel(createModel<StreamsWidget>("AudibleInstruments", "Audible Instruments", "Streams", "Dual Dynamics Gate"));
+	p->addModel(createModel<CloudsWidget>("AudibleInstruments", "Audible Instruments", "Clouds", "Texture Synthesizer"));
+	p->addModel(createModel<WarpsWidget>("AudibleInstruments", "Audible Instruments", "Warps", "Meta Modulator"));
+	p->addModel(createModel<RingsWidget>("AudibleInstruments", "Audible Instruments", "Rings", "Resonator"));
+	p->addModel(createModel<LinksWidget>("AudibleInstruments", "Audible Instruments", "Links", "Multiples"));
+	p->addModel(createModel<KinksWidget>("AudibleInstruments", "Audible Instruments", "Kinks", "Utilities"));
+	p->addModel(createModel<ShadesWidget>("AudibleInstruments", "Audible Instruments", "Shades", "Mixer"));
+	p->addModel(createModel<BranchesWidget>("AudibleInstruments", "Audible Instruments", "Branches", "Bernoulli Gate"));
+	p->addModel(createModel<BlindsWidget>("AudibleInstruments", "Audible Instruments", "Blinds", "Quad VC-polarizer"));
+	p->addModel(createModel<VeilsWidget>("AudibleInstruments", "Audible Instruments", "Veils", "Quad VCA"));
+	p->addModel(createModel<FramesWidget>("AudibleInstruments", "Audible Instruments", "Frames", "Keyframer/Mixer"));
 }

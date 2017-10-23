@@ -5,47 +5,48 @@ FLAGS += \
 	-Wno-unused-local-typedefs
 
 
-SOURCES = $(wildcard src/*.cpp) \
-	eurorack/stmlib/utils/random.cc \
-	eurorack/stmlib/dsp/atan.cc \
-	eurorack/stmlib/dsp/units.cc \
-	eurorack/braids/macro_oscillator.cc \
-	eurorack/braids/analog_oscillator.cc \
-	eurorack/braids/digital_oscillator.cc \
-	eurorack/braids/quantizer.cc \
-	eurorack/braids/resources.cc \
-	eurorack/clouds/dsp/correlator.cc \
-	eurorack/clouds/dsp/granular_processor.cc \
-	eurorack/clouds/dsp/mu_law.cc \
-	eurorack/clouds/dsp/pvoc/frame_transformation.cc \
-	eurorack/clouds/dsp/pvoc/phase_vocoder.cc \
-	eurorack/clouds/dsp/pvoc/stft.cc \
-	eurorack/clouds/resources.cc \
-	eurorack/elements/dsp/exciter.cc \
-	eurorack/elements/dsp/ominous_voice.cc \
-	eurorack/elements/dsp/resonator.cc \
-	eurorack/elements/dsp/tube.cc \
-	eurorack/elements/dsp/multistage_envelope.cc \
-	eurorack/elements/dsp/part.cc \
-	eurorack/elements/dsp/string.cc \
-	eurorack/elements/dsp/voice.cc \
-	eurorack/elements/resources.cc \
-	eurorack/rings/dsp/fm_voice.cc \
-	eurorack/rings/dsp/part.cc \
-	eurorack/rings/dsp/string_synth_part.cc \
-	eurorack/rings/dsp/string.cc \
-	eurorack/rings/dsp/resonator.cc \
-	eurorack/rings/resources.cc \
-	eurorack/tides/generator.cc \
-	eurorack/tides/resources.cc \
-	eurorack/warps/dsp/modulator.cc \
-	eurorack/warps/dsp/oscillator.cc \
-	eurorack/warps/dsp/vocoder.cc \
-	eurorack/warps/dsp/filter_bank.cc \
-	eurorack/warps/resources.cc \
-	eurorack/frames/keyframer.cc \
-	eurorack/frames/resources.cc \
-	eurorack/frames/poly_lfo.cc
+SOURCES += $(wildcard src/*.cpp)
+SOURCES += eurorack/stmlib/utils/random.cc
+SOURCES += eurorack/stmlib/dsp/atan.cc
+SOURCES += eurorack/stmlib/dsp/units.cc
+SOURCES += eurorack/braids/macro_oscillator.cc
+SOURCES += eurorack/braids/analog_oscillator.cc
+SOURCES += eurorack/braids/digital_oscillator.cc
+SOURCES += eurorack/braids/quantizer.cc
+SOURCES += eurorack/braids/resources.cc
+SOURCES += eurorack/clouds/dsp/correlator.cc
+SOURCES += eurorack/clouds/dsp/granular_processor.cc
+SOURCES += eurorack/clouds/dsp/mu_law.cc
+SOURCES += eurorack/clouds/dsp/pvoc/frame_transformation.cc
+SOURCES += eurorack/clouds/dsp/pvoc/phase_vocoder.cc
+SOURCES += eurorack/clouds/dsp/pvoc/stft.cc
+SOURCES += eurorack/clouds/resources.cc
+SOURCES += eurorack/elements/dsp/exciter.cc
+SOURCES += eurorack/elements/dsp/ominous_voice.cc
+SOURCES += eurorack/elements/dsp/resonator.cc
+SOURCES += eurorack/elements/dsp/tube.cc
+SOURCES += eurorack/elements/dsp/multistage_envelope.cc
+SOURCES += eurorack/elements/dsp/part.cc
+SOURCES += eurorack/elements/dsp/string.cc
+SOURCES += eurorack/elements/dsp/voice.cc
+SOURCES += eurorack/elements/resources.cc
+SOURCES += eurorack/rings/dsp/fm_voice.cc
+SOURCES += eurorack/rings/dsp/part.cc
+SOURCES += eurorack/rings/dsp/string_synth_part.cc
+SOURCES += eurorack/rings/dsp/string.cc
+SOURCES += eurorack/rings/dsp/resonator.cc
+SOURCES += eurorack/rings/resources.cc
+SOURCES += eurorack/tides/generator.cc
+SOURCES += eurorack/tides/resources.cc
+SOURCES += eurorack/warps/dsp/modulator.cc
+SOURCES += eurorack/warps/dsp/oscillator.cc
+SOURCES += eurorack/warps/dsp/vocoder.cc
+SOURCES += eurorack/warps/dsp/filter_bank.cc
+SOURCES += eurorack/warps/resources.cc
+SOURCES += eurorack/frames/keyframer.cc
+SOURCES += eurorack/frames/resources.cc
+SOURCES += eurorack/frames/poly_lfo.cc
+
 
 include ../../plugin.mk
 
@@ -53,6 +54,6 @@ include ../../plugin.mk
 dist: all
 	mkdir -p dist/AudibleInstruments
 	cp LICENSE* dist/AudibleInstruments/
-	cp plugin.* dist/AudibleInstruments/
+	cp $(TARGET) dist/AudibleInstruments/
 	cp -R res dist/AudibleInstruments/
 	cd dist && zip -5 -r AudibleInstruments-$(VERSION)-$(ARCH).zip AudibleInstruments
