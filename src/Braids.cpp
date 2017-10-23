@@ -39,6 +39,7 @@ struct Braids : Module {
 	SampleRateConverter<1> src;
 	DoubleRingBuffer<Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
+	bool lowCpu = false;
 
 	Braids();
 	void step() override;
@@ -53,6 +54,10 @@ struct Braids : Module {
 			json_array_insert_new(settingsJ, i, settingJ);
 		}
 		json_object_set_new(rootJ, "settings", settingsJ);
+
+		json_t *lowCpuJ = json_boolean(lowCpu);
+		json_object_set_new(rootJ, "lowCpu", lowCpuJ);
+
 		return rootJ;
 	}
 
@@ -65,6 +70,11 @@ struct Braids : Module {
 				if (settingJ)
 					settingsArray[i] = json_integer_value(settingJ);
 			}
+		}
+
+		json_t *lowCpuJ = json_object_get(rootJ, "lowCpu");
+		if (lowCpuJ) {
+			lowCpu = json_boolean_value(lowCpuJ);
 		}
 	}
 };
@@ -118,6 +128,8 @@ void Braids::step() {
 		float pitchV = inputs[PITCH_INPUT].value + params[COARSE_PARAM].value + params[FINE_PARAM].value / 12.0;
 		if (!settings.meta_modulation)
 			pitchV += fm;
+		if (lowCpu)
+			pitchV += log2f(96000.0 / engineGetSampleRate());
 		int32_t pitch = (pitchV * 12.0 + 60) * 128;
 		pitch += jitter_source.Render(settings.vco_drift);
 		pitch = clampi(pitch, 0, 16383);
@@ -138,17 +150,26 @@ void Braids::step() {
 			render_buffer[i] = stmlib::Mix(sample, warped, signature);
 		}
 
-		// Sample rate convert
-		Frame<1> in[24];
-		for (int i = 0; i < 24; i++) {
-			in[i].samples[0] = render_buffer[i] / 32768.0;
+		if (lowCpu) {
+			for (int i = 0; i < 24; i++) {
+				Frame<1> f;
+				f.samples[0] = render_buffer[i] / 32768.0;
+				outputBuffer.push(f);
+			}
 		}
-		src.setRatio(engineGetSampleRate() / 96000.0);
+		else {
+			// Sample rate convert
+			Frame<1> in[24];
+			for (int i = 0; i < 24; i++) {
+				in[i].samples[0] = render_buffer[i] / 32768.0;
+			}
+			src.setRatio(engineGetSampleRate() / 96000.0);
 
-		int inLen = 24;
-		int outLen = outputBuffer.capacity();
-		src.process(in, &inLen, outputBuffer.endData(), &outLen);
-		outputBuffer.endIncr(outLen);
+			int inLen = 24;
+			int outLen = outputBuffer.capacity();
+			src.process(in, &inLen, outputBuffer.endData(), &outLen);
+			outputBuffer.endIncr(outLen);
+		}
 	}
 
 	// Output
@@ -302,6 +323,16 @@ struct BraidsSettingItem : MenuItem {
 	}
 };
 
+struct BraidsLowCpuItem : MenuItem {
+	Braids *braids;
+	void onAction() override {
+		braids->lowCpu = !braids->lowCpu;
+	}
+	void step() override {
+		rightText = (braids->lowCpu) ? "✔" : "";
+	}
+};
+
 Menu *BraidsWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 
@@ -313,6 +344,7 @@ Menu *BraidsWidget::createContextMenu() {
 	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
 	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
 	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
+	menu->pushChild(construct<BraidsLowCpuItem>(&MenuEntry::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
 
 	return menu;
 }
