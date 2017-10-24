@@ -244,7 +244,7 @@ void Frames::step() {
 }
 
 
-struct FramesLight : Light {
+struct FramesLight : LightWidget {
 	float *colors[3];
 	FramesLight() {
 		box.size = Vec(67, 67);
