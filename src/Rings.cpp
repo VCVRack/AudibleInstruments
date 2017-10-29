@@ -43,6 +43,11 @@ struct Rings : Module {
 		EVEN_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		POLYPHONY_GREEN_LIGHT, POLYPHONY_RED_LIGHT,
+		RESONATOR_GREEN_LIGHT, RESONATOR_RED_LIGHT,
+		NUM_LIGHTS
+	};
 
 	SampleRateConverter<1> inputSrc;
 	SampleRateConverter<2> outputSrc;
@@ -55,7 +60,6 @@ struct Rings : Module {
 	rings::Strummer strummer;
 	bool strum = false;
 	bool lastStrum = false;
-	float lights[2] = {};
 	SchmittTrigger polyphonyTrigger;
 	SchmittTrigger modelTrigger;
 	int polyphonyMode = 0;
@@ -97,7 +101,7 @@ struct Rings : Module {
 };
 
 
-Rings::Rings() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+Rings::Rings() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&strummer, 0, sizeof(strummer));
 	memset(&part, 0, sizeof(part));
 	memset(&string_synth, 0, sizeof(string_synth));
@@ -128,12 +132,14 @@ void Rings::step() {
 	if (polyphonyTrigger.process(params[POLYPHONY_PARAM].value)) {
 		polyphonyMode = (polyphonyMode + 1) % 3;
 	}
-	lights[0] = (float)polyphonyMode;
+	lights[POLYPHONY_GREEN_LIGHT].value = (polyphonyMode == 0 || polyphonyMode == 1) ? 1.0 : 0.0;
+	lights[POLYPHONY_RED_LIGHT].value = (polyphonyMode == 1 || polyphonyMode == 2) ? 1.0 : 0.0;
 
 	if (modelTrigger.process(params[RESONATOR_PARAM].value)) {
 		model = (model + 1) % 3;
 	}
-	lights[1] = (float)model;
+	lights[RESONATOR_GREEN_LIGHT].value = (model == 0 || model == 1) ? 1.0 : 0.0;
+	lights[RESONATOR_RED_LIGHT].value = (model == 1 || model == 2) ? 1.0 : 0.0;
 
 	// Render frames
 	if (outputBuffer.empty()) {
@@ -229,15 +235,6 @@ void Rings::step() {
 }
 
 
-struct RingsModeLight : ModeValueLight {
-	RingsModeLight() {
-		addColor(COLOR_CYAN);
-		addColor(COLOR_ORANGE);
-		addColor(COLOR_RED);
-	}
-};
-
-
 RingsWidget::RingsWidget() {
 	Rings *module = new Rings();
 	setModule(module);
@@ -283,6 +280,6 @@ RingsWidget::RingsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(131, 316), module, Rings::ODD_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(169, 316), module, Rings::EVEN_OUTPUT));
 
-	addChild(createValueLight<SmallLight<RingsModeLight>>(Vec(38, 43.8), &module->lights[0]));
-	addChild(createValueLight<SmallLight<RingsModeLight>>(Vec(163, 43.8), &module->lights[1]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(38, 43.8), module, Rings::POLYPHONY_GREEN_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(163, 43.8), module, Rings::RESONATOR_GREEN_LIGHT));
 }

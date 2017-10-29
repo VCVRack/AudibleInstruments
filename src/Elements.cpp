@@ -66,6 +66,11 @@ struct Elements : Module {
 		MAIN_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		EXCITER_LIGHT,
+		RESONATOR_LIGHT,
+		NUM_LIGHTS
+	};
 
 	SampleRateConverter<2> inputSrc;
 	SampleRateConverter<2> outputSrc;
@@ -74,7 +79,6 @@ struct Elements : Module {
 
 	uint16_t reverb_buffer[32768] = {};
 	elements::Part *part;
-	float lights[2] = {};
 
 	Elements();
 	~Elements();
@@ -103,7 +107,7 @@ struct Elements : Module {
 };
 
 
-Elements::Elements() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+Elements::Elements() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	part = new elements::Part();
 	// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.
 	memset(part, 0, sizeof(*part));
@@ -194,8 +198,8 @@ void Elements::step() {
 		}
 
 		// Set lights
-		lights[0] = part->exciter_level();
-		lights[1] = part->resonator_level();
+		lights[EXCITER_LIGHT].value = part->exciter_level();
+		lights[RESONATOR_LIGHT].value = part->resonator_level();
 	}
 
 	// Set output
@@ -280,8 +284,8 @@ ElementsWidget::ElementsWidget() {
 
 	addParam(createParam<CKD6>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 1.0, 0.0));
 
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(184, 165), &module->lights[0]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(395, 165), &module->lights[1]));
+	addChild(createLight<MediumLight<GreenLight>>(Vec(184, 165), module, Elements::EXCITER_LIGHT));
+	addChild(createLight<MediumLight<RedLight>>(Vec(395, 165), module, Elements::RESONATOR_LIGHT));
 }
 
 struct ElementsModalItem : MenuItem {

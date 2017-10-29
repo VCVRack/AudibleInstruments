@@ -24,47 +24,38 @@ struct Shades : Module {
 		OUT3_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		OUT1_POS_LIGHT, OUT1_NEG_LIGHT,
+		OUT2_POS_LIGHT, OUT2_NEG_LIGHT,
+		OUT3_POS_LIGHT, OUT3_NEG_LIGHT,
+		NUM_LIGHTS
+	};
 
-	float lights[3] = {};
-
-	Shades() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Shades() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
 
 
-static float getChannelOutput(Input &in, Param &gain, Param &mode) {
-	float out = in.normalize(5.0);
-	if ((int)roundf(mode.value) == 1) {
-		// attenuverter
-		out *= 2.0*gain.value - 1.0;
-	}
-	else {
-		// attenuator
-		out *= gain.value;
-	}
-	return out;
-}
-
 void Shades::step() {
 	float out = 0.0;
-	out += getChannelOutput(inputs[IN1_INPUT], params[GAIN1_PARAM], params[MODE1_PARAM]);
-	lights[0] = out / 5.0;
-	if (outputs[OUT1_OUTPUT].active) {
-		outputs[OUT1_OUTPUT].value = out;
-		out = 0.0;
-	}
 
-	out += getChannelOutput(inputs[IN2_INPUT], params[GAIN2_PARAM], params[MODE2_PARAM]);
-	lights[1] = out / 5.0;
-	if (outputs[OUT2_OUTPUT].active) {
-		outputs[OUT2_OUTPUT].value = out;
-		out = 0.0;
-	}
-
-	out += getChannelOutput(inputs[IN3_INPUT], params[GAIN3_PARAM], params[MODE3_PARAM]);
-	lights[2] = out / 5.0;
-	if (outputs[OUT3_OUTPUT].active) {
-		outputs[OUT3_OUTPUT].value = out;
+	for (int i = 0; i < 3; i++) {
+		float in = inputs[IN1_INPUT + i].normalize(5.0);
+		if ((int)params[MODE1_PARAM + i].value == 1) {
+			// attenuverter
+			in *= 2.0 * params[GAIN1_PARAM + i].value - 1.0;
+		}
+		else {
+			// attenuator
+			in *= params[GAIN1_PARAM + i].value;
+		}
+		out += in;
+		lights[OUT1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, out / 5.0));
+		lights[OUT1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -out / 5.0));
+		if (outputs[OUT1_OUTPUT + i].active) {
+			outputs[OUT1_OUTPUT + i].value = out;
+			out = 0.0;
+		}
 	}
 }
 
@@ -100,7 +91,7 @@ ShadesWidget::ShadesWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(56, 281), module, Shades::OUT2_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(56, 317), module, Shades::OUT3_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 254), &module->lights[0]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 290), &module->lights[1]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(41, 326), &module->lights[2]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 254), module, Shades::OUT1_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 290), module, Shades::OUT2_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 326), module, Shades::OUT3_POS_LIGHT));
 }

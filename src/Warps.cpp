@@ -27,12 +27,17 @@ struct Warps : Module {
 		AUX_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		CARRIER_GREEN_LIGHT, CARRIER_RED_LIGHT,
+		ALGORITHM_LIGHT,
+		NUM_LIGHTS = ALGORITHM_LIGHT + 3
+	};
+
 
 	int frame = 0;
 	warps::Modulator modulator;
 	warps::ShortFrame inputFrames[60] = {};
 	warps::ShortFrame outputFrames[60] = {};
-	float lights[2] = {};
 	SchmittTrigger stateTrigger;
 
 	Warps();
@@ -65,7 +70,7 @@ struct Warps : Module {
 };
 
 
-Warps::Warps() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+Warps::Warps() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&modulator, 0, sizeof(modulator));
 	modulator.Init(96000.0f);
 
@@ -78,7 +83,8 @@ void Warps::step() {
 	if (stateTrigger.process(params[STATE_PARAM].value)) {
 		p->carrier_shape = (p->carrier_shape + 1) % 4;
 	}
-	lights[0] = p->carrier_shape;
+	lights[CARRIER_GREEN_LIGHT].value = (p->carrier_shape == 1 || p->carrier_shape == 2) ? 1.0 : 0.0;
+	lights[CARRIER_RED_LIGHT].value = (p->carrier_shape == 2 || p->carrier_shape == 3) ? 1.0 : 0.0;
 
 	// Buffer loop
 	if (++frame >= 60) {
@@ -87,7 +93,16 @@ void Warps::step() {
 		p->channel_drive[0] = clampf(params[LEVEL1_PARAM].value + inputs[LEVEL1_INPUT].value / 5.0, 0.0, 1.0);
 		p->channel_drive[1] = clampf(params[LEVEL2_PARAM].value + inputs[LEVEL2_INPUT].value / 5.0, 0.0, 1.0);
 		p->modulation_algorithm = clampf(params[ALGORITHM_PARAM].value / 8.0 + inputs[ALGORITHM_INPUT].value / 5.0, 0.0, 1.0);
-		lights[1] = p->modulation_algorithm * 8.0;
+
+		{
+			// TODO
+			// Use the correct light color
+			NVGcolor algorithmColor = nvgHSL(p->modulation_algorithm, 0.5, 0.5);
+			lights[ALGORITHM_LIGHT + 0].value = algorithmColor.r;
+			lights[ALGORITHM_LIGHT + 1].value = algorithmColor.g;
+			lights[ALGORITHM_LIGHT + 2].value = algorithmColor.b;
+		}
+
 		p->modulation_parameter = clampf(params[TIMBRE_PARAM].value + inputs[TIMBRE_INPUT].value / 5.0, 0.0, 1.0);
 
 		p->frequency_shift_pot = params[ALGORITHM_PARAM].value / 8.0;
@@ -104,42 +119,6 @@ void Warps::step() {
 	outputs[MODULATOR_OUTPUT].value = (float)outputFrames[frame].l / 0x8000 * 5.0;
 	outputs[AUX_OUTPUT].value = (float)outputFrames[frame].r / 0x8000 * 5.0;
 }
-
-
-struct WarpsModeLight : ModeValueLight {
-	WarpsModeLight() {
-		addColor(COLOR_BLACK_TRANSPARENT);
-		addColor(COLOR_GREEN);
-		addColor(COLOR_YELLOW);
-		addColor(COLOR_RED);
-	}
-};
-
-struct WarpsAlgoLight : ValueLight {
-	WarpsAlgoLight() {
-		box.size = Vec(67, 67);
-	}
-
-	void step() override {
-		// TODO Set these to Warps' actual colors
-		static NVGcolor colors[9] = {
-			nvgHSL(0.5, 0.3, 0.85),
-			nvgHSL(0.6, 0.3, 0.85),
-			nvgHSL(0.7, 0.3, 0.85),
-			nvgHSL(0.8, 0.3, 0.85),
-			nvgHSL(0.9, 0.3, 0.85),
-			nvgHSL(0.0, 0.3, 0.85),
-			nvgHSL(0.1, 0.3, 0.85),
-			nvgHSL(0.2, 0.3, 0.85),
-			nvgHSL(0.3, 0.3, 0.85),
-		};
-		int i = clampi((int) *value, 0, 7);
-		NVGcolor color0 = colors[i];
-		NVGcolor color1 = colors[i + 1];
-		float p = fmodf(*value, 1.0);
-		color = nvgLerpRGBA(color0, color1, p);
-	}
-};
 
 
 WarpsWidget::WarpsWidget() {
@@ -176,6 +155,13 @@ WarpsWidget::WarpsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(80, 316), module, Warps::MODULATOR_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
-	addChild(createValueLight<SmallLight<WarpsModeLight>>(Vec(20, 167), &module->lights[0]));
-	addChild(createValueLight<WarpsAlgoLight>(Vec(41, 64), &module->lights[1]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(20, 167), module, Warps::CARRIER_GREEN_LIGHT));
+	{
+		RedGreenBlueLight *algorithmLight = new RedGreenBlueLight();
+		algorithmLight->box.pos = Vec(41, 64);
+		algorithmLight->box.size = Vec(67, 67);
+		algorithmLight->module = module;
+		algorithmLight->lightId = Warps::ALGORITHM_LIGHT;
+		addChild(algorithmLight);
+	}
 }

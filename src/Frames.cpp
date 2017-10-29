@@ -34,10 +34,13 @@ struct Frames : Module {
 		OUT3_OUTPUT,
 		OUT4_OUTPUT,
 		FRAME_STEP_OUTPUT,
+		NUM_OUTPUTS
+	};
+	enum LightIds {
 		GAIN1_LIGHT,
 		EDIT_LIGHT = GAIN1_LIGHT + 4,
 		FRAME_LIGHT,
-		NUM_OUTPUTS = FRAME_LIGHT + 3
+		NUM_LIGHTS = FRAME_LIGHT + 3
 	};
 
 	frames::Keyframer keyframer;
@@ -101,12 +104,12 @@ struct Frames : Module {
 	}
 	void randomize() override {
 		// TODO
-		// Maybe something useful should go in here??
+		// Maybe something useful should go in here?
 	}
 };
 
 
-Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&keyframer, 0, sizeof(keyframer));
 	keyframer.Init();
 	memset(&poly_lfo, 0, sizeof(poly_lfo));
@@ -219,15 +222,14 @@ void Frames::step() {
 
 	// Set lights
 	for (int i = 0; i < 4; i++) {
-		outputs[GAIN1_LIGHT + i].value = gains[i];
+		lights[GAIN1_LIGHT + i].value = gains[i];
 	}
 
 	if (poly_lfo_mode) {
-		outputs[EDIT_LIGHT].value = (poly_lfo.level(0) > 128 ? 1.0 : 0.0);
+		lights[EDIT_LIGHT].value = (poly_lfo.level(0) > 128 ? 1.0 : 0.0);
 	}
 	else {
-		// TODO
-		outputs[EDIT_LIGHT].value = (nearestIndex >= 0 ? 1.0 : 0.0);
+		lights[EDIT_LIGHT].value = (nearestIndex >= 0 ? 1.0 : 0.0);
 	}
 
 	// Set frame light colors
@@ -239,31 +241,10 @@ void Frames::step() {
 		colors = keyframer.color();
 	}
 	for (int c = 0; c < 3; c++) {
-		outputs[FRAME_LIGHT + c].value = colors[c] / 255.0;
+		lights[FRAME_LIGHT + c].value = colors[c] / 255.0;
 	}
 }
 
-
-struct FramesLight : LightWidget {
-	float *colors[3];
-	FramesLight() {
-		box.size = Vec(67, 67);
-	}
-	void step() override {
-		const NVGcolor red = COLOR_RED;
-		const NVGcolor green = COLOR_GREEN;
-		const NVGcolor blue = COLOR_BLUE;
-		float r = *colors[0];
-		float g = *colors[1];
-		float b = *colors[2];
-		color.r = red.r * r + green.r * g + blue.r * b;
-		color.g = red.g * r + green.g * g + blue.g * b;
-		color.b = red.b * r + green.b * g + blue.b * b;
-		color.a = 1.0;
-		// Lighten
-		color = nvgLerpRGBA(color, COLOR_WHITE, 0.5);
-	}
-};
 
 struct CKSSRot : SVGSwitch, ToggleSwitch {
 	CKSSRot() {
@@ -316,17 +297,17 @@ FramesWidget::FramesWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(188, 315), module, Frames::OUT4_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(231, 315), module, Frames::FRAME_STEP_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(30, 101), &module->outputs[Frames::GAIN1_LIGHT + 0].value));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(97, 101), &module->outputs[Frames::GAIN1_LIGHT + 1].value));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(165, 101), &module->outputs[Frames::GAIN1_LIGHT + 2].value));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(232, 101), &module->outputs[Frames::GAIN1_LIGHT + 3].value));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(61, 155), &module->outputs[Frames::EDIT_LIGHT].value));
+	addChild(createLight<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
+	addChild(createLight<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
+	addChild(createLight<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
+	addChild(createLight<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
+	addChild(createLight<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
 	{
-		FramesLight *framesLight = new FramesLight();
+		RedGreenBlueLight *framesLight = new RedGreenBlueLight();
 		framesLight->box.pos = Vec(102, 128);
-		framesLight->colors[0] = &module->outputs[Frames::FRAME_LIGHT + 0].value;
-		framesLight->colors[1] = &module->outputs[Frames::FRAME_LIGHT + 1].value;
-		framesLight->colors[2] = &module->outputs[Frames::FRAME_LIGHT + 2].value;
+		framesLight->box.size = Vec(67, 67);
+		framesLight->module = module;
+		framesLight->lightId = Frames::FRAME_LIGHT;
 		addChild(framesLight);
 	}
 }

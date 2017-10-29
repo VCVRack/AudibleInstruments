@@ -23,28 +23,36 @@ struct Links : Module {
 		C1_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		A_POS_LIGHT, A_NEG_LIGHT,
+		B_POS_LIGHT, B_NEG_LIGHT,
+		C_POS_LIGHT, C_NEG_LIGHT,
+		NUM_LIGHTS
+	};
 
-	float lights[3] = {};
-	Links() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Links() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
 
 
 void Links::step() {
-	float in1 = inputs[A1_INPUT].value;
-	float in2 = inputs[B1_INPUT].value + inputs[B2_INPUT].value;
-	float in3 = inputs[C1_INPUT].value + inputs[C2_INPUT].value + inputs[C3_INPUT].value;
+	float inA = inputs[A1_INPUT].value;
+	float inB = inputs[B1_INPUT].value + inputs[B2_INPUT].value;
+	float inC = inputs[C1_INPUT].value + inputs[C2_INPUT].value + inputs[C3_INPUT].value;
 
-	outputs[A1_OUTPUT].value = in1;
-	outputs[A2_OUTPUT].value = in1;
-	outputs[A3_OUTPUT].value = in1;
-	outputs[B1_OUTPUT].value = in2;
-	outputs[B2_OUTPUT].value = in2;
-	outputs[C1_OUTPUT].value = in3;
+	outputs[A1_OUTPUT].value = inA;
+	outputs[A2_OUTPUT].value = inA;
+	outputs[A3_OUTPUT].value = inA;
+	outputs[B1_OUTPUT].value = inB;
+	outputs[B2_OUTPUT].value = inB;
+	outputs[C1_OUTPUT].value = inC;
 
-	lights[0] = in1 / 5.0;
-	lights[1] = in2 / 5.0;
-	lights[2] = in3 / 5.0;
+	lights[A_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, inA / 5.0));
+	lights[A_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -inA / 5.0));
+	lights[B_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, inB / 5.0));
+	lights[B_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -inB / 5.0));
+	lights[C_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, inC / 5.0));
+	lights[C_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -inC / 5.0));
 }
 
 
@@ -78,7 +86,7 @@ LinksWidget::LinksWidget() {
 	addInput(createInput<PJ301MPort>(Vec(4, 316), module, Links::C3_INPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(31, 316), module, Links::C1_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(26, 59), &module->lights[0]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(26, 161), &module->lights[1]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(26, 262), &module->lights[2]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 59), module, Links::A_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 161), module, Links::B_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_POS_LIGHT));
 }

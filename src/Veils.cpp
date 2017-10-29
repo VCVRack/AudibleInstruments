@@ -32,57 +32,37 @@ struct Veils : Module {
 		OUT4_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		OUT1_POS_LIGHT, OUT1_NEG_LIGHT,
+		OUT2_POS_LIGHT, OUT2_NEG_LIGHT,
+		OUT3_POS_LIGHT, OUT3_NEG_LIGHT,
+		OUT4_POS_LIGHT, OUT4_NEG_LIGHT,
+		NUM_LIGHTS
+	};
 
-	float lights[4] = {};
-
-	Veils() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Veils() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
 
 
-static float processChannel(Input &in, Param &gain, Input &cv, Param &response) {
-	float out = in.value * gain.value;
-	if (out == 0.0)
-		return 0.0;
-
-	if (cv.active) {
-		float linear = fmaxf(cv.value / 5.0, 0.0);
-		if (linear == 0.0)
-			return 0.0;
-		const float ex = 200.0;
-		float exponential = rescalef(powf(ex, linear), 1.0, ex, 0.0, 1.0);
-		out *= crossf(exponential, linear, response.value);
-	}
-	return out;
-}
-
 void Veils::step() {
 	float out = 0.0;
-	out += processChannel(inputs[IN1_INPUT], params[GAIN1_PARAM], inputs[CV1_INPUT], params[RESPONSE1_PARAM]);
-	lights[0] = out;
-	if (outputs[OUT1_OUTPUT].active) {
-		outputs[OUT1_OUTPUT].value = out;
-		out = 0.0;
-	}
 
-	out += processChannel(inputs[IN2_INPUT], params[GAIN2_PARAM], inputs[CV2_INPUT], params[RESPONSE2_PARAM]);
-	lights[1] = out;
-	if (outputs[OUT2_OUTPUT].active) {
-		outputs[OUT2_OUTPUT].value = out;
-		out = 0.0;
-	}
-
-	out += processChannel(inputs[IN3_INPUT], params[GAIN3_PARAM], inputs[CV3_INPUT], params[RESPONSE3_PARAM]);
-	lights[2] = out;
-	if (outputs[OUT3_OUTPUT].active) {
-		outputs[OUT3_OUTPUT].value = out;
-		out = 0.0;
-	}
-
-	out += processChannel(inputs[IN4_INPUT], params[GAIN4_PARAM], inputs[CV4_INPUT], params[RESPONSE4_PARAM]);
-	lights[3] = out;
-	if (outputs[OUT4_OUTPUT].active) {
-		outputs[OUT4_OUTPUT].value = out;
+	for (int i = 0; i < 4; i++) {
+		float in = inputs[IN1_INPUT + i].value * params[GAIN1_PARAM + i].value;
+		if (inputs[CV1_INPUT + i].active) {
+			float linear = fmaxf(inputs[CV1_INPUT + i].value / 5.0, 0.0);
+			const float ex = 200.0;
+			float exponential = rescalef(powf(ex, linear), 1.0, ex, 0.0, 1.0);
+			in *= crossf(exponential, linear, params[RESPONSE1_PARAM + i].value);
+		}
+		out += in;
+		lights[OUT1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, out / 5.0));
+		lights[OUT1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -out / 5.0));
+		if (outputs[OUT1_OUTPUT + i].active) {
+			outputs[OUT1_OUTPUT + i].value = out;
+			out = 0.0;
+		}
 	}
 }
 
@@ -129,8 +109,8 @@ VeilsWidget::VeilsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(144, 198), module, Veils::OUT3_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(144, 277), module, Veils::OUT4_OUTPUT));
 
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 245), &module->lights[2]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 324), &module->lights[3]));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 87), module, Veils::OUT1_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 166), module, Veils::OUT2_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 245), module, Veils::OUT3_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 324), module, Veils::OUT4_POS_LIGHT));
 }

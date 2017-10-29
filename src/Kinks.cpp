@@ -24,12 +24,17 @@ struct Kinks : Module {
 		SH_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		SIGN_POS_LIGHT, SIGN_NEG_LIGHT,
+		LOGIC_POS_LIGHT, LOGIC_NEG_LIGHT,
+		SH_POS_LIGHT, SH_NEG_LIGHT,
+		NUM_LIGHTS
+	};
 
 	SchmittTrigger trigger;
 	float sample = 0.0;
-	float lights[3] = {};
 
-	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		trigger.setThresholds(0.0, 0.7);
 	}
 	void step() override;
@@ -46,9 +51,13 @@ void Kinks::step() {
 	}
 
 	// lights
-	lights[0] = inputs[SIGN_INPUT].value;
-	lights[1] = inputs[LOGIC_A_INPUT].value + inputs[LOGIC_B_INPUT].value;
-	lights[2] = sample;
+	lights[SIGN_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, inputs[SIGN_INPUT].value / 5.0));
+	lights[SIGN_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -inputs[SIGN_INPUT].value / 5.0));
+	float logicSum = inputs[LOGIC_A_INPUT].value + inputs[LOGIC_B_INPUT].value;
+	lights[LOGIC_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, logicSum / 5.0));
+	lights[LOGIC_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -logicSum / 5.0));
+	lights[SH_POS_LIGHT].setBrightness(fmaxf(0.0, sample / 5.0));
+	lights[SH_NEG_LIGHT].setBrightness(fmaxf(0.0, -sample / 5.0));
 
 	// outputs
 	outputs[INVERT_OUTPUT].value = -inputs[SIGN_INPUT].value;
@@ -91,7 +100,7 @@ KinksWidget::KinksWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(4, 316), module, Kinks::NOISE_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(31, 316), module, Kinks::SH_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 59), &module->lights[0]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 161), &module->lights[1]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(11, 262), &module->lights[2]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 59), module, Kinks::SIGN_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 161), module, Kinks::LOGIC_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 262), module, Kinks::SH_POS_LIGHT));
 }

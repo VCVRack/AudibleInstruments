@@ -11,54 +11,55 @@ struct Branches : Module {
 	};
 	enum InputIds {
 		IN1_INPUT,
-		P1_INPUT,
 		IN2_INPUT,
+		P1_INPUT,
 		P2_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
 		OUT1A_OUTPUT,
-		OUT1B_OUTPUT,
 		OUT2A_OUTPUT,
+		OUT1B_OUTPUT,
 		OUT2B_OUTPUT,
 		NUM_OUTPUTS
+	};
+	enum LightIds {
+		STATE1_LIGHT,
+		STATE2_LIGHT,
+		NUM_LIGHTS
 	};
 
 	bool lastGate[2] = {};
 	bool outcome[2] = {};
-	float light[2] = {};
 
-	Branches() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Branches() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
 
 
-static void processChannel(Input &in, Input &p, Param &threshold, Param &mode, bool *lastGate, bool *outcome, Output &out1, Output &out2, float *light) {
-	float out = in.value;
-	bool gate = (out >= 1.0);
-	if (gate && !*lastGate) {
-		// trigger
-		float r = randomf();
-		bool toss = (r < threshold.value + p.value);
-		if (mode.value < 0.5) {
-			// direct mode
-			*outcome = toss;
-		}
-		else {
-			// toggle mode
-			*outcome = *outcome != toss;
-		}
-	}
-	*lastGate = gate;
-	*light = *outcome ? out : -out;
-
-	out1.value = *outcome ? 0.0 : out;
-	out2.value = *outcome ? out : 0.0;
-}
-
 void Branches::step() {
-	processChannel(inputs[IN1_INPUT], inputs[P1_INPUT], params[THRESHOLD1_PARAM], params[MODE1_PARAM], &lastGate[0], &outcome[0], outputs[OUT1A_OUTPUT], outputs[OUT1B_OUTPUT], &light[0]);
-	processChannel(inputs[IN2_INPUT].active ? inputs[IN2_INPUT] : inputs[IN1_INPUT], inputs[P2_INPUT], params[THRESHOLD2_PARAM], params[MODE2_PARAM], &lastGate[1], &outcome[1], outputs[OUT2A_OUTPUT], outputs[OUT2B_OUTPUT], &light[1]);
+	for (int i = 0; i < 2; i++) {
+		float out = inputs[IN1_INPUT + i].value;
+		bool gate = (out >= 1.0);
+		if (gate && !lastGate[i]) {
+			// trigger
+			float r = randomf();
+			bool toss = (r < params[THRESHOLD1_PARAM + i].value + inputs[P1_INPUT + i].value);
+			if (params[MODE1_PARAM + i].value < 0.5) {
+				// direct mode
+				outcome[i] = toss;
+			}
+			else {
+				// toggle mode
+				outcome[i] = outcome[i] != toss;
+			}
+		}
+		lastGate[i] = gate;
+		lights[STATE1_LIGHT + i].value = outcome[i] ? out : -out;
+
+		outputs[OUT1A_OUTPUT + i].value = outcome[i] ? 0.0 : out;
+		outputs[OUT1B_OUTPUT + i].value = outcome[i] ? out : 0.0;
+	}
 }
 
 
@@ -91,6 +92,6 @@ BranchesWidget::BranchesWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(9, 316), module, Branches::OUT2A_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(55, 316), module, Branches::OUT2B_OUTPUT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(40, 169), &module->light[0]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(40, 325), &module->light[1]));
+	addChild(createLight<SmallLight<GreenLight>>(Vec(40, 169), module, Branches::STATE1_LIGHT));
+	addChild(createLight<SmallLight<GreenLight>>(Vec(40, 325), module, Branches::STATE2_LIGHT));
 }

@@ -39,10 +39,15 @@ struct Tides : Module {
 		BI_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		MODE_GREEN_LIGHT, MODE_RED_LIGHT,
+		PHASE_GREEN_LIGHT, PHASE_RED_LIGHT,
+		RANGE_GREEN_LIGHT, RANGE_RED_LIGHT,
+		NUM_LIGHTS
+	};
 
 	bool wavetableHack = false;
 	tides::Generator generator;
-	float lights[3] = {};
 	int frame = 0;
 	uint8_t lastGate;
 	SchmittTrigger modeTrigger;
@@ -84,7 +89,7 @@ struct Tides : Module {
 };
 
 
-Tides::Tides() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
+Tides::Tides() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
 	generator.set_sync(false);
@@ -97,14 +102,16 @@ void Tides::step() {
 		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
 		generator.set_mode(mode);
 	}
-	lights[0] = (float)mode;
+	lights[MODE_GREEN_LIGHT].value = (mode == 0 || mode == 1) ? 1.0 : 0.0;
+	lights[MODE_RED_LIGHT].value = (mode == 1 || mode == 2) ? 1.0 : 0.0;
 
 	tides::GeneratorRange range = generator.range();
 	if (rangeTrigger.process(params[RANGE_PARAM].value)) {
 		range = (tides::GeneratorRange) (((int)range - 1 + 3) % 3);
 		generator.set_range(range);
 	}
-	lights[2] = (float)range;
+	lights[RANGE_GREEN_LIGHT].value = (range == 0 || range == 1) ? 1.0 : 0.0;
+	lights[RANGE_RED_LIGHT].value = (range == 1 || range == 2) ? 1.0 : 0.0;
 
 	// Buffer loop
 	if (++frame >= 16) {
@@ -162,25 +169,19 @@ void Tides::step() {
 
 	uni = uni * level >> 16;
 	bi = -bi * level >> 16;
-	float unif = rescalef(uni, 0, 0xffff, 0.0, 8.0);
-	float bif = rescalef(bi, -0x8000, 0x7fff, -5.0, 5.0);
+	float unif = (float) uni / 0xffff;
+	float bif = (float) bi / 0x8000;
 
 	outputs[HIGH_OUTPUT].value = sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0;
 	outputs[LOW_OUTPUT].value = sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0;
-	outputs[UNI_OUTPUT].value = unif;
-	outputs[BI_OUTPUT].value = bif;
+	outputs[UNI_OUTPUT].value = unif * 8.0;
+	outputs[BI_OUTPUT].value = bif * 5.0;
 
-	lights[1] = (sample.flags & tides::FLAG_END_OF_ATTACK ? -unif : unif) / 8.0;
+	if (sample.flags & tides::FLAG_END_OF_ATTACK)
+		unif *= -1.0;
+	lights[PHASE_GREEN_LIGHT].setBrightnessSmooth(fmaxf(0.0, unif));
+	lights[PHASE_RED_LIGHT].setBrightnessSmooth(fmaxf(0.0, -unif));
 }
-
-
-struct TidesModeLight : ModeValueLight {
-	TidesModeLight() {
-		addColor(COLOR_RED);
-		addColor(COLOR_BLACK_TRANSPARENT);
-		addColor(COLOR_CYAN);
-	}
-};
 
 
 TidesWidget::TidesWidget() {
@@ -226,9 +227,9 @@ TidesWidget::TidesWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(128, 316), module, Tides::UNI_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(164, 316), module, Tides::BI_OUTPUT));
 
-	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 62), &module->lights[0]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(57, 83), &module->lights[1]));
-	addChild(createValueLight<SmallLight<TidesModeLight>>(Vec(57, 103), &module->lights[2]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(57, 62), module, Tides::MODE_GREEN_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(57, 83), module, Tides::PHASE_GREEN_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(57, 103), module, Tides::RANGE_GREEN_LIGHT));
 }
 
 

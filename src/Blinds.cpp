@@ -32,48 +32,38 @@ struct Blinds : Module {
 		OUT4_OUTPUT,
 		NUM_OUTPUTS
 	};
+	enum LightIds {
+		IN1_POS_LIGHT, IN1_NEG_LIGHT,
+		IN2_POS_LIGHT, IN2_NEG_LIGHT,
+		IN3_POS_LIGHT, IN3_NEG_LIGHT,
+		IN4_POS_LIGHT, IN4_NEG_LIGHT,
+		OUT1_POS_LIGHT, OUT1_NEG_LIGHT,
+		OUT2_POS_LIGHT, OUT2_NEG_LIGHT,
+		OUT3_POS_LIGHT, OUT3_NEG_LIGHT,
+		OUT4_POS_LIGHT, OUT4_NEG_LIGHT,
+		NUM_LIGHTS
+	};
 
-	float lights[4] = {};
-	float gainLights[4] = {};
-
-	Blinds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {}
+	Blinds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
 
 
-static float processChannel(Input &in, Param &gain, Input &cv, Param &mod, float *light) {
-	float g = gain.value + mod.value * cv.value / 5.0;
-	*light = g * 5.0;
-	return g * in.normalize(5.0);
-}
-
 void Blinds::step() {
 	float out = 0.0;
-	out += processChannel(inputs[IN1_INPUT], params[GAIN1_PARAM], inputs[CV1_INPUT], params[MOD1_PARAM], &gainLights[0]);
-	lights[0] = out;
-	if (outputs[OUT1_OUTPUT].active) {
-		outputs[OUT1_OUTPUT].value = out;
-		out = 0.0;
-	}
 
-	out += processChannel(inputs[IN2_INPUT], params[GAIN2_PARAM], inputs[CV2_INPUT], params[MOD2_PARAM], &gainLights[1]);
-	lights[1] = out;
-	if (outputs[OUT2_OUTPUT].active) {
-		outputs[OUT2_OUTPUT].value = out;
-		out = 0.0;
-	}
-
-	out += processChannel(inputs[IN3_INPUT], params[GAIN3_PARAM], inputs[CV3_INPUT], params[MOD3_PARAM], &gainLights[2]);
-	lights[2] = out;
-	if (outputs[OUT3_OUTPUT].active) {
-		outputs[OUT3_OUTPUT].value = out;
-		out = 0.0;
-	}
-
-	out += processChannel(inputs[IN4_INPUT], params[GAIN4_PARAM], inputs[CV4_INPUT], params[MOD4_PARAM], &gainLights[3]);
-	lights[3] = out;
-	if (outputs[OUT4_OUTPUT].active) {
-		outputs[OUT4_OUTPUT].value = out;
+	for (int i = 0; i < 4; i++) {
+		float g = params[GAIN1_PARAM + i].value;
+		g += params[MOD1_PARAM + i].value * inputs[CV1_INPUT + i].value / 5.0;
+		lights[IN1_POS_LIGHT + 2*i].setBrightness(fmaxf(0.0, g));
+		lights[IN1_NEG_LIGHT + 2*i].setBrightness(fmaxf(0.0, -g));
+		out += g * inputs[IN1_INPUT + i].normalize(5.0);
+		lights[OUT1_POS_LIGHT + 2*i].setBrightness(fmaxf(0.0, out));
+		lights[OUT1_NEG_LIGHT + 2*i].setBrightness(fmaxf(0.0, -out));
+		if (outputs[OUT1_OUTPUT + i].active) {
+			outputs[OUT1_OUTPUT + i].value = out;
+			out = 0.0;
+		}
 	}
 }
 
@@ -120,13 +110,13 @@ BlindsWidget::BlindsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(144, 198), module, Blinds::OUT3_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(144, 277), module, Blinds::OUT4_OUTPUT));
 
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 87), &module->lights[0]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 166), &module->lights[1]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 245), &module->lights[2]));
-	addChild(createValueLight<MediumLight<GreenRedPolarityLight>>(Vec(150, 324), &module->lights[3]));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 87), module, Blinds::IN1_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 166), module, Blinds::IN2_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 245), module, Blinds::IN3_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::IN4_POS_LIGHT));
 
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 96), &module->gainLights[0]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 175), &module->gainLights[1]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 254), &module->gainLights[2]));
-	addChild(createValueLight<SmallLight<GreenRedPolarityLight>>(Vec(77, 333), &module->gainLights[3]));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 96), module, Blinds::OUT1_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 175), module, Blinds::OUT2_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 254), module, Blinds::OUT3_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 333), module, Blinds::OUT4_POS_LIGHT));
 }
