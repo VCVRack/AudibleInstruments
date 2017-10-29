@@ -75,13 +75,13 @@ ShadesWidget::ShadesWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 
-	addParam(createParam<Rogan1PSRed>(Vec(40, 41), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(40, 107), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSGreen>(Vec(40, 173), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan1PSRed>(Vec(40, 41), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(40, 107), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSGreen>(Vec(40, 173), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<CKSS>(Vec(10, 52), module, Shades::MODE1_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<CKSS>(Vec(10, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<CKSS>(Vec(10, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<CKSS>(Vec(10, 52), module, Shades::MODE1_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<CKSS>(Vec(10, 118), module, Shades::MODE2_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<CKSS>(Vec(10, 184), module, Shades::MODE3_PARAM, 0.0, 1.0, 1.0));
 
 	addInput(createInput<PJ301MPort>(Vec(9, 245), module, Shades::IN1_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(9, 281), module, Shades::IN2_INPUT));

@@ -58,6 +58,7 @@ struct ShadesWidget : ModuleWidget {
 
 struct BranchesWidget : ModuleWidget {
 	BranchesWidget();
+	Menu *createContextMenu() override;
 };
 
 struct BlindsWidget : ModuleWidget {

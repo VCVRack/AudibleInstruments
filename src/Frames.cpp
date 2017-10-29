@@ -222,7 +222,7 @@ void Frames::step() {
 
 	// Set lights
 	for (int i = 0; i < 4; i++) {
-		lights[GAIN1_LIGHT + i].value = gains[i];
+		lights[GAIN1_LIGHT + i].setBrightness(gains[i]);
 	}
 
 	if (poly_lfo_mode) {
@@ -240,8 +240,10 @@ void Frames::step() {
 	else {
 		colors = keyframer.color();
 	}
-	for (int c = 0; c < 3; c++) {
-		lights[FRAME_LIGHT + c].value = colors[c] / 255.0;
+	for (int i = 0; i < 3; i++) {
+		float c = colors[i] / 255.0;
+		c = 1.0 - (1.0 - c) * 1.25;
+		lights[FRAME_LIGHT + i].setBrightness(c);
 	}
 }
 

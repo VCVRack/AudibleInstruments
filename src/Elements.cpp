@@ -67,6 +67,7 @@ struct Elements : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
+		GATE_LIGHT,
 		EXCITER_LIGHT,
 		RESONATOR_LIGHT,
 		NUM_LIGHTS
@@ -198,8 +199,9 @@ void Elements::step() {
 		}
 
 		// Set lights
-		lights[EXCITER_LIGHT].value = part->exciter_level();
-		lights[RESONATOR_LIGHT].value = part->resonator_level();
+		lights[GATE_LIGHT].setBrightness(performance.gate ? 0.5 : 0.0);
+		lights[EXCITER_LIGHT].setBrightness(part->exciter_level());
+		lights[RESONATOR_LIGHT].setBrightness(part->resonator_level());
 	}
 
 	// Set output
@@ -284,6 +286,10 @@ ElementsWidget::ElementsWidget() {
 
 	addParam(createParam<CKD6>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 1.0, 0.0));
 
+	ModuleLightWidget *gateLight = createLight<YellowLight>(Vec(36+3, 116+3), module, Elements::GATE_LIGHT);
+	gateLight->bgColor = COLOR_BLACK_TRANSPARENT;
+	gateLight->box.size = Vec(28-6, 28-6);
+	addChild(gateLight);
 	addChild(createLight<MediumLight<GreenLight>>(Vec(184, 165), module, Elements::EXCITER_LIGHT));
 	addChild(createLight<MediumLight<RedLight>>(Vec(395, 165), module, Elements::RESONATOR_LIGHT));
 }
@@ -306,9 +312,9 @@ Menu *ElementsWidget::createContextMenu() {
 	assert(elements);
 
 	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative Models"));
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative models"));
 	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
-	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Non-Linear String", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
+	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
 	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
 
 	return menu;

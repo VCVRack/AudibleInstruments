@@ -97,10 +97,10 @@ void Warps::step() {
 		{
 			// TODO
 			// Use the correct light color
-			NVGcolor algorithmColor = nvgHSL(p->modulation_algorithm, 0.5, 0.5);
-			lights[ALGORITHM_LIGHT + 0].value = algorithmColor.r;
-			lights[ALGORITHM_LIGHT + 1].value = algorithmColor.g;
-			lights[ALGORITHM_LIGHT + 2].value = algorithmColor.b;
+			NVGcolor algorithmColor = nvgHSL(p->modulation_algorithm, 0.3, 0.4);
+			lights[ALGORITHM_LIGHT + 0].setBrightness(algorithmColor.r);
+			lights[ALGORITHM_LIGHT + 1].setBrightness(algorithmColor.g);
+			lights[ALGORITHM_LIGHT + 2].setBrightness(algorithmColor.b);
 		}
 
 		p->modulation_parameter = clampf(params[TIMBRE_PARAM].value + inputs[TIMBRE_INPUT].value / 5.0, 0.0, 1.0);

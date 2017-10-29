@@ -33,10 +33,10 @@ struct Blinds : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		IN1_POS_LIGHT, IN1_NEG_LIGHT,
-		IN2_POS_LIGHT, IN2_NEG_LIGHT,
-		IN3_POS_LIGHT, IN3_NEG_LIGHT,
-		IN4_POS_LIGHT, IN4_NEG_LIGHT,
+		CV1_POS_LIGHT, CV1_NEG_LIGHT,
+		CV2_POS_LIGHT, CV2_NEG_LIGHT,
+		CV3_POS_LIGHT, CV3_NEG_LIGHT,
+		CV4_POS_LIGHT, CV4_NEG_LIGHT,
 		OUT1_POS_LIGHT, OUT1_NEG_LIGHT,
 		OUT2_POS_LIGHT, OUT2_NEG_LIGHT,
 		OUT3_POS_LIGHT, OUT3_NEG_LIGHT,
@@ -55,11 +55,12 @@ void Blinds::step() {
 	for (int i = 0; i < 4; i++) {
 		float g = params[GAIN1_PARAM + i].value;
 		g += params[MOD1_PARAM + i].value * inputs[CV1_INPUT + i].value / 5.0;
-		lights[IN1_POS_LIGHT + 2*i].setBrightness(fmaxf(0.0, g));
-		lights[IN1_NEG_LIGHT + 2*i].setBrightness(fmaxf(0.0, -g));
+		g = clampf(g, -2.0, 2.0);
+		lights[CV1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, g));
+		lights[CV1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -g));
 		out += g * inputs[IN1_INPUT + i].normalize(5.0);
-		lights[OUT1_POS_LIGHT + 2*i].setBrightness(fmaxf(0.0, out));
-		lights[OUT1_NEG_LIGHT + 2*i].setBrightness(fmaxf(0.0, -out));
+		lights[OUT1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, out / 5.0));
+		lights[OUT1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -out / 5.0));
 		if (outputs[OUT1_OUTPUT + i].active) {
 			outputs[OUT1_OUTPUT + i].value = out;
 			out = 0.0;
@@ -110,13 +111,13 @@ BlindsWidget::BlindsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(144, 198), module, Blinds::OUT3_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(144, 277), module, Blinds::OUT4_OUTPUT));
 
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 87), module, Blinds::IN1_POS_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 166), module, Blinds::IN2_POS_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 245), module, Blinds::IN3_POS_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::IN4_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 96), module, Blinds::CV1_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 175), module, Blinds::CV2_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 254), module, Blinds::CV3_POS_LIGHT));
+	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 333), module, Blinds::CV4_POS_LIGHT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 96), module, Blinds::OUT1_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 175), module, Blinds::OUT2_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 254), module, Blinds::OUT3_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 333), module, Blinds::OUT4_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 87), module, Blinds::OUT1_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 166), module, Blinds::OUT2_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 245), module, Blinds::OUT3_POS_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::OUT4_POS_LIGHT));
 }

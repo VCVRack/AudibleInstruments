@@ -102,16 +102,16 @@ void Tides::step() {
 		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
 		generator.set_mode(mode);
 	}
-	lights[MODE_GREEN_LIGHT].value = (mode == 0 || mode == 1) ? 1.0 : 0.0;
-	lights[MODE_RED_LIGHT].value = (mode == 1 || mode == 2) ? 1.0 : 0.0;
+	lights[MODE_GREEN_LIGHT].value = (mode == 2) ? 1.0 : 0.0;
+	lights[MODE_RED_LIGHT].value = (mode == 0) ? 1.0 : 0.0;
 
 	tides::GeneratorRange range = generator.range();
 	if (rangeTrigger.process(params[RANGE_PARAM].value)) {
 		range = (tides::GeneratorRange) (((int)range - 1 + 3) % 3);
 		generator.set_range(range);
 	}
-	lights[RANGE_GREEN_LIGHT].value = (range == 0 || range == 1) ? 1.0 : 0.0;
-	lights[RANGE_RED_LIGHT].value = (range == 1 || range == 2) ? 1.0 : 0.0;
+	lights[RANGE_GREEN_LIGHT].value = (range == 2) ? 1.0 : 0.0;
+	lights[RANGE_RED_LIGHT].value = (range == 0) ? 1.0 : 0.0;
 
 	// Buffer loop
 	if (++frame >= 16) {

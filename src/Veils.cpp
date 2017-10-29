@@ -52,8 +52,9 @@ void Veils::step() {
 		float in = inputs[IN1_INPUT + i].value * params[GAIN1_PARAM + i].value;
 		if (inputs[CV1_INPUT + i].active) {
 			float linear = fmaxf(inputs[CV1_INPUT + i].value / 5.0, 0.0);
-			const float ex = 200.0;
-			float exponential = rescalef(powf(ex, linear), 1.0, ex, 0.0, 1.0);
+			linear = clampf(linear, 0.0, 2.0);
+			const float base = 200.0;
+			float exponential = rescalef(powf(base, linear / 2.0), 1.0, base, 0.0, 10.0);
 			in *= crossf(exponential, linear, params[RESPONSE1_PARAM + i].value);
 		}
 		out += in;
