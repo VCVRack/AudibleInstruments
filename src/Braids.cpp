@@ -292,15 +292,15 @@ BraidsWidget::BraidsWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(210, 365)));
 
-	addParam(createParam<Rogan2SGray>(Vec(177, 60), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<Rogan2PSWhite>(Vec(20, 139), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Rogan2PSWhite>(Vec(98, 139), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
-	addParam(createParam<Rogan2PSWhite>(Vec(177, 139), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<Rogan2PSGreen>(Vec(20, 218), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan2PSGreen>(Vec(98, 218), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Rogan2PSRed>(Vec(177, 218), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
+	addParam(createParam<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
 
 	addInput(createInput<PJ301MPort>(Vec(10, 316), module, Braids::TRIG_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(47, 316), module, Braids::PITCH_INPUT));

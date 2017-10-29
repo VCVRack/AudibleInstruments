@@ -138,12 +138,12 @@ WarpsWidget::WarpsWidget() {
 	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
 	addChild(createScrew<ScrewSilver>(Vec(120, 365)));
 
-	addParam(createParam<Rogan6PSWhite>(Vec(30, 53), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
+	addParam(createParam<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(95, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
 	addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(15, 214), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<Trimpot>(Vec(54, 214), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
+	addParam(createParam<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
 	addInput(createInput<PJ301MPort>(Vec(8, 273), module, Warps::LEVEL1_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(44, 273), module, Warps::LEVEL2_INPUT));
@@ -158,8 +158,8 @@ WarpsWidget::WarpsWidget() {
 	addChild(createLight<SmallLight<GreenRedLight>>(Vec(20, 167), module, Warps::CARRIER_GREEN_LIGHT));
 	{
 		RedGreenBlueLight *algorithmLight = new RedGreenBlueLight();
-		algorithmLight->box.pos = Vec(41, 64);
-		algorithmLight->box.size = Vec(67, 67);
+		algorithmLight->box.pos = Vec(40, 63);
+		algorithmLight->box.size = Vec(71, 71);
 		algorithmLight->module = module;
 		algorithmLight->lightId = Warps::ALGORITHM_LIGHT;
 		addChild(algorithmLight);

@@ -279,7 +279,7 @@ FramesWidget::FramesWidget() {
 	addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan6PSWhite>(Vec(91, 117), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
+	addParam(createParam<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
@@ -306,8 +306,8 @@ FramesWidget::FramesWidget() {
 	addChild(createLight<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
 	{
 		RedGreenBlueLight *framesLight = new RedGreenBlueLight();
-		framesLight->box.pos = Vec(102, 128);
-		framesLight->box.size = Vec(67, 67);
+		framesLight->box.pos = Vec(100, 126);
+		framesLight->box.size = Vec(71, 71);
 		framesLight->module = module;
 		framesLight->lightId = Frames::FRAME_LIGHT;
 		addChild(framesLight);

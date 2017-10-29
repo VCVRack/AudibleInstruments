@@ -255,12 +255,12 @@ RingsWidget::RingsWidget() {
 	addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
 	addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<Rogan3PSWhite>(Vec(30, 73), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
-	addParam(createParam<Rogan3PSWhite>(Vec(127, 73), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
+	addParam(createParam<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(14, 159), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(84, 159), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(155, 159), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
 
 	addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
 	addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));

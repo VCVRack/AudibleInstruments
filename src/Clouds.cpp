@@ -175,14 +175,14 @@ CloudsWidget::CloudsWidget() {
 	// addParam(createParam<MediumMomentarySwitch>(Vec(211, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
 	// addParam(createParam<MediumMomentarySwitch>(Vec(239, 51), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<Rogan3PSRed>(Vec(28, 94), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan3PSGreen>(Vec(109, 94), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan3PSWhite>(Vec(191, 94), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
+	addParam(createParam<Rogan3PSRed>(Vec(27, 93), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan3PSGreen>(Vec(108, 93), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan3PSWhite>(Vec(190, 93), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
 
-	addParam(createParam<Rogan1PSRed>(Vec(15, 181), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSRed>(Vec(82, 181), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSGreen>(Vec(147, 181), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(214, 181), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSRed>(Vec(14, 180), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSRed>(Vec(81, 180), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSGreen>(Vec(146, 180), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
+	addParam(createParam<Rogan1PSWhite>(Vec(213, 180), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5));
 
 	addInput(createInput<PJ301MPort>(Vec(15, 274), module, Clouds::FREEZE_INPUT));
 	addInput(createInput<PJ301MPort>(Vec(58, 274), module, Clouds::TRIG_INPUT));
