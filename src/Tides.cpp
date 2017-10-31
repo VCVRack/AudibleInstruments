@@ -93,7 +93,7 @@ Tides::Tides() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
 	generator.set_sync(false);
-	initialize();
+	reset();
 }
 
 void Tides::step() {
