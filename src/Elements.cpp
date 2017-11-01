@@ -297,7 +297,7 @@ ElementsWidget::ElementsWidget() {
 struct ElementsModalItem : MenuItem {
 	Elements *elements;
 	int model;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		elements->setModel(model);
 	}
 	void step() override {

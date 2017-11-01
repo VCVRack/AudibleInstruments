@@ -314,7 +314,7 @@ struct BraidsSettingItem : MenuItem {
 	uint8_t *setting = NULL;
 	uint8_t offValue = 0;
 	uint8_t onValue = 1;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		// Toggle setting
 		*setting = (*setting == onValue) ? offValue : onValue;
 	}
@@ -325,7 +325,7 @@ struct BraidsSettingItem : MenuItem {
 
 struct BraidsLowCpuItem : MenuItem {
 	Braids *braids;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		braids->lowCpu = !braids->lowCpu;
 	}
 	void step() override {

@@ -319,7 +319,7 @@ struct FramesCurveItem : MenuItem {
 	Frames *frames;
 	uint8_t channel;
 	frames::EasingCurve curve;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		frames->keyframer.mutable_settings(channel)->easing_curve = curve;
 	}
 	void step() override {
@@ -331,7 +331,7 @@ struct FramesResponseItem : MenuItem {
 	Frames *frames;
 	uint8_t channel;
 	uint8_t response;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		frames->keyframer.mutable_settings(channel)->response = response;
 	}
 	void step() override {
@@ -364,7 +364,7 @@ struct FramesChannelSettingsItem : MenuItem {
 
 struct FramesClearItem : MenuItem {
 	Frames *frames;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		frames->keyframer.Clear();
 	}
 };
@@ -372,7 +372,7 @@ struct FramesClearItem : MenuItem {
 struct FramesModeItem : MenuItem {
 	Frames *frames;
 	bool poly_lfo_mode;
-	void onAction() override {
+	void onAction(EventAction &e) override {
 		frames->poly_lfo_mode = poly_lfo_mode;
 	}
 	void step() override {
