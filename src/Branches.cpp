@@ -50,12 +50,15 @@ struct Branches : Module {
 
 
 void Branches::step() {
+	float gate = 0.0;
 	for (int i = 0; i < 2; i++) {
 		// mode button
 		if (modeTrigger[i].process(params[MODE1_PARAM + i].value))
 			mode[i] = !mode[i];
 
-		float gate = inputs[IN1_INPUT + i].value;
+		if (inputs[IN1_INPUT + i].active)
+			gate = inputs[IN1_INPUT + i].value;
+
 		if (gateTrigger[i].process(gate)) {
 			// trigger
 			float r = randomf();
