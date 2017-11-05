@@ -42,6 +42,7 @@ struct WarpsWidget : ModuleWidget {
 
 struct RingsWidget : ModuleWidget {
 	RingsWidget();
+	Menu *createContextMenu() override;
 };
 
 struct LinksWidget : ModuleWidget {

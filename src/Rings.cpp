@@ -65,6 +65,8 @@ struct Rings : Module {
 	int polyphonyMode = 0;
 	int model = 0;
 
+	bool easterEgg = false;
+
 	Rings();
 	void step() override;
 
@@ -73,6 +75,7 @@ struct Rings : Module {
 
 		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
 		json_object_set_new(rootJ, "model", json_integer(model));
+		json_object_set_new(rootJ, "easterEgg", json_integer(int(easterEgg)));
 
 		return rootJ;
 	}
@@ -86,6 +89,11 @@ struct Rings : Module {
 		json_t *modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
 			model = json_integer_value(modelJ);
+		}
+
+		json_t *eggJ = json_object_get(rootJ, "easterEgg");
+		if (eggJ) {
+			easterEgg = json_integer_value(eggJ) != 0;
 		}
 	}
 
@@ -193,9 +201,9 @@ void Rings::step() {
 		// Process audio
 		float out[24];
 		float aux[24];
-		if (0) {
-			// strummer.Process(NULL, 24, &performance_state);
-			// string_synth.Process(performance_state, patch, in, out, aux, 24);
+		if (easterEgg) {
+			strummer.Process(NULL, 24, &performance_state);
+			string_synth.Process(performance_state, patch, in, out, aux, 24);
 		}
 		else {
 			strummer.Process(in, 24, &performance_state);
@@ -282,4 +290,28 @@ RingsWidget::RingsWidget() {
 
 	addChild(createLight<SmallLight<GreenRedLight>>(Vec(38, 43.8), module, Rings::POLYPHONY_GREEN_LIGHT));
 	addChild(createLight<SmallLight<GreenRedLight>>(Vec(163, 43.8), module, Rings::RESONATOR_GREEN_LIGHT));
+}
+
+
+struct RingsEasterEggItem : MenuItem {
+	Rings *rings;
+	void onAction(EventAction &e) override {
+		rings->easterEgg = !rings->easterEgg;
+	}
+	void step() override {
+		rightText = (rings->easterEgg) ? "✔" : "";
+	}
+};
+
+Menu *RingsWidget::createContextMenu() {
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	Rings *rings = dynamic_cast<Rings*>(module);
+	assert(rings);
+
+	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Options"));
+	menu->pushChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Easter Egg", &RingsEasterEggItem::rings, rings));
+
+	return menu;
 }
