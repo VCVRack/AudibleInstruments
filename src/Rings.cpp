@@ -75,7 +75,7 @@ struct Rings : Module {
 
 		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
 		json_object_set_new(rootJ, "model", json_integer(model));
-		json_object_set_new(rootJ, "easterEgg", json_integer(int(easterEgg)));
+		json_object_set_new(rootJ, "easterEgg", json_boolean(easterEgg));
 
 		return rootJ;
 	}
@@ -91,9 +91,9 @@ struct Rings : Module {
 			model = json_integer_value(modelJ);
 		}
 
-		json_t *eggJ = json_object_get(rootJ, "easterEgg");
-		if (eggJ) {
-			easterEgg = json_integer_value(eggJ) != 0;
+		json_t *easterEggJ = json_object_get(rootJ, "easterEgg");
+		if (easterEggJ) {
+			easterEgg = json_boolean_value(easterEggJ);
 		}
 	}
 
@@ -310,8 +310,7 @@ Menu *RingsWidget::createContextMenu() {
 	assert(rings);
 
 	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Options"));
-	menu->pushChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Easter Egg", &RingsEasterEggItem::rings, rings));
+	menu->pushChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
 
 	return menu;
 }
