@@ -33,7 +33,13 @@ struct StreamsWidget : ModuleWidget {
 };
 
 struct CloudsWidget : ModuleWidget {
+	ParamWidget *blendParam;
+	ParamWidget *spreadParam;
+	ParamWidget *feedbackParam;
+	ParamWidget *reverbParam;
 	CloudsWidget();
+	void step() override;
+	Menu *createContextMenu() override;
 };
 
 struct WarpsWidget : ModuleWidget {
