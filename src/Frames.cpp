@@ -304,14 +304,13 @@ FramesWidget::FramesWidget() {
 	addChild(createLight<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
 	addChild(createLight<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
 	addChild(createLight<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
-	{
-		RedGreenBlueLight *framesLight = new RedGreenBlueLight();
-		framesLight->box.pos = Vec(100, 126);
-		framesLight->box.size = Vec(71, 71);
-		framesLight->module = module;
-		framesLight->lightId = Frames::FRAME_LIGHT;
-		addChild(framesLight);
-	}
+
+	struct FrameLight : RedGreenBlueLight {
+		FrameLight() {
+			box.size = Vec(71, 71);
+		}
+	};
+	addChild(createLight<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
 }
 
 

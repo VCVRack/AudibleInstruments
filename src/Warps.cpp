@@ -156,12 +156,11 @@ WarpsWidget::WarpsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
 	addChild(createLight<SmallLight<GreenRedLight>>(Vec(20, 167), module, Warps::CARRIER_GREEN_LIGHT));
-	{
-		RedGreenBlueLight *algorithmLight = new RedGreenBlueLight();
-		algorithmLight->box.pos = Vec(40, 63);
-		algorithmLight->box.size = Vec(71, 71);
-		algorithmLight->module = module;
-		algorithmLight->lightId = Warps::ALGORITHM_LIGHT;
-		addChild(algorithmLight);
-	}
+
+	struct AlgorithmLight : RedGreenBlueLight {
+		AlgorithmLight() {
+			box.size = Vec(71, 71);
+		}
+	};
+	addChild(createLight<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
 }
