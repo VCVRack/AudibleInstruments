@@ -21,11 +21,11 @@ struct ElementsWidget : ModuleWidget {
 };
 
 struct TidesWidget : ModuleWidget {
+	Panel *tidesPanel;
+	Panel *sheepPanel;
 	TidesWidget();
-};
-
-struct SheepWidget : TidesWidget {
-	SheepWidget();
+	void step() override;
+	Menu *createContextMenu() override;
 };
 
 struct StreamsWidget : ModuleWidget {

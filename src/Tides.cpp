@@ -46,7 +46,7 @@ struct Tides : Module {
 		NUM_LIGHTS
 	};
 
-	bool wavetableHack = false;
+	bool sheep = false;
 	tides::Generator generator;
 	int frame = 0;
 	uint8_t lastGate;
@@ -72,6 +72,7 @@ struct Tides : Module {
 
 		json_object_set_new(rootJ, "mode", json_integer((int) generator.mode()));
 		json_object_set_new(rootJ, "range", json_integer((int) generator.range()));
+		json_object_set_new(rootJ, "sheep", json_boolean(sheep));
 
 		return rootJ;
 	}
@@ -85,6 +86,11 @@ struct Tides : Module {
 		json_t *rangeJ = json_object_get(rootJ, "range");
 		if (rangeJ) {
 			generator.set_range((tides::GeneratorRange) json_integer_value(rangeJ));
+		}
+
+		json_t *sheepJ = json_object_get(rootJ, "sheep");
+		if (sheepJ) {
+			sheep = json_boolean_value(sheepJ);
 		}
 	}
 };
@@ -141,7 +147,7 @@ void Tides::step() {
 		generator.set_sync(inputs[CLOCK_INPUT].active);
 
 		// Generator
-		generator.Process(wavetableHack);
+		generator.Process(sheep);
 	}
 
 	// Level
@@ -191,10 +197,16 @@ TidesWidget::TidesWidget() {
 	box.size = Vec(15 * 14, 380);
 
 	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+		tidesPanel = new LightPanel();
+		tidesPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));
+		tidesPanel->box.size = box.size;
+		addChild(tidesPanel);
+	}
+	{
+		sheepPanel = new LightPanel();
+		sheepPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
+		sheepPanel->box.size = box.size;
+		addChild(sheepPanel);
 	}
 
 	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
@@ -233,13 +245,37 @@ TidesWidget::TidesWidget() {
 	addChild(createLight<MediumLight<GreenRedLight>>(Vec(56, 102), module, Tides::RANGE_GREEN_LIGHT));
 }
 
-
-SheepWidget::SheepWidget() {
+void TidesWidget::step() {
 	Tides *tides = dynamic_cast<Tides*>(module);
 	assert(tides);
-	tides->wavetableHack = true;
 
-	Panel *panel = getFirstDescendantOfType<Panel>();
-	assert(panel);
-	panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
+	tidesPanel->visible = !tides->sheep;
+	sheepPanel->visible = tides->sheep;
+
+	ModuleWidget::step();
+}
+
+
+struct TidesSheepItem : MenuItem {
+	Tides *tides;
+	void onAction(EventAction &e) override {
+		tides->sheep ^= true;
+	}
+	void step() override {
+		rightText = (tides->sheep) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+
+Menu *TidesWidget::createContextMenu() {
+	Menu *menu = ModuleWidget::createContextMenu();
+
+	Tides *tides = dynamic_cast<Tides*>(module);
+	assert(tides);
+
+	menu->pushChild(construct<MenuEntry>());
+	menu->pushChild(construct<TidesSheepItem>(&MenuEntry::text, "Sheep", &TidesSheepItem::tides, tides));
+
+	return menu;
 }

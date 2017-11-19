@@ -13,9 +13,8 @@ void init(rack::Plugin *p) {
 	p->addModel(createModel<BraidsWidget>("Audible Instruments", "Braids", "Macro Oscillator", OSCILLATOR_TAG, WAVESHAPER_TAG));
 	p->addModel(createModel<ElementsWidget>("Audible Instruments", "Elements", "Modal Synthesizer", REVERB_TAG));
 	p->addModel(createModel<TidesWidget>("Audible Instruments", "Tides", "Tidal Modulator", LFO_TAG, OSCILLATOR_TAG, WAVESHAPER_TAG, FUNCTION_GENERATOR_TAG));
-	// p->addModel(createModel<StreamsWidget>("Audible Instruments", "Streams", "Dual Dynamics Gate"));
 	p->addModel(createModel<CloudsWidget>("Audible Instruments", "Clouds", "Texture Synthesizer", GRANULAR_TAG, REVERB_TAG));
-	p->addModel(createModel<WarpsWidget>("Audible Instruments", "Warps", "Meta Modulator", RING_MODULATOR_TAG));
+	p->addModel(createModel<WarpsWidget>("Audible Instruments", "Warps", "Meta Modulator", RING_MODULATOR_TAG, WAVESHAPER_TAG));
 	p->addModel(createModel<RingsWidget>("Audible Instruments", "Rings", "Resonator"));
 	p->addModel(createModel<LinksWidget>("Audible Instruments", "Links", "Multiples", MULTIPLE_TAG, MIXER_TAG));
 	p->addModel(createModel<KinksWidget>("Audible Instruments", "Kinks", "Utilities", UTILITY_TAG));
