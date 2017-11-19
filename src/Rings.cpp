@@ -60,11 +60,11 @@ struct Rings : Module {
 	rings::Strummer strummer;
 	bool strum = false;
 	bool lastStrum = false;
+
 	SchmittTrigger polyphonyTrigger;
 	SchmittTrigger modelTrigger;
 	int polyphonyMode = 0;
-	int model = 0;
-
+	rings::ResonatorModel model = rings::RESONATOR_MODEL_MODAL;
 	bool easterEgg = false;
 
 	Rings();
@@ -74,7 +74,7 @@ struct Rings : Module {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
-		json_object_set_new(rootJ, "model", json_integer(model));
+		json_object_set_new(rootJ, "model", json_integer((int) model));
 		json_object_set_new(rootJ, "easterEgg", json_boolean(easterEgg));
 
 		return rootJ;
@@ -88,7 +88,7 @@ struct Rings : Module {
 
 		json_t *modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
-			model = json_integer_value(modelJ);
+			model = (rings::ResonatorModel) json_integer_value(modelJ);
 		}
 
 		json_t *easterEggJ = json_object_get(rootJ, "easterEgg");
@@ -99,12 +99,12 @@ struct Rings : Module {
 
 	void reset() override {
 		polyphonyMode = 0;
-		model = 0;
+		model = rings::RESONATOR_MODEL_MODAL;
 	}
 
 	void randomize() override {
 		polyphonyMode = randomu32() % 3;
-		model = randomu32() % 3;
+		model = (rings::ResonatorModel) (randomu32() % 3);
 	}
 };
 
@@ -144,10 +144,11 @@ void Rings::step() {
 	lights[POLYPHONY_RED_LIGHT].value = (polyphonyMode == 1 || polyphonyMode == 2) ? 1.0 : 0.0;
 
 	if (modelTrigger.process(params[RESONATOR_PARAM].value)) {
-		model = (model + 1) % 3;
+		model = (rings::ResonatorModel) ((model + 1) % 3);
 	}
-	lights[RESONATOR_GREEN_LIGHT].value = (model == 0 || model == 1) ? 1.0 : 0.0;
-	lights[RESONATOR_RED_LIGHT].value = (model == 1 || model == 2) ? 1.0 : 0.0;
+	int modelColor = model % 3;
+	lights[RESONATOR_GREEN_LIGHT].value = (modelColor == 0 || modelColor == 1) ? 1.0 : 0.0;
+	lights[RESONATOR_RED_LIGHT].value = (modelColor == 1 || modelColor == 2) ? 1.0 : 0.0;
 
 	// Render frames
 	if (outputBuffer.empty()) {
@@ -161,11 +162,15 @@ void Rings::step() {
 			inputBuffer.startIncr(inLen);
 		}
 
-		// Polyphony / model
-		int polyphony = 1<<polyphonyMode;
+		// Polyphony
+		int polyphony = 1 << polyphonyMode;
 		if (part.polyphony() != polyphony)
 			part.set_polyphony(polyphony);
-		part.set_model((rings::ResonatorModel)model);
+		// Model
+		if (easterEgg)
+			string_synth.set_fx((rings::FxType) model);
+		else
+			part.set_model(model);
 
 		// Patch
 		rings::Patch patch;
@@ -288,10 +293,22 @@ RingsWidget::RingsWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(131, 316), module, Rings::ODD_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(169, 316), module, Rings::EVEN_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(38, 43.8), module, Rings::POLYPHONY_GREEN_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(163, 43.8), module, Rings::RESONATOR_GREEN_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
 }
 
+
+struct RingsModelItem : MenuItem {
+	Rings *rings;
+	rings::ResonatorModel model;
+	void onAction(EventAction &e) override {
+		rings->model = model;
+	}
+	void step() override {
+		rightText = (rings->model == model) ? "✔" : "";
+		MenuItem::step();
+	}
+};
 
 struct RingsEasterEggItem : MenuItem {
 	Rings *rings;
@@ -300,6 +317,7 @@ struct RingsEasterEggItem : MenuItem {
 	}
 	void step() override {
 		rightText = (rings->easterEgg) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -309,7 +327,16 @@ Menu *RingsWidget::createContextMenu() {
 	Rings *rings = dynamic_cast<Rings*>(module);
 	assert(rings);
 
-	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuEntry>());
+	menu->pushChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
+	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
+	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
+	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Modulated/inharmonic string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING));
+	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "FM voice", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_FM_VOICE));
+	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
+	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
+
+	menu->pushChild(construct<MenuEntry>());
 	menu->pushChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
 
 	return menu;

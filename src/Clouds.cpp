@@ -3,6 +3,7 @@
 #include "dsp/samplerate.hpp"
 #include "dsp/ringbuffer.hpp"
 #include "dsp/digital.hpp"
+#include "dsp/vumeter.hpp"
 #include "clouds/dsp/granular_processor.h"
 
 
@@ -63,8 +64,11 @@ struct Clouds : Module {
 
 	SchmittTrigger freezeTrigger;
 	bool freeze = false;
-	SchmittTrigger modeTrigger;
-	int modeIndex = 0;
+	SchmittTrigger blendTrigger;
+	int blendIndex = 0;
+
+	clouds::PlaybackMode playback;
+	int quality = 0;
 
 	Clouds();
 	~Clouds();
@@ -72,7 +76,30 @@ struct Clouds : Module {
 
 	void reset() override {
 		freeze = false;
-		modeIndex = 0;
+		blendIndex = 0;
+		playback = clouds::PLAYBACK_MODE_GRANULAR;
+		quality = 0;
+	}
+
+	json_t *toJson() override {
+		json_t *rootJ = json_object();
+
+		json_object_set_new(rootJ, "playback", json_integer((int) playback));
+		json_object_set_new(rootJ, "quality", json_integer(quality));
+
+		return rootJ;
+	}
+
+	void fromJson(json_t *rootJ) override {
+		json_t *playbackJ = json_object_get(rootJ, "playback");
+		if (playbackJ) {
+			playback = (clouds::PlaybackMode) json_integer_value(playbackJ);
+		}
+
+		json_t *qualityJ = json_object_get(rootJ, "quality");
+		if (qualityJ) {
+			quality = json_integer_value(qualityJ);
+		}
 	}
 };
 
@@ -86,6 +113,7 @@ Clouds::Clouds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(processor, 0, sizeof(*processor));
 
 	processor->Init(block_mem, memLen, block_ccm, ccmLen);
+	reset();
 }
 
 Clouds::~Clouds() {
@@ -96,8 +124,8 @@ Clouds::~Clouds() {
 
 void Clouds::step() {
 	// Get input
+	Frame<2> inputFrame = {};
 	if (!inputBuffer.full()) {
-		Frame<2> inputFrame;
 		inputFrame.samples[0] = inputs[IN_L_INPUT].value * params[IN_GAIN_PARAM].value / 5.0;
 		inputFrame.samples[1] = inputs[IN_R_INPUT].active ? inputs[IN_R_INPUT].value * params[IN_GAIN_PARAM].value / 5.0 : inputFrame.samples[0];
 		inputBuffer.push(inputFrame);
@@ -106,8 +134,8 @@ void Clouds::step() {
 	if (freezeTrigger.process(params[FREEZE_PARAM].value)) {
 		freeze ^= true;
 	}
-	if (modeTrigger.process(params[MODE_PARAM].value)) {
-		modeIndex = (modeIndex + 1) % 4;
+	if (blendTrigger.process(params[MODE_PARAM].value)) {
+		blendIndex = (blendIndex + 1) % 4;
 	}
 
 	// Trigger
@@ -135,16 +163,14 @@ void Clouds::step() {
 		}
 
 		// Set up processor
-		processor->set_num_channels(2);
-		processor->set_low_fidelity(false);
-		// TODO Support the other modes
-		processor->set_playback_mode(clouds::PLAYBACK_MODE_GRANULAR);
+		processor->set_playback_mode(playback);
+		processor->set_quality(quality);
 		processor->Prepare();
 
-		clouds::Parameters* p = processor->mutable_parameters();
+		clouds::Parameters *p = processor->mutable_parameters();
 		p->trigger = triggered;
 		p->gate = triggered;
-		p->freeze = freeze;
+		p->freeze = freeze || (inputs[FREEZE_INPUT].value >= 1.0);
 		p->position = clampf(params[POSITION_PARAM].value + inputs[POSITION_INPUT].value / 5.0, 0.0, 1.0);
 		p->size = clampf(params[SIZE_PARAM].value + inputs[SIZE_INPUT].value / 5.0, 0.0, 1.0);
 		p->pitch = clampf((params[PITCH_PARAM].value + inputs[PITCH_INPUT].value) * 12.0, -48.0, 48.0);
@@ -153,6 +179,8 @@ void Clouds::step() {
 		p->dry_wet = clampf(params[BLEND_PARAM].value + inputs[BLEND_INPUT].value / 5.0, 0.0, 1.0);
 		p->stereo_spread = params[SPREAD_PARAM].value;
 		p->feedback = params[FEEDBACK_PARAM].value;
+		// TODO
+		// Why doesn't dry audio get reverbed?
 		p->reverb = params[REVERB_PARAM].value;
 
 		clouds::ShortFrame output[32];
@@ -174,22 +202,31 @@ void Clouds::step() {
 		}
 
 		triggered = false;
-
-		// Lights
-		lights[FREEZE_LIGHT].value = freeze ? 1.0 : 0.0;
-		// TODO
-		lights[MIX_GREEN_LIGHT].value = 1.0;
-		lights[PAN_GREEN_LIGHT].value = 1.0;
-		lights[FEEDBACK_GREEN_LIGHT].value = 1.0;
-		lights[REVERB_GREEN_LIGHT].value = 1.0;
 	}
 
 	// Set output
+	Frame<2> outputFrame = {};
 	if (!outputBuffer.empty()) {
-		Frame<2> outputFrame = outputBuffer.shift();
+		outputFrame = outputBuffer.shift();
 		outputs[OUT_L_OUTPUT].value = 5.0 * outputFrame.samples[0];
 		outputs[OUT_R_OUTPUT].value = 5.0 * outputFrame.samples[1];
 	}
+
+	// Lights
+	clouds::Parameters *p = processor->mutable_parameters();
+	VUMeter vuMeter;
+	vuMeter.dBInterval = 6.0;
+	Frame<2> lightFrame = p->freeze ? outputFrame : inputFrame;
+	vuMeter.setValue(fmaxf(fabsf(lightFrame.samples[0]), fabsf(lightFrame.samples[1])));
+	lights[FREEZE_LIGHT].setBrightness(p->freeze ? 0.75 : 0.0);
+	lights[MIX_GREEN_LIGHT].setBrightnessSmooth(vuMeter.getBrightness(3));
+	lights[PAN_GREEN_LIGHT].setBrightnessSmooth(vuMeter.getBrightness(2));
+	lights[FEEDBACK_GREEN_LIGHT].setBrightnessSmooth(vuMeter.getBrightness(1));
+	lights[REVERB_GREEN_LIGHT].setBrightness(0.0);
+	lights[MIX_RED_LIGHT].setBrightness(0.0);
+	lights[PAN_RED_LIGHT].setBrightness(0.0);
+	lights[FEEDBACK_RED_LIGHT].setBrightnessSmooth(vuMeter.getBrightness(1));
+	lights[REVERB_RED_LIGHT].setBrightnessSmooth(vuMeter.getBrightness(0));
 }
 
 
@@ -260,37 +297,78 @@ CloudsWidget::CloudsWidget() {
 void CloudsWidget::step() {
 	Clouds *module = dynamic_cast<Clouds*>(this->module);
 
-	blendParam->visible = (module->modeIndex == 0);
-	spreadParam->visible = (module->modeIndex == 1);
-	feedbackParam->visible = (module->modeIndex == 2);
-	reverbParam->visible = (module->modeIndex == 3);
+	blendParam->visible = (module->blendIndex == 0);
+	spreadParam->visible = (module->blendIndex == 1);
+	feedbackParam->visible = (module->blendIndex == 2);
+	reverbParam->visible = (module->blendIndex == 3);
 
 	ModuleWidget::step();
 }
 
 
-struct CloudsModeItem : MenuItem {
+struct CloudsBlendItem : MenuItem {
 	Clouds *module;
-	int modeIndex;
+	int blendIndex;
 	void onAction(EventAction &e) override {
-		module->modeIndex = modeIndex;
+		module->blendIndex = blendIndex;
 	}
 	void step() override {
-		rightText = (module->modeIndex == modeIndex) ? "✔" : "";
+		rightText = (module->blendIndex == blendIndex) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
+
+struct CloudsPlaybackItem : MenuItem {
+	Clouds *module;
+	clouds::PlaybackMode playback;
+	void onAction(EventAction &e) override {
+		module->playback = playback;
+	}
+	void step() override {
+		rightText = (module->playback == playback) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+
+struct CloudsQualityItem : MenuItem {
+	Clouds *module;
+	int quality;
+	void onAction(EventAction &e) override {
+		module->quality = quality;
+	}
+	void step() override {
+		rightText = (module->quality == quality) ? "✔" : "";
+		MenuItem::step();
+	}
+};
+
+
 Menu *CloudsWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
-
 	Clouds *module = dynamic_cast<Clouds*>(this->module);
 
 	menu->pushChild(construct<MenuLabel>());
 	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Blend knob"));
-	menu->pushChild(construct<CloudsModeItem>(&MenuEntry::text, "Wet/dry", &CloudsModeItem::module, module, &CloudsModeItem::modeIndex, 0));
-	menu->pushChild(construct<CloudsModeItem>(&MenuEntry::text, "Spread", &CloudsModeItem::module, module, &CloudsModeItem::modeIndex, 1));
-	menu->pushChild(construct<CloudsModeItem>(&MenuEntry::text, "Feedback", &CloudsModeItem::module, module, &CloudsModeItem::modeIndex, 2));
-	menu->pushChild(construct<CloudsModeItem>(&MenuEntry::text, "Reverb", &CloudsModeItem::module, module, &CloudsModeItem::modeIndex, 3));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 0));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 1));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 2));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 3));
+
+	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative mode"));
+	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Granular", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_GRANULAR));
+	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Pitch-shifter/time-stretcher", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_STRETCH));
+	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Looping delay", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_LOOPING_DELAY));
+	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Spectral madness", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_SPECTRAL));
+
+	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Quality"));
+	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "1s 32kHz 16-bit stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 0));
+	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "2s 32kHz 16-bit mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 1));
+	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "4s 16kHz 8-bit µ-law stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 2));
+	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
 
 	return menu;
 }

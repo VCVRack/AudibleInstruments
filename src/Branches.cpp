@@ -121,6 +121,7 @@ BranchesWidget::BranchesWidget() {
 	addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
 }
 
+
 struct BranchesModeItem : MenuItem {
 	Branches *branches;
 	int channel;
@@ -129,8 +130,10 @@ struct BranchesModeItem : MenuItem {
 	}
 	void step() override {
 		rightText = branches->mode[channel] ? "Toggle" : "Latch";
+		MenuItem::step();
 	}
 };
+
 
 Menu *BranchesWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
@@ -139,6 +142,7 @@ Menu *BranchesWidget::createContextMenu() {
 	assert(branches);
 
 	menu->pushChild(construct<MenuLabel>());
+
 	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Channels"));
 	menu->pushChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));
 	menu->pushChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));

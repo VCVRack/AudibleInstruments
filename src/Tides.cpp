@@ -56,6 +56,17 @@ struct Tides : Module {
 	Tides();
 	void step() override;
 
+
+	void reset() override {
+		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
+		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
+	}
+
+	void randomize() override {
+		generator.set_range((tides::GeneratorRange) (randomu32() % 3));
+		generator.set_mode((tides::GeneratorMode) (randomu32() % 3));
+	}
+
 	json_t *toJson() override {
 		json_t *rootJ = json_object();
 
@@ -75,16 +86,6 @@ struct Tides : Module {
 		if (rangeJ) {
 			generator.set_range((tides::GeneratorRange) json_integer_value(rangeJ));
 		}
-	}
-
-	void reset() override {
-		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
-		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
-	}
-
-	void randomize() override {
-		generator.set_range((tides::GeneratorRange) (randomu32() % 3));
-		generator.set_mode((tides::GeneratorMode) (randomu32() % 3));
 	}
 };
 
@@ -227,9 +228,9 @@ TidesWidget::TidesWidget() {
 	addOutput(createOutput<PJ301MPort>(Vec(128, 316), module, Tides::UNI_OUTPUT));
 	addOutput(createOutput<PJ301MPort>(Vec(164, 316), module, Tides::BI_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(57, 62), module, Tides::MODE_GREEN_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(57, 83), module, Tides::PHASE_GREEN_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(57, 103), module, Tides::RANGE_GREEN_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(56, 61), module, Tides::MODE_GREEN_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(56, 82), module, Tides::PHASE_GREEN_LIGHT));
+	addChild(createLight<MediumLight<GreenRedLight>>(Vec(56, 102), module, Tides::RANGE_GREEN_LIGHT));
 }
 
 

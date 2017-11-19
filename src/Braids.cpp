@@ -320,6 +320,7 @@ struct BraidsSettingItem : MenuItem {
 	}
 	void step() override {
 		rightText = (*setting == onValue) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -330,6 +331,7 @@ struct BraidsLowCpuItem : MenuItem {
 	}
 	void step() override {
 		rightText = (braids->lowCpu) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 

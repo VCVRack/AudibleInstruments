@@ -199,7 +199,7 @@ void Elements::step() {
 		}
 
 		// Set lights
-		lights[GATE_LIGHT].setBrightness(performance.gate ? 0.5 : 0.0);
+		lights[GATE_LIGHT].setBrightness(performance.gate ? 0.75 : 0.0);
 		lights[EXCITER_LIGHT].setBrightness(part->exciter_level());
 		lights[RESONATOR_LIGHT].setBrightness(part->resonator_level());
 	}
@@ -286,10 +286,14 @@ ElementsWidget::ElementsWidget() {
 
 	addParam(createParam<CKD6>(Vec(36, 116), module, Elements::PLAY_PARAM, 0.0, 1.0, 0.0));
 
-	ModuleLightWidget *gateLight = createLight<YellowLight>(Vec(36+3, 116+3), module, Elements::GATE_LIGHT);
-	gateLight->bgColor = COLOR_BLACK_TRANSPARENT;
-	gateLight->box.size = Vec(28-6, 28-6);
-	addChild(gateLight);
+	struct GateLight : YellowLight {
+		GateLight() {
+			box.size = Vec(28-6, 28-6);
+			bgColor = COLOR_BLACK_TRANSPARENT;
+		}
+	};
+
+	addChild(createLight<GateLight>(Vec(36+3, 116+3), module, Elements::GATE_LIGHT));
 	addChild(createLight<MediumLight<GreenLight>>(Vec(184, 165), module, Elements::EXCITER_LIGHT));
 	addChild(createLight<MediumLight<RedLight>>(Vec(395, 165), module, Elements::RESONATOR_LIGHT));
 }
@@ -302,6 +306,7 @@ struct ElementsModalItem : MenuItem {
 	}
 	void step() override {
 		rightText = (elements->getModel() == model) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
@@ -311,7 +316,7 @@ Menu *ElementsWidget::createContextMenu() {
 	Elements *elements = dynamic_cast<Elements*>(module);
 	assert(elements);
 
-	menu->pushChild(construct<MenuLabel>());
+	menu->pushChild(construct<MenuEntry>());
 	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative models"));
 	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
 	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));

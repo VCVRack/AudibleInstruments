@@ -50,7 +50,6 @@ struct Frames : Module {
 
 	SchmittTrigger addTrigger;
 	SchmittTrigger delTrigger;
-	bool clearKeyframes = false;
 
 	Frames();
 	void step() override;
@@ -71,7 +70,14 @@ struct Frames : Module {
 		}
 		json_object_set_new(rootJ, "keyframes", keyframesJ);
 
-		// TODO Channel settings
+		json_t *channelsJ = json_array();
+		for (int i = 0; i < 4; i++) {
+			json_t *channelJ = json_object();
+			json_object_set_new(channelJ, "curve", json_integer((int) keyframer.mutable_settings(i)->easing_curve));
+			json_object_set_new(channelJ, "response", json_integer(keyframer.mutable_settings(i)->response));
+			json_array_append_new(channelsJ, channelJ);
+		}
+		json_object_set_new(rootJ, "channels", channelsJ);
 
 		return rootJ;
 	}
@@ -95,7 +101,18 @@ struct Frames : Module {
 			}
 		}
 
-		// TODO Channel settings
+		json_t *channelsJ = json_object_get(rootJ, "channels");
+		if (channelsJ) {
+			for (int i = 0; i < 4; i++) {
+				json_t *channelJ = json_array_get(channelsJ, i);
+				if (channelJ) {
+					json_t *curveJ = json_object_get(channelJ, "curve");
+					keyframer.mutable_settings(i)->easing_curve = (frames::EasingCurve) json_integer_value(curveJ);
+					json_t *responseJ = json_object_get(channelJ, "response");
+					keyframer.mutable_settings(i)->response = json_integer_value(responseJ);
+				}
+			}
+		}
 	}
 
 	void reset() override {
@@ -323,8 +340,10 @@ struct FramesCurveItem : MenuItem {
 	}
 	void step() override {
 		rightText = (frames->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
+		MenuItem::step();
 	}
 };
+
 
 struct FramesResponseItem : MenuItem {
 	Frames *frames;
@@ -335,8 +354,10 @@ struct FramesResponseItem : MenuItem {
 	}
 	void step() override {
 		rightText = (frames->keyframer.mutable_settings(channel)->response = response) ? "✔" : "";
+		MenuItem::step();
 	}
 };
+
 
 struct FramesChannelSettingsItem : MenuItem {
 	Frames *frames;
@@ -361,12 +382,14 @@ struct FramesChannelSettingsItem : MenuItem {
 	}
 };
 
+
 struct FramesClearItem : MenuItem {
 	Frames *frames;
 	void onAction(EventAction &e) override {
 		frames->keyframer.Clear();
 	}
 };
+
 
 struct FramesModeItem : MenuItem {
 	Frames *frames;
@@ -376,6 +399,7 @@ struct FramesModeItem : MenuItem {
 	}
 	void step() override {
 		rightText = (frames->poly_lfo_mode == poly_lfo_mode) ? "✔" : "";
+		MenuItem::step();
 	}
 };
 
