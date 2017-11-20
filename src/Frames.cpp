@@ -107,9 +107,11 @@ struct Frames : Module {
 				json_t *channelJ = json_array_get(channelsJ, i);
 				if (channelJ) {
 					json_t *curveJ = json_object_get(channelJ, "curve");
-					keyframer.mutable_settings(i)->easing_curve = (frames::EasingCurve) json_integer_value(curveJ);
+					if (curveJ)
+						keyframer.mutable_settings(i)->easing_curve = (frames::EasingCurve) json_integer_value(curveJ);
 					json_t *responseJ = json_object_get(channelJ, "response");
-					keyframer.mutable_settings(i)->response = json_integer_value(responseJ);
+					if (responseJ)
+						keyframer.mutable_settings(i)->response = json_integer_value(responseJ);
 				}
 			}
 		}
@@ -118,6 +120,10 @@ struct Frames : Module {
 	void reset() override {
 		poly_lfo_mode = false;
 		keyframer.Clear();
+		for (int i = 0; i < 4; i++) {
+			keyframer.mutable_settings(i)->easing_curve = frames::EASING_CURVE_LINEAR;
+			keyframer.mutable_settings(i)->response = 0;
+		}
 	}
 	void randomize() override {
 		// TODO
@@ -132,9 +138,7 @@ Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&poly_lfo, 0, sizeof(poly_lfo));
 	poly_lfo.Init();
 
-	for (int i = 0; i < 4; i++) {
-		keyframer.mutable_settings(i)->easing_curve = frames::EASING_CURVE_LINEAR;
-	}
+	reset();
 }
 
 
@@ -204,6 +208,12 @@ void Frames::step() {
 		else {
 			float lin = keyframer.level(i) / 65535.0;
 			gains[i] = lin;
+		}
+		// Simulate SSM2164
+		if (keyframer.mutable_settings(i)->response > 0) {
+			const float expBase = 200.0;
+			float expGain = rescalef(powf(expBase, gains[i]), 1.0, expBase, 0.0, 1.0);
+			gains[i] = crossf(gains[i], expGain, keyframer.mutable_settings(i)->response / 255.0);
 		}
 	}
 
@@ -353,7 +363,7 @@ struct FramesResponseItem : MenuItem {
 		frames->keyframer.mutable_settings(channel)->response = response;
 	}
 	void step() override {
-		rightText = (frames->keyframer.mutable_settings(channel)->response = response) ? "✔" : "";
+		rightText = (frames->keyframer.mutable_settings(channel)->response == response) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -376,7 +386,7 @@ struct FramesChannelSettingsItem : MenuItem {
 		menu->pushChild(construct<MenuLabel>());
 		menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Response Curve"));
 		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
-		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 1));
+		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
 
 		return menu;
 	}
