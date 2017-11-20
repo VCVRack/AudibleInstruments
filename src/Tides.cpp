@@ -46,7 +46,7 @@ struct Tides : Module {
 		NUM_LIGHTS
 	};
 
-	bool sheep = false;
+	bool sheep;
 	tides::Generator generator;
 	int frame = 0;
 	uint8_t lastGate;
@@ -60,6 +60,7 @@ struct Tides : Module {
 	void reset() override {
 		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
 		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
+		sheep = false;
 	}
 
 	void randomize() override {
