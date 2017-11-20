@@ -86,6 +86,7 @@ struct Clouds : Module {
 
 		json_object_set_new(rootJ, "playback", json_integer((int) playback));
 		json_object_set_new(rootJ, "quality", json_integer(quality));
+		json_object_set_new(rootJ, "blendMode", json_integer(blendMode));
 
 		return rootJ;
 	}
@@ -99,6 +100,11 @@ struct Clouds : Module {
 		json_t *qualityJ = json_object_get(rootJ, "quality");
 		if (qualityJ) {
 			quality = json_integer_value(qualityJ);
+		}
+
+		json_t *blendModeJ = json_object_get(rootJ, "blendMode");
+		if (blendModeJ) {
+			blendMode = json_integer_value(blendModeJ);
 		}
 	}
 };
