@@ -65,7 +65,7 @@ struct Clouds : Module {
 	SchmittTrigger freezeTrigger;
 	bool freeze = false;
 	SchmittTrigger blendTrigger;
-	int blendIndex = 0;
+	int blendMode = 0;
 
 	clouds::PlaybackMode playback;
 	int quality = 0;
@@ -76,7 +76,7 @@ struct Clouds : Module {
 
 	void reset() override {
 		freeze = false;
-		blendIndex = 0;
+		blendMode = 0;
 		playback = clouds::PLAYBACK_MODE_GRANULAR;
 		quality = 0;
 	}
@@ -135,7 +135,7 @@ void Clouds::step() {
 		freeze ^= true;
 	}
 	if (blendTrigger.process(params[MODE_PARAM].value)) {
-		blendIndex = (blendIndex + 1) % 4;
+		blendMode = (blendMode + 1) % 4;
 	}
 
 	// Trigger
@@ -176,12 +176,31 @@ void Clouds::step() {
 		p->pitch = clampf((params[PITCH_PARAM].value + inputs[PITCH_INPUT].value) * 12.0, -48.0, 48.0);
 		p->density = clampf(params[DENSITY_PARAM].value + inputs[DENSITY_INPUT].value / 5.0, 0.0, 1.0);
 		p->texture = clampf(params[TEXTURE_PARAM].value + inputs[TEXTURE_INPUT].value / 5.0, 0.0, 1.0);
-		p->dry_wet = clampf(params[BLEND_PARAM].value + inputs[BLEND_INPUT].value / 5.0, 0.0, 1.0);
+		p->dry_wet = params[BLEND_PARAM].value;
 		p->stereo_spread = params[SPREAD_PARAM].value;
 		p->feedback = params[FEEDBACK_PARAM].value;
 		// TODO
 		// Why doesn't dry audio get reverbed?
 		p->reverb = params[REVERB_PARAM].value;
+		float blend = inputs[BLEND_INPUT].value / 5.0;
+		switch (blendMode) {
+			case 0:
+				p->dry_wet += blend;
+				p->dry_wet = clampf(p->dry_wet, 0.0, 1.0);
+				break;
+			case 1:
+				p->stereo_spread += blend;
+				p->stereo_spread = clampf(p->stereo_spread, 0.0, 1.0);
+				break;
+			case 2:
+				p->feedback += blend;
+				p->feedback = clampf(p->feedback, 0.0, 1.0);
+				break;
+			case 3:
+				p->reverb += blend;
+				p->reverb = clampf(p->reverb, 0.0, 1.0);
+				break;
+		}
 
 		clouds::ShortFrame output[32];
 		processor->Process(input, output, 32);
@@ -297,10 +316,10 @@ CloudsWidget::CloudsWidget() {
 void CloudsWidget::step() {
 	Clouds *module = dynamic_cast<Clouds*>(this->module);
 
-	blendParam->visible = (module->blendIndex == 0);
-	spreadParam->visible = (module->blendIndex == 1);
-	feedbackParam->visible = (module->blendIndex == 2);
-	reverbParam->visible = (module->blendIndex == 3);
+	blendParam->visible = (module->blendMode == 0);
+	spreadParam->visible = (module->blendMode == 1);
+	feedbackParam->visible = (module->blendMode == 2);
+	reverbParam->visible = (module->blendMode == 3);
 
 	ModuleWidget::step();
 }
@@ -308,12 +327,12 @@ void CloudsWidget::step() {
 
 struct CloudsBlendItem : MenuItem {
 	Clouds *module;
-	int blendIndex;
+	int blendMode;
 	void onAction(EventAction &e) override {
-		module->blendIndex = blendIndex;
+		module->blendMode = blendMode;
 	}
 	void step() override {
-		rightText = (module->blendIndex == blendIndex) ? "✔" : "";
+		rightText = (module->blendMode == blendMode) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -351,10 +370,10 @@ Menu *CloudsWidget::createContextMenu() {
 
 	menu->pushChild(construct<MenuLabel>());
 	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Blend knob"));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 0));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 1));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 2));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendIndex, 3));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 0));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 1));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 2));
+	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 3));
 
 	menu->pushChild(construct<MenuLabel>());
 	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative mode"));
