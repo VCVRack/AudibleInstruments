@@ -275,8 +275,8 @@ Menu *TidesWidget::createContextMenu() {
 	Tides *tides = dynamic_cast<Tides*>(module);
 	assert(tides);
 
-	menu->pushChild(construct<MenuEntry>());
-	menu->pushChild(construct<TidesSheepItem>(&MenuEntry::text, "Sheep", &TidesSheepItem::tides, tides));
+	menu->addChild(construct<MenuEntry>());
+	menu->addChild(construct<TidesSheepItem>(&MenuEntry::text, "Sheep", &TidesSheepItem::tides, tides));
 
 	return menu;
 }
