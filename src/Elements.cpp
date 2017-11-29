@@ -316,11 +316,11 @@ Menu *ElementsWidget::createContextMenu() {
 	Elements *elements = dynamic_cast<Elements*>(module);
 	assert(elements);
 
-	menu->pushChild(construct<MenuEntry>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative models"));
-	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
-	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
-	menu->pushChild(construct<ElementsModalItem>(&MenuEntry::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
+	menu->addChild(construct<MenuEntry>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Alternative models"));
+	menu->addChild(construct<ElementsModalItem>(&MenuEntry::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
+	menu->addChild(construct<ElementsModalItem>(&MenuEntry::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
+	menu->addChild(construct<ElementsModalItem>(&MenuEntry::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
 
 	return menu;
 }

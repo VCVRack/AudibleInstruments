@@ -141,11 +141,11 @@ Menu *BranchesWidget::createContextMenu() {
 	Branches *branches = dynamic_cast<Branches*>(module);
 	assert(branches);
 
-	menu->pushChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>());
 
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Channels"));
-	menu->pushChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));
-	menu->pushChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Channels"));
+	menu->addChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));
+	menu->addChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));
 
 	return menu;
 }

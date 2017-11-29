@@ -376,17 +376,17 @@ struct FramesChannelSettingsItem : MenuItem {
 		Menu *menu = new Menu();
 
 		// TODO
-		menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Interpolation Curve"));
-		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
-		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
-		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Accelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_IN_QUARTIC));
-		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
-		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
-		menu->pushChild(construct<FramesCurveItem>(&MenuEntry::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
-		menu->pushChild(construct<MenuLabel>());
-		menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Response Curve"));
-		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
-		menu->pushChild(construct<FramesResponseItem>(&MenuEntry::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
+		menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Interpolation Curve"));
+		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
+		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
+		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Accelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_IN_QUARTIC));
+		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
+		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
+		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Response Curve"));
+		menu->addChild(construct<FramesResponseItem>(&MenuEntry::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
+		menu->addChild(construct<FramesResponseItem>(&MenuEntry::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
 
 		return menu;
 	}
@@ -420,17 +420,17 @@ Menu *FramesWidget::createContextMenu() {
 	Frames *frames = dynamic_cast<Frames*>(module);
 	assert(frames);
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Channel Settings"));
+	menu->addChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Channel Settings"));
 	for (int i = 0; i < 4; i++) {
-		menu->pushChild(construct<FramesChannelSettingsItem>(&MenuItem::text, stringf("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
+		menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, stringf("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
 	}
-	menu->pushChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
+	menu->addChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Mode"));
-	menu->pushChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
-	menu->pushChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
+	menu->addChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Mode"));
+	menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
+	menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
 
 	return menu;
 }

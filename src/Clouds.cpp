@@ -374,26 +374,26 @@ Menu *CloudsWidget::createContextMenu() {
 	Menu *menu = ModuleWidget::createContextMenu();
 	Clouds *module = dynamic_cast<Clouds*>(this->module);
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Blend knob"));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 0));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 1));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 2));
-	menu->pushChild(construct<CloudsBlendItem>(&MenuEntry::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 3));
+	menu->addChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Blend knob"));
+	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 0));
+	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 1));
+	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 2));
+	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 3));
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Alternative mode"));
-	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Granular", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_GRANULAR));
-	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Pitch-shifter/time-stretcher", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_STRETCH));
-	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Looping delay", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_LOOPING_DELAY));
-	menu->pushChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Spectral madness", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_SPECTRAL));
+	menu->addChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Alternative mode"));
+	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Granular", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_GRANULAR));
+	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Pitch-shifter/time-stretcher", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_STRETCH));
+	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Looping delay", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_LOOPING_DELAY));
+	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Spectral madness", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_SPECTRAL));
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Quality"));
-	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "1s 32kHz 16-bit stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 0));
-	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "2s 32kHz 16-bit mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 1));
-	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "4s 16kHz 8-bit µ-law stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 2));
-	menu->pushChild(construct<CloudsQualityItem>(&MenuEntry::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
+	menu->addChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Quality"));
+	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "1s 32kHz 16-bit stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 0));
+	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "2s 32kHz 16-bit mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 1));
+	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "4s 16kHz 8-bit µ-law stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 2));
+	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
 
 	return menu;
 }
