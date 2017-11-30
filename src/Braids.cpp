@@ -92,7 +92,7 @@ Braids::Braids() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
 	// List of supported settings
 	settings.meta_modulation = 0;
 	settings.vco_drift = 0;
-	settings.signature = 255;
+	settings.signature = 0;
 }
 
 void Braids::step() {
