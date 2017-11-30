@@ -341,12 +341,12 @@ Menu *BraidsWidget::createContextMenu() {
 	Braids *braids = dynamic_cast<Braids*>(module);
 	assert(braids);
 
-	menu->pushChild(construct<MenuLabel>());
-	menu->pushChild(construct<MenuLabel>(&MenuEntry::text, "Options"));
-	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
-	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
-	menu->pushChild(construct<BraidsSettingItem>(&MenuEntry::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
-	menu->pushChild(construct<BraidsLowCpuItem>(&MenuEntry::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
+	menu->addChild(construct<MenuLabel>());
+	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Options"));
+	menu->addChild(construct<BraidsSettingItem>(&MenuEntry::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
+	menu->addChild(construct<BraidsSettingItem>(&MenuEntry::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
+	menu->addChild(construct<BraidsSettingItem>(&MenuEntry::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
+	menu->addChild(construct<BraidsLowCpuItem>(&MenuEntry::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
 
 	return menu;
 }

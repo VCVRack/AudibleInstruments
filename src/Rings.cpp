@@ -327,17 +327,17 @@ Menu *RingsWidget::createContextMenu() {
 	Rings *rings = dynamic_cast<Rings*>(module);
 	assert(rings);
 
-	menu->pushChild(construct<MenuEntry>());
-	menu->pushChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
-	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
-	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
-	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Modulated/inharmonic string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING));
-	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "FM voice", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_FM_VOICE));
-	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
-	menu->pushChild(construct<RingsModelItem>(&MenuEntry::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
+	menu->addChild(construct<MenuEntry>());
+	menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
+	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
+	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
+	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Modulated/inharmonic string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING));
+	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "FM voice", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_FM_VOICE));
+	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
+	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
 
-	menu->pushChild(construct<MenuEntry>());
-	menu->pushChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
+	menu->addChild(construct<MenuEntry>());
+	menu->addChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
 
 	return menu;
 }
