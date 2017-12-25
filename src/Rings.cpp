@@ -97,12 +97,12 @@ struct Rings : Module {
 		}
 	}
 
-	void reset() override {
+	void onReset() override {
 		polyphonyMode = 0;
 		model = rings::RESONATOR_MODEL_MODAL;
 	}
 
-	void randomize() override {
+	void onRandomize() override {
 		polyphonyMode = randomu32() % 3;
 		model = (rings::ResonatorModel) (randomu32() % 3);
 	}
@@ -155,7 +155,7 @@ void Rings::step() {
 		float in[24] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRatio(48000.0 / engineGetSampleRate());
+			inputSrc.setRates(engineGetSampleRate(), 48000);
 			int inLen = inputBuffer.size();
 			int outLen = 24;
 			inputSrc.process(inputBuffer.startData(), &inLen, (Frame<1>*) in, &outLen);
@@ -223,7 +223,7 @@ void Rings::step() {
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRatio(engineGetSampleRate() / 48000.0);
+			outputSrc.setRates(48000, engineGetSampleRate());
 			int inLen = 24;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);

@@ -140,7 +140,7 @@ void Elements::step() {
 
 		// Convert input buffer
 		{
-			inputSrc.setRatio(32000.0 / engineGetSampleRate());
+			inputSrc.setRates(engineGetSampleRate(), 32000);
 			Frame<2> inputFrames[16];
 			int inLen = inputBuffer.size();
 			int outLen = 16;
@@ -191,7 +191,7 @@ void Elements::step() {
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRatio(engineGetSampleRate() / 32000.0);
+			outputSrc.setRates(32000, engineGetSampleRate());
 			int inLen = 16;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);

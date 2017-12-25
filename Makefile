@@ -1,9 +1,10 @@
+SLUG = AudibleInstruments
+VERSION = 0.5.0
 
 FLAGS += \
 	-DTEST \
 	-I./eurorack \
 	-Wno-unused-local-typedefs
-
 
 SOURCES += $(wildcard src/*.cpp)
 SOURCES += eurorack/stmlib/utils/random.cc
@@ -47,13 +48,7 @@ SOURCES += eurorack/frames/keyframer.cc
 SOURCES += eurorack/frames/resources.cc
 SOURCES += eurorack/frames/poly_lfo.cc
 
+DISTRIBUTABLES += $(wildcard LICENSE*) res
+
 
 include ../../plugin.mk
-
-
-dist: all
-	mkdir -p dist/AudibleInstruments
-	cp LICENSE* dist/AudibleInstruments/
-	cp $(TARGET) dist/AudibleInstruments/
-	cp -R res dist/AudibleInstruments/
-	cd dist && zip -5 -r AudibleInstruments-$(VERSION)-$(ARCH).zip AudibleInstruments

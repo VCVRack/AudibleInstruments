@@ -40,7 +40,7 @@ struct Branches : Module {
 	Branches() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 
-	void reset() override {
+	void onReset() override {
 		for (int i = 0; i < 2; i++) {
 			mode[i] = false;
 			outcome[i] = false;

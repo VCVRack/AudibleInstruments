@@ -58,12 +58,12 @@ struct Warps : Module {
 		}
 	}
 
-	void reset() override {
+	void onReset() override {
 		warps::Parameters *p = modulator.mutable_parameters();
 		p->carrier_shape = 0;
 	}
 
-	void randomize() override {
+	void onRandomize() override {
 		warps::Parameters *p = modulator.mutable_parameters();
 		p->carrier_shape = randomu32() % 4;
 	}

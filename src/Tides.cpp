@@ -57,13 +57,13 @@ struct Tides : Module {
 	void step() override;
 
 
-	void reset() override {
+	void onReset() override {
 		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
 		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
 		sheep = false;
 	}
 
-	void randomize() override {
+	void onRandomize() override {
 		generator.set_range((tides::GeneratorRange) (randomu32() % 3));
 		generator.set_mode((tides::GeneratorMode) (randomu32() % 3));
 	}
@@ -101,7 +101,7 @@ Tides::Tides() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
 	generator.set_sync(false);
-	reset();
+	onReset();
 }
 
 void Tides::step() {

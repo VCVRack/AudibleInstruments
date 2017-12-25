@@ -117,7 +117,7 @@ struct Frames : Module {
 		}
 	}
 
-	void reset() override {
+	void onReset() override {
 		poly_lfo_mode = false;
 		keyframer.Clear();
 		for (int i = 0; i < 4; i++) {
@@ -125,7 +125,7 @@ struct Frames : Module {
 			keyframer.mutable_settings(i)->response = 0;
 		}
 	}
-	void randomize() override {
+	void onRandomize() override {
 		// TODO
 		// Maybe something useful should go in here?
 	}
@@ -138,7 +138,7 @@ Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&poly_lfo, 0, sizeof(poly_lfo));
 	poly_lfo.Init();
 
-	reset();
+	onReset();
 }
 
 

@@ -74,7 +74,7 @@ struct Clouds : Module {
 	~Clouds();
 	void step() override;
 
-	void reset() override {
+	void onReset() override {
 		freeze = false;
 		blendMode = 0;
 		playback = clouds::PLAYBACK_MODE_GRANULAR;
@@ -119,7 +119,7 @@ Clouds::Clouds() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(processor, 0, sizeof(*processor));
 
 	processor->Init(block_mem, memLen, block_ccm, ccmLen);
-	reset();
+	onReset();
 }
 
 Clouds::~Clouds() {
@@ -154,7 +154,7 @@ void Clouds::step() {
 		clouds::ShortFrame input[32] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRatio(32000.0 / engineGetSampleRate());
+			inputSrc.setRates(engineGetSampleRate(), 32000);
 			Frame<2> inputFrames[32];
 			int inLen = inputBuffer.size();
 			int outLen = 32;
@@ -219,7 +219,7 @@ void Clouds::step() {
 				outputFrames[i].samples[1] = output[i].r / 32768.0;
 			}
 
-			outputSrc.setRatio(engineGetSampleRate() / 32000.0);
+			outputSrc.setRates(32000, engineGetSampleRate());
 			int inLen = 32;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
