@@ -11,11 +11,11 @@ void init(rack::Plugin *p) {
 #endif
 
 	p->addModel(createModel<BraidsWidget>("Audible Instruments", "Braids", "Macro Oscillator", OSCILLATOR_TAG, WAVESHAPER_TAG));
-	p->addModel(createModel<ElementsWidget>("Audible Instruments", "Elements", "Modal Synthesizer", REVERB_TAG));
+	p->addModel(createModel<ElementsWidget>("Audible Instruments", "Elements", "Modal Synthesizer", PHYSICAL_MODELING_TAG));
 	p->addModel(createModel<TidesWidget>("Audible Instruments", "Tides", "Tidal Modulator", LFO_TAG, OSCILLATOR_TAG, WAVESHAPER_TAG, FUNCTION_GENERATOR_TAG));
 	p->addModel(createModel<CloudsWidget>("Audible Instruments", "Clouds", "Texture Synthesizer", GRANULAR_TAG, REVERB_TAG));
 	p->addModel(createModel<WarpsWidget>("Audible Instruments", "Warps", "Meta Modulator", RING_MODULATOR_TAG, WAVESHAPER_TAG));
-	p->addModel(createModel<RingsWidget>("Audible Instruments", "Rings", "Resonator"));
+	p->addModel(createModel<RingsWidget>("Audible Instruments", "Rings", "Resonator", PHYSICAL_MODELING_TAG));
 	p->addModel(createModel<LinksWidget>("Audible Instruments", "Links", "Multiples", MULTIPLE_TAG, MIXER_TAG));
 	p->addModel(createModel<KinksWidget>("Audible Instruments", "Kinks", "Utilities", UTILITY_TAG));
 	p->addModel(createModel<ShadesWidget>("Audible Instruments", "Shades", "Mixer", MIXER_TAG));
