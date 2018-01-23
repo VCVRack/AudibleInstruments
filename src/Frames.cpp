@@ -375,7 +375,9 @@ struct FramesChannelSettingsItem : MenuItem {
 	Menu *createChildMenu() override {
 		Menu *menu = new Menu();
 
-		// TODO
+		menu->addChild(construct<MenuLabel>(&MenuEntry::text, stringf("Channel %d", channel + 1)));
+		menu->addChild(construct<MenuLabel>());
+
 		menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Interpolation Curve"));
 		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
 		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
