@@ -163,8 +163,8 @@ void Clouds::step() {
 
 			// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
 			for (int i = 0; i < outLen; i++) {
-				input[i].l = clampf(inputFrames[i].samples[0] * 32767.0, -32768, 32767);
-				input[i].r = clampf(inputFrames[i].samples[1] * 32767.0, -32768, 32767);
+				input[i].l = clamp(inputFrames[i].samples[0] * 32767.0f, -32768.0f, 32767.0f);
+				input[i].r = clamp(inputFrames[i].samples[1] * 32767.0f, -32768.0f, 32767.0f);
 			}
 		}
 
@@ -177,34 +177,34 @@ void Clouds::step() {
 		p->trigger = triggered;
 		p->gate = triggered;
 		p->freeze = freeze || (inputs[FREEZE_INPUT].value >= 1.0);
-		p->position = clampf(params[POSITION_PARAM].value + inputs[POSITION_INPUT].value / 5.0, 0.0, 1.0);
-		p->size = clampf(params[SIZE_PARAM].value + inputs[SIZE_INPUT].value / 5.0, 0.0, 1.0);
-		p->pitch = clampf((params[PITCH_PARAM].value + inputs[PITCH_INPUT].value) * 12.0, -48.0, 48.0);
-		p->density = clampf(params[DENSITY_PARAM].value + inputs[DENSITY_INPUT].value / 5.0, 0.0, 1.0);
-		p->texture = clampf(params[TEXTURE_PARAM].value + inputs[TEXTURE_INPUT].value / 5.0, 0.0, 1.0);
+		p->position = clamp(params[POSITION_PARAM].value + inputs[POSITION_INPUT].value / 5.0f, 0.0f, 1.0f);
+		p->size = clamp(params[SIZE_PARAM].value + inputs[SIZE_INPUT].value / 5.0f, 0.0f, 1.0f);
+		p->pitch = clamp((params[PITCH_PARAM].value + inputs[PITCH_INPUT].value) * 12.0f, -48.0f, 48.0f);
+		p->density = clamp(params[DENSITY_PARAM].value + inputs[DENSITY_INPUT].value / 5.0f, 0.0f, 1.0f);
+		p->texture = clamp(params[TEXTURE_PARAM].value + inputs[TEXTURE_INPUT].value / 5.0f, 0.0f, 1.0f);
 		p->dry_wet = params[BLEND_PARAM].value;
 		p->stereo_spread = params[SPREAD_PARAM].value;
 		p->feedback = params[FEEDBACK_PARAM].value;
 		// TODO
 		// Why doesn't dry audio get reverbed?
 		p->reverb = params[REVERB_PARAM].value;
-		float blend = inputs[BLEND_INPUT].value / 5.0;
+		float blend = inputs[BLEND_INPUT].value / 5.0f;
 		switch (blendMode) {
 			case 0:
 				p->dry_wet += blend;
-				p->dry_wet = clampf(p->dry_wet, 0.0, 1.0);
+				p->dry_wet = clamp(p->dry_wet, 0.0f, 1.0f);
 				break;
 			case 1:
 				p->stereo_spread += blend;
-				p->stereo_spread = clampf(p->stereo_spread, 0.0, 1.0);
+				p->stereo_spread = clamp(p->stereo_spread, 0.0f, 1.0f);
 				break;
 			case 2:
 				p->feedback += blend;
-				p->feedback = clampf(p->feedback, 0.0, 1.0);
+				p->feedback = clamp(p->feedback, 0.0f, 1.0f);
 				break;
 			case 3:
 				p->reverb += blend;
-				p->reverb = clampf(p->reverb, 0.0, 1.0);
+				p->reverb = clamp(p->reverb, 0.0f, 1.0f);
 				break;
 		}
 

@@ -52,10 +52,10 @@ void Veils::step() {
 		float in = inputs[IN1_INPUT + i].value * params[GAIN1_PARAM + i].value;
 		if (inputs[CV1_INPUT + i].active) {
 			float linear = fmaxf(inputs[CV1_INPUT + i].value / 5.0, 0.0);
-			linear = clampf(linear, 0.0, 2.0);
+			linear = clamp(linear, 0.0f, 2.0f);
 			const float base = 200.0;
-			float exponential = rescalef(powf(base, linear / 2.0), 1.0, base, 0.0, 10.0);
-			in *= crossf(exponential, linear, params[RESPONSE1_PARAM + i].value);
+			float exponential = rescale(powf(base, linear / 2.0f), 1.0f, base, 0.0f, 10.0f);
+			in *= crossfade(exponential, linear, params[RESPONSE1_PARAM + i].value);
 		}
 		out += in;
 		lights[OUT1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, out / 5.0));

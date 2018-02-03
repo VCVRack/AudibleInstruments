@@ -176,10 +176,10 @@ void Rings::step() {
 		// Patch
 		rings::Patch patch;
 		float structure = params[STRUCTURE_PARAM].value + 3.3*quadraticBipolar(params[STRUCTURE_MOD_PARAM].value)*inputs[STRUCTURE_MOD_INPUT].value/5.0;
-		patch.structure = clampf(structure, 0.0, 0.9995);
-		patch.brightness = clampf(params[BRIGHTNESS_PARAM].value + 3.3*quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].value)*inputs[BRIGHTNESS_MOD_INPUT].value/5.0, 0.0, 1.0);
-		patch.damping = clampf(params[DAMPING_PARAM].value + 3.3*quadraticBipolar(params[DAMPING_MOD_PARAM].value)*inputs[DAMPING_MOD_INPUT].value/5.0, 0.0, 0.9995);
-		patch.position = clampf(params[POSITION_PARAM].value + 3.3*quadraticBipolar(params[POSITION_MOD_PARAM].value)*inputs[POSITION_MOD_INPUT].value/5.0, 0.0, 0.9995);
+		patch.structure = clamp(structure, 0.0f, 0.9995f);
+		patch.brightness = clamp(params[BRIGHTNESS_PARAM].value + 3.3*quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].value)*inputs[BRIGHTNESS_MOD_INPUT].value/5.0, 0.0f, 1.0f);
+		patch.damping = clamp(params[DAMPING_PARAM].value + 3.3*quadraticBipolar(params[DAMPING_MOD_PARAM].value)*inputs[DAMPING_MOD_INPUT].value/5.0, 0.0f, 0.9995f);
+		patch.position = clamp(params[POSITION_PARAM].value + 3.3*quadraticBipolar(params[POSITION_MOD_PARAM].value)*inputs[POSITION_MOD_INPUT].value/5.0, 0.0f, 0.9995f);
 
 		// Performance
 		rings::PerformanceState performance_state;
@@ -189,8 +189,8 @@ void Rings::step() {
 		if (inputs[PITCH_INPUT].active) {
 			transpose = roundf(transpose);
 		}
-		performance_state.tonic = 12.0 + clampf(transpose, 0, 60.0);
-		performance_state.fm = clampf(48.0 * 3.3*quarticBipolar(params[FREQUENCY_MOD_PARAM].value) * inputs[FREQUENCY_MOD_INPUT].normalize(1.0)/5.0, -48.0, 48.0);
+		performance_state.tonic = 12.0 + clamp(transpose, 0.0f, 60.0f);
+		performance_state.fm = clamp(48.0 * 3.3*quarticBipolar(params[FREQUENCY_MOD_PARAM].value) * inputs[FREQUENCY_MOD_INPUT].normalize(1.0)/5.0, -48.0f, 48.0f);
 
 		performance_state.internal_exciter = !inputs[IN_INPUT].active;
 		performance_state.internal_strum = !inputs[STRUM_INPUT].active;
@@ -202,7 +202,7 @@ void Rings::step() {
 		lastStrum = strum;
 		strum = false;
 
-		performance_state.chord = clampf(roundf(structure * (rings::kNumChords - 1)), 0, rings::kNumChords - 1);
+		performance_state.chord = clamp((int) roundf(structure * (rings::kNumChords - 1)), 0, rings::kNumChords - 1);
 
 		// Process audio
 		float out[24];
@@ -237,11 +237,11 @@ void Rings::step() {
 		Frame<2> outputFrame = outputBuffer.shift();
 		// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
 		if (outputs[ODD_OUTPUT].active && outputs[EVEN_OUTPUT].active) {
-			outputs[ODD_OUTPUT].value = clampf(outputFrame.samples[0], -1.0, 1.0)*5.0;
-			outputs[EVEN_OUTPUT].value = clampf(outputFrame.samples[1], -1.0, 1.0)*5.0;
+			outputs[ODD_OUTPUT].value = clamp(outputFrame.samples[0], -1.0, 1.0)*5.0;
+			outputs[EVEN_OUTPUT].value = clamp(outputFrame.samples[1], -1.0, 1.0)*5.0;
 		}
 		else {
-			float v = clampf(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0)*5.0;
+			float v = clamp(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0)*5.0;
 			outputs[ODD_OUTPUT].value = v;
 			outputs[EVEN_OUTPUT].value = v;
 		}

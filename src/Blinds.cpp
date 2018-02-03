@@ -55,7 +55,7 @@ void Blinds::step() {
 	for (int i = 0; i < 4; i++) {
 		float g = params[GAIN1_PARAM + i].value;
 		g += params[MOD1_PARAM + i].value * inputs[CV1_INPUT + i].value / 5.0;
-		g = clampf(g, -2.0, 2.0);
+		g = clamp(g, -2.0f, 2.0f);
 		lights[CV1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, g));
 		lights[CV1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -g));
 		out += g * inputs[IN1_INPUT + i].normalize(5.0);

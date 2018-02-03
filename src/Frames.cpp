@@ -151,8 +151,8 @@ void Frames::step() {
 
 	int32_t timestamp = params[FRAME_PARAM].value * 65535.0;
 	int32_t timestampMod = timestamp + params[MODULATION_PARAM].value * inputs[FRAME_INPUT].value / 10.0 * 65535.0;
-	timestamp = clampi(timestamp, 0, 65535);
-	timestampMod = clampi(timestampMod, 0, 65535);
+	timestamp = clamp(timestamp, 0, 65535);
+	timestampMod = clamp(timestampMod, 0, 65535);
 	int16_t nearestIndex = -1;
 	if (!poly_lfo_mode) {
 		nearestIndex = keyframer.FindNearestKeyframe(timestamp, 2048);
@@ -212,8 +212,8 @@ void Frames::step() {
 		// Simulate SSM2164
 		if (keyframer.mutable_settings(i)->response > 0) {
 			const float expBase = 200.0;
-			float expGain = rescalef(powf(expBase, gains[i]), 1.0, expBase, 0.0, 1.0);
-			gains[i] = crossf(gains[i], expGain, keyframer.mutable_settings(i)->response / 255.0);
+			float expGain = rescale(powf(expBase, gains[i]), 1.0f, expBase, 0.0f, 1.0f);
+			gains[i] = crossfade(gains[i], expGain, keyframer.mutable_settings(i)->response / 255.0f);
 		}
 	}
 
@@ -245,7 +245,7 @@ void Frames::step() {
 		}
 	}
 
-	outputs[MIX_OUTPUT].value = clampf(mix / 2.0, -10.0, 10.0);
+	outputs[MIX_OUTPUT].value = clamp(mix / 2.0, -10.0f, 10.0f);
 
 	// Set lights
 	for (int i = 0; i < 4; i++) {

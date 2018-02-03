@@ -132,12 +132,12 @@ void Tides::step() {
 		pitch += 60.0;
 		// Scale to the global sample rate
 		pitch += log2f(48000.0 / engineGetSampleRate()) * 12.0;
-		generator.set_pitch(clampf(pitch * 0x80, -0x8000, 0x7fff));
+		generator.set_pitch((int) clamp(pitch * 0x80, (float) -0x8000, (float) 0x7fff));
 
 		// Slope, smoothness, pitch
-		int16_t shape = clampf(params[SHAPE_PARAM].value + inputs[SHAPE_INPUT].value / 5.0, -1.0, 1.0) * 0x7fff;
-		int16_t slope = clampf(params[SLOPE_PARAM].value + inputs[SLOPE_INPUT].value / 5.0, -1.0, 1.0) * 0x7fff;
-		int16_t smoothness = clampf(params[SMOOTHNESS_PARAM].value + inputs[SMOOTHNESS_INPUT].value / 5.0, -1.0, 1.0) * 0x7fff;
+		int16_t shape = clamp(params[SHAPE_PARAM].value + inputs[SHAPE_INPUT].value / 5.0f, -1.0f, 1.0f) * 0x7fff;
+		int16_t slope = clamp(params[SLOPE_PARAM].value + inputs[SLOPE_INPUT].value / 5.0f, -1.0f, 1.0f) * 0x7fff;
+		int16_t smoothness = clamp(params[SMOOTHNESS_PARAM].value + inputs[SMOOTHNESS_INPUT].value / 5.0f, -1.0f, 1.0f) * 0x7fff;
 		generator.set_shape(shape);
 		generator.set_slope(slope);
 		generator.set_smoothness(smoothness);
@@ -152,7 +152,7 @@ void Tides::step() {
 	}
 
 	// Level
-	uint16_t level = clampf(inputs[LEVEL_INPUT].normalize(8.0) / 8.0, 0.0, 1.0) * 0xffff;
+	uint16_t level = clamp(inputs[LEVEL_INPUT].normalize(8.0) / 8.0f, 0.0f, 1.0f) * 0xffff;
 	if (level < 32)
 		level = 0;
 

@@ -112,7 +112,7 @@ void Braids::step() {
 		if (settings.meta_modulation) {
 			shape += roundf(fm / 10.0 * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 		}
-		settings.shape = clampi(shape, 0, braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
+		settings.shape = clamp(shape, 0, braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 
 		// Setup oscillator from settings
 		osc.set_shape((braids::MacroOscillatorShape) settings.shape);
@@ -120,8 +120,8 @@ void Braids::step() {
 		// Set timbre/modulation
 		float timbre = params[TIMBRE_PARAM].value + params[MODULATION_PARAM].value * inputs[TIMBRE_INPUT].value / 5.0;
 		float modulation = params[COLOR_PARAM].value + inputs[COLOR_INPUT].value / 5.0;
-		int16_t param1 = rescalef(clampf(timbre, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
-		int16_t param2 = rescalef(clampf(modulation, 0.0, 1.0), 0.0, 1.0, 0, INT16_MAX);
+		int16_t param1 = rescale(clamp(timbre, 0.0f, 1.0f), 0.0f, 1.0f, 0, INT16_MAX);
+		int16_t param2 = rescale(clamp(modulation, 0.0f, 1.0f), 0.0f, 1.0f, 0, INT16_MAX);
 		osc.set_parameters(param1, param2);
 
 		// Set pitch
@@ -132,7 +132,7 @@ void Braids::step() {
 			pitchV += log2f(96000.0 / engineGetSampleRate());
 		int32_t pitch = (pitchV * 12.0 + 60) * 128;
 		pitch += jitter_source.Render(settings.vco_drift);
-		pitch = clampi(pitch, 0, 16383);
+		pitch = clamp(pitch, 0, 16383);
 		osc.set_pitch(pitch);
 
 		// TODO: add a sync input buffer (must be sample rate converted)

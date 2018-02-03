@@ -161,7 +161,7 @@ void Elements::step() {
 		p->exciter_blow_level = params[BLOW_PARAM].value;
 		p->exciter_strike_level = params[STRIKE_PARAM].value;
 
-#define BIND(_p, _m, _i) clampf(params[_p].value + 3.3*quadraticBipolar(params[_m].value)*inputs[_i].value/5.0, 0.0, 0.9995)
+#define BIND(_p, _m, _i) clamp(params[_p].value + 3.3f*quadraticBipolar(params[_m].value)*inputs[_i].value/5.0f, 0.0f, 0.9995f)
 
 		p->exciter_bow_timbre = BIND(BOW_TIMBRE_PARAM, BOW_TIMBRE_MOD_PARAM, BOW_TIMBRE_MOD_INPUT);
 		p->exciter_blow_meta = BIND(FLOW_PARAM, FLOW_MOD_PARAM, FLOW_MOD_INPUT);
@@ -172,14 +172,14 @@ void Elements::step() {
 		p->resonator_brightness = BIND(BRIGHTNESS_PARAM, BRIGHTNESS_MOD_PARAM, BRIGHTNESS_MOD_INPUT);
 		p->resonator_damping = BIND(DAMPING_PARAM, DAMPING_MOD_PARAM, DAMPING_MOD_INPUT);
 		p->resonator_position = BIND(POSITION_PARAM, POSITION_MOD_PARAM, POSITION_MOD_INPUT);
-		p->space = clampf(params[SPACE_PARAM].value + params[SPACE_MOD_PARAM].value*inputs[SPACE_MOD_INPUT].value/5.0, 0.0, 2.0);
+		p->space = clamp(params[SPACE_PARAM].value + params[SPACE_MOD_PARAM].value*inputs[SPACE_MOD_INPUT].value/5.0f, 0.0f, 2.0f);
 
 		// Get performance inputs
 		elements::PerformanceState performance;
 		performance.note = 12.0*inputs[NOTE_INPUT].value + roundf(params[COARSE_PARAM].value) + params[FINE_PARAM].value + 69.0;
 		performance.modulation = 3.3*quarticBipolar(params[FM_PARAM].value) * 49.5 * inputs[FM_INPUT].value/5.0;
 		performance.gate = params[PLAY_PARAM].value >= 1.0 || inputs[GATE_INPUT].value >= 1.0;
-		performance.strength = clampf(1.0 - inputs[STRENGTH_INPUT].value/5.0, 0.0, 1.0);
+		performance.strength = clamp(1.0 - inputs[STRENGTH_INPUT].value/5.0f, 0.0f, 1.0f);
 
 		// Generate audio
 		part->Process(performance, blow, strike, main, aux, 16);
