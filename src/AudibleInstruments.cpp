@@ -5,10 +5,8 @@ Plugin *plugin;
 
 void init(rack::Plugin *p) {
 	plugin = p;
-	p->slug = "AudibleInstruments";
-#ifdef VERSION
+	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
-#endif
 
 	p->addModel(createModel<BraidsWidget>("Audible Instruments", "Braids", "Macro Oscillator", OSCILLATOR_TAG, WAVESHAPER_TAG));
 	p->addModel(createModel<ElementsWidget>("Audible Instruments", "Elements", "Modal Synthesizer", PHYSICAL_MODELING_TAG));
