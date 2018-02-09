@@ -44,7 +44,7 @@ void Kinks::step() {
 	float noise = 2.0 * randomNormal();
 
 	// S&H
-	if (trigger.process(inputs[TRIG_INPUT].value * 0.7)) {
+	if (trigger.process(inputs[TRIG_INPUT].value / 0.7)) {
 		sample = inputs[SH_INPUT].normalize(noise);
 	}
 
