@@ -80,3 +80,8 @@ struct FramesWidget : ModuleWidget {
 	FramesWidget();
 	Menu *createContextMenu() override;
 };
+
+struct PeaksWidget : ModuleWidget {
+	PeaksWidget();
+	Menu *createContextMenu() override;
+};

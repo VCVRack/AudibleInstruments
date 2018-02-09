@@ -21,4 +21,5 @@ void init(rack::Plugin *p) {
 	p->addModel(createModel<BlindsWidget>("Audible Instruments", "Blinds", "Quad VC-polarizer", MIXER_TAG, ATTENUATOR_TAG));
 	p->addModel(createModel<VeilsWidget>("Audible Instruments", "Veils", "Quad VCA", MIXER_TAG));
 	p->addModel(createModel<FramesWidget>("Audible Instruments", "Frames", "Keyframer/Mixer", MIXER_TAG, ATTENUATOR_TAG, LFO_TAG));
+	p->addModel(createModel<PeaksWidget>("Audible Instruments", "Peaks", "Percussive Synthesizer", UTILITY_TAG, LFO_TAG, DRUM_TAG));
 }
