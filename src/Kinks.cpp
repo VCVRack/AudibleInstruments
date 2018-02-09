@@ -80,25 +80,25 @@ KinksWidget::KinksWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
 
-	addInput(createInput<PJ301MPort>(Vec(4, 75), module, Kinks::SIGN_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(31, 75), module, Kinks::INVERT_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(4, 113), module, Kinks::HALF_RECTIFY_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(31, 113), module, Kinks::FULL_RECTIFY_OUTPUT));
+	addInput(Port::create<PJ301MPort>(Vec(4, 75), Port::INPUT, module, Kinks::SIGN_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(31, 75), Port::OUTPUT, module, Kinks::INVERT_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(4, 113), Port::OUTPUT, module, Kinks::HALF_RECTIFY_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(31, 113), Port::OUTPUT, module, Kinks::FULL_RECTIFY_OUTPUT));
 
-	addInput(createInput<PJ301MPort>(Vec(4, 177), module, Kinks::LOGIC_A_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(31, 177), module, Kinks::LOGIC_B_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(4, 214), module, Kinks::MAX_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(31, 214), module, Kinks::MIN_OUTPUT));
+	addInput(Port::create<PJ301MPort>(Vec(4, 177), Port::INPUT, module, Kinks::LOGIC_A_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(31, 177), Port::INPUT, module, Kinks::LOGIC_B_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(4, 214), Port::OUTPUT, module, Kinks::MAX_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(31, 214), Port::OUTPUT, module, Kinks::MIN_OUTPUT));
 
-	addInput(createInput<PJ301MPort>(Vec(4, 278), module, Kinks::SH_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(31, 278), module, Kinks::TRIG_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(4, 316), module, Kinks::NOISE_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(31, 316), module, Kinks::SH_OUTPUT));
+	addInput(Port::create<PJ301MPort>(Vec(4, 278), Port::INPUT, module, Kinks::SH_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(31, 278), Port::INPUT, module, Kinks::TRIG_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(4, 316), Port::OUTPUT, module, Kinks::NOISE_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(31, 316), Port::OUTPUT, module, Kinks::SH_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 59), module, Kinks::SIGN_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 161), module, Kinks::LOGIC_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 262), module, Kinks::SH_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(11, 59), module, Kinks::SIGN_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(11, 161), module, Kinks::LOGIC_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(11, 262), module, Kinks::SH_POS_LIGHT));
 }

@@ -258,41 +258,41 @@ RingsWidget::RingsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(180, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(180, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(180, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(180, 365)));
 
-	addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
 
-	addParam(createParam<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
-	addParam(createParam<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
+	addParam(ParamWidget::create<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<PJ301MPort>(Vec(15, 273), module, Rings::BRIGHTNESS_MOD_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(54, 273), module, Rings::FREQUENCY_MOD_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(92, 273), module, Rings::DAMPING_MOD_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(131, 273), module, Rings::STRUCTURE_MOD_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(169, 273), module, Rings::POSITION_MOD_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(15, 273), Port::INPUT, module, Rings::BRIGHTNESS_MOD_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(54, 273), Port::INPUT, module, Rings::FREQUENCY_MOD_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(92, 273), Port::INPUT, module, Rings::DAMPING_MOD_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(131, 273), Port::INPUT, module, Rings::STRUCTURE_MOD_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(169, 273), Port::INPUT, module, Rings::POSITION_MOD_INPUT));
 
-	addInput(createInput<PJ301MPort>(Vec(15, 316), module, Rings::STRUM_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(54, 316), module, Rings::PITCH_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(92, 316), module, Rings::IN_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(131, 316), module, Rings::ODD_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(169, 316), module, Rings::EVEN_OUTPUT));
+	addInput(Port::create<PJ301MPort>(Vec(15, 316), Port::INPUT, module, Rings::STRUM_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(54, 316), Port::INPUT, module, Rings::PITCH_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(92, 316), Port::INPUT, module, Rings::IN_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(131, 316), Port::OUTPUT, module, Rings::ODD_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(169, 316), Port::OUTPUT, module, Rings::EVEN_OUTPUT));
 
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
 }
 
 

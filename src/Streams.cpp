@@ -52,27 +52,27 @@ StreamsWidget::StreamsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(150, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(150, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(150, 365)));
 
-	// addParam(createParam<HugeGlowKnob>(Vec(30, 53), module, Streams::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
+	// addParam(ParamWidget::create<HugeGlowKnob>(Vec(30, 53), module, Streams::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
-	// addParam(createParam<Rogan1PSWhite>(Vec(95, 173), module, Streams::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	// addParam(createParam<MediumToggleSwitch>(Vec(17, 182), module, Streams::STATE_PARAM, 0.0, 3.0, 0.0));
-	// addParam(createParam<Trimpot>(Vec(15, 214), module, Streams::LEVEL1_PARAM, 0.0, 1.0, 1.0));
-	// addParam(createParam<Trimpot>(Vec(53, 214), module, Streams::LEVEL2_PARAM, 0.0, 1.0, 1.0));
+	// addParam(ParamWidget::create<Rogan1PSWhite>(Vec(95, 173), module, Streams::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+	// addParam(ParamWidget::create<MediumToggleSwitch>(Vec(17, 182), module, Streams::STATE_PARAM, 0.0, 3.0, 0.0));
+	// addParam(ParamWidget::create<Trimpot>(Vec(15, 214), module, Streams::LEVEL1_PARAM, 0.0, 1.0, 1.0));
+	// addParam(ParamWidget::create<Trimpot>(Vec(53, 214), module, Streams::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
-	// addInput(createInput<PJ3410Port>(Vec(11, 275), module, Streams::LEVEL1_INPUT));
-	// addInput(createInput<PJ3410Port>(Vec(47, 275), module, Streams::LEVEL2_INPUT));
-	// addInput(createInput<PJ3410Port>(Vec(83, 275), module, Streams::ALGORITHM_INPUT));
-	// addInput(createInput<PJ3410Port>(Vec(119, 275), module, Streams::TIMBRE_INPUT));
+	// addInput(Port::create<PJ3410Port>(Vec(11, 275), Port::INPUT, module, Streams::LEVEL1_INPUT));
+	// addInput(Port::create<PJ3410Port>(Vec(47, 275), Port::INPUT, module, Streams::LEVEL2_INPUT));
+	// addInput(Port::create<PJ3410Port>(Vec(83, 275), Port::INPUT, module, Streams::ALGORITHM_INPUT));
+	// addInput(Port::create<PJ3410Port>(Vec(119, 275), Port::INPUT, module, Streams::TIMBRE_INPUT));
 
-	// addInput(createInput<PJ3410Port>(Vec(11, 318), module, Streams::CARRIER_INPUT));
-	// addInput(createInput<PJ3410Port>(Vec(47, 318), module, Streams::MODULATOR_INPUT));
-	// addOutput(createOutput<PJ3410Port>(Vec(83, 318), module, Streams::MODULATOR_OUTPUT));
-	// addOutput(createOutput<PJ3410Port>(Vec(119, 318), module, Streams::AUX_OUTPUT));
+	// addInput(Port::create<PJ3410Port>(Vec(11, 318), Port::INPUT, module, Streams::CARRIER_INPUT));
+	// addInput(Port::create<PJ3410Port>(Vec(47, 318), Port::INPUT, module, Streams::MODULATOR_INPUT));
+	// addOutput(Port::create<PJ3410Port>(Vec(83, 318), Port::OUTPUT, module, Streams::MODULATOR_OUTPUT));
+	// addOutput(Port::create<PJ3410Port>(Vec(119, 318), Port::OUTPUT, module, Streams::AUX_OUTPUT));
 
 	// Streams *streams = dynamic_cast<Streams*>(module);
 	// addChild(createValueLight<SmallModeLight>(Vec(21, 168), &streams->lights[0]));

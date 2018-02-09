@@ -81,43 +81,43 @@ BlindsWidget::BlindsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(150, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(150, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(150, 365)));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(8, 52), module, Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(8, 131), module, Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(8, 210), module, Blinds::GAIN3_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(8, 288), module, Blinds::GAIN4_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 52), module, Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 131), module, Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 210), module, Blinds::GAIN3_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 288), module, Blinds::GAIN4_PARAM, -1.0, 1.0, 0.0));
 
-	addParam(createParam<Trimpot>(Vec(72, 63), module, Blinds::MOD1_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(72, 142), module, Blinds::MOD2_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(72, 221), module, Blinds::MOD3_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<Trimpot>(Vec(72, 300), module, Blinds::MOD4_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(72, 63), module, Blinds::MOD1_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(72, 142), module, Blinds::MOD2_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(72, 221), module, Blinds::MOD3_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Trimpot>(Vec(72, 300), module, Blinds::MOD4_PARAM, -1.0, 1.0, 0.0));
 
-	addInput(createInput<PJ301MPort>(Vec(110, 41), module, Blinds::IN1_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(110, 120), module, Blinds::IN2_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(110, 198), module, Blinds::IN3_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(110, 277), module, Blinds::IN4_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 41), Port::INPUT, module, Blinds::IN1_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 120), Port::INPUT, module, Blinds::IN2_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 198), Port::INPUT, module, Blinds::IN3_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 277), Port::INPUT, module, Blinds::IN4_INPUT));
 
-	addInput(createInput<PJ301MPort>(Vec(110, 80), module, Blinds::CV1_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(110, 159), module, Blinds::CV2_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(110, 238), module, Blinds::CV3_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(110, 316), module, Blinds::CV4_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 80), Port::INPUT, module, Blinds::CV1_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 159), Port::INPUT, module, Blinds::CV2_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 238), Port::INPUT, module, Blinds::CV3_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(110, 316), Port::INPUT, module, Blinds::CV4_INPUT));
 
-	addOutput(createOutput<PJ301MPort>(Vec(144, 41), module, Blinds::OUT1_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(144, 120), module, Blinds::OUT2_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(144, 198), module, Blinds::OUT3_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(144, 277), module, Blinds::OUT4_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(144, 41), Port::OUTPUT, module, Blinds::OUT1_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(144, 120), Port::OUTPUT, module, Blinds::OUT2_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(144, 198), Port::OUTPUT, module, Blinds::OUT3_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(144, 277), Port::OUTPUT, module, Blinds::OUT4_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 96), module, Blinds::CV1_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 175), module, Blinds::CV2_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 254), module, Blinds::CV3_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(77, 333), module, Blinds::CV4_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 96), module, Blinds::CV1_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 175), module, Blinds::CV2_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 254), module, Blinds::CV3_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 333), module, Blinds::CV4_POS_LIGHT));
 
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 87), module, Blinds::OUT1_POS_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 166), module, Blinds::OUT2_POS_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 245), module, Blinds::OUT3_POS_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::OUT4_POS_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 87), module, Blinds::OUT1_POS_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 166), module, Blinds::OUT2_POS_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 245), module, Blinds::OUT3_POS_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::OUT4_POS_LIGHT));
 }

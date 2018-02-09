@@ -267,44 +267,44 @@ CloudsWidget::CloudsWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(240, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(240, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(240, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(240, 365)));
 
-	addParam(createParam<Rogan3PSRed>(Vec(27, 93), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan3PSGreen>(Vec(108, 93), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan3PSWhite>(Vec(190, 93), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
+	addParam(ParamWidget::create<Rogan3PSRed>(Vec(27, 93), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan3PSGreen>(Vec(108, 93), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan3PSWhite>(Vec(190, 93), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
 
-	addParam(createParam<Rogan1PSRed>(Vec(14, 180), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSRed>(Vec(81, 180), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSGreen>(Vec(146, 180), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
-	blendParam = createParam<Rogan1PSWhite>(Vec(213, 180), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
+	addParam(ParamWidget::create<Rogan1PSRed>(Vec(14, 180), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSRed>(Vec(81, 180), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(146, 180), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
+	blendParam = ParamWidget::create<Rogan1PSWhite>(Vec(213, 180), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
 	addParam(blendParam);
-	spreadParam = createParam<Rogan1PSRed>(Vec(213, 180), module, Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
+	spreadParam = ParamWidget::create<Rogan1PSRed>(Vec(213, 180), module, Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
 	addParam(spreadParam);
-	feedbackParam = createParam<Rogan1PSGreen>(Vec(213, 180), module, Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
+	feedbackParam = ParamWidget::create<Rogan1PSGreen>(Vec(213, 180), module, Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
 	addParam(feedbackParam);
-	reverbParam = createParam<Rogan1PSBlue>(Vec(213, 180), module, Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
+	reverbParam = ParamWidget::create<Rogan1PSBlue>(Vec(213, 180), module, Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
 	addParam(reverbParam);
 
-	addParam(createParam<CKD6>(Vec(12, 43), module, Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<TL1105>(Vec(211, 50), module, Clouds::MODE_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<TL1105>(Vec(239, 50), module, Clouds::LOAD_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<CKD6>(Vec(12, 43), module, Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<TL1105>(Vec(211, 50), module, Clouds::MODE_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<TL1105>(Vec(239, 50), module, Clouds::LOAD_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<PJ301MPort>(Vec(15, 274), module, Clouds::FREEZE_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(58, 274), module, Clouds::TRIG_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(101, 274), module, Clouds::POSITION_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(144, 274), module, Clouds::SIZE_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(188, 274), module, Clouds::PITCH_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(230, 274), module, Clouds::BLEND_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(15, 274), Port::INPUT, module, Clouds::FREEZE_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(58, 274), Port::INPUT, module, Clouds::TRIG_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(101, 274), Port::INPUT, module, Clouds::POSITION_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(144, 274), Port::INPUT, module, Clouds::SIZE_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(188, 274), Port::INPUT, module, Clouds::PITCH_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(230, 274), Port::INPUT, module, Clouds::BLEND_INPUT));
 
-	addInput(createInput<PJ301MPort>(Vec(15, 317), module, Clouds::IN_L_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(58, 317), module, Clouds::IN_R_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(101, 317), module, Clouds::DENSITY_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(144, 317), module, Clouds::TEXTURE_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(188, 317), module, Clouds::OUT_L_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(230, 317), module, Clouds::OUT_R_OUTPUT));
+	addInput(Port::create<PJ301MPort>(Vec(15, 317), Port::INPUT, module, Clouds::IN_L_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(58, 317), Port::INPUT, module, Clouds::IN_R_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(101, 317), Port::INPUT, module, Clouds::DENSITY_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(144, 317), Port::INPUT, module, Clouds::TEXTURE_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(188, 317), Port::OUTPUT, module, Clouds::OUT_L_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(230, 317), Port::OUTPUT, module, Clouds::OUT_R_OUTPUT));
 
 	struct FreezeLight : YellowLight {
 		FreezeLight() {
@@ -312,11 +312,11 @@ CloudsWidget::CloudsWidget() {
 			bgColor = COLOR_BLACK_TRANSPARENT;
 		}
 	};
-	addChild(createLight<FreezeLight>(Vec(12+3, 43+3), module, Clouds::FREEZE_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
-	addChild(createLight<MediumLight<GreenRedLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
+	addChild(ModuleLightWidget::create<FreezeLight>(Vec(12+3, 43+3), module, Clouds::FREEZE_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
+	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
 }
 
 void CloudsWidget::step() {

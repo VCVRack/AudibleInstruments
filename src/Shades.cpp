@@ -72,26 +72,26 @@ ShadesWidget::ShadesWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
 
-	addParam(createParam<Rogan1PSRed>(Vec(40, 40), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSWhite>(Vec(40, 106), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<Rogan1PSGreen>(Vec(40, 172), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSRed>(Vec(40, 40), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(40, 106), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(40, 172), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
 
-	addParam(createParam<CKSS>(Vec(10, 51), module, Shades::MODE1_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<CKSS>(Vec(10, 117), module, Shades::MODE2_PARAM, 0.0, 1.0, 1.0));
-	addParam(createParam<CKSS>(Vec(10, 183), module, Shades::MODE3_PARAM, 0.0, 1.0, 1.0));
+	addParam(ParamWidget::create<CKSS>(Vec(10, 51), module, Shades::MODE1_PARAM, 0.0, 1.0, 1.0));
+	addParam(ParamWidget::create<CKSS>(Vec(10, 117), module, Shades::MODE2_PARAM, 0.0, 1.0, 1.0));
+	addParam(ParamWidget::create<CKSS>(Vec(10, 183), module, Shades::MODE3_PARAM, 0.0, 1.0, 1.0));
 
-	addInput(createInput<PJ301MPort>(Vec(9, 245), module, Shades::IN1_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(9, 281), module, Shades::IN2_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(9, 317), module, Shades::IN3_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(9, 245), Port::INPUT, module, Shades::IN1_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(9, 281), Port::INPUT, module, Shades::IN2_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(9, 317), Port::INPUT, module, Shades::IN3_INPUT));
 
-	addOutput(createOutput<PJ301MPort>(Vec(56, 245), module, Shades::OUT1_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(56, 281), module, Shades::OUT2_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(56, 317), module, Shades::OUT3_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(56, 245), Port::OUTPUT, module, Shades::OUT1_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(56, 281), Port::OUTPUT, module, Shades::OUT2_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(56, 317), Port::OUTPUT, module, Shades::OUT3_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 254), module, Shades::OUT1_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 290), module, Shades::OUT2_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 326), module, Shades::OUT3_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(41, 254), module, Shades::OUT1_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(41, 290), module, Shades::OUT2_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(41, 326), module, Shades::OUT3_POS_LIGHT));
 }

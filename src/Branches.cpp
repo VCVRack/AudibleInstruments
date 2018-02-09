@@ -100,25 +100,25 @@ BranchesWidget::BranchesWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
 
-	addParam(createParam<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<PJ301MPort>(Vec(9, 122), module, Branches::IN1_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(55, 122), module, Branches::P1_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(9, 160), module, Branches::OUT1A_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(55, 160), module, Branches::OUT1B_OUTPUT));
+	addParam(ParamWidget::create<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<PJ301MPort>(Vec(9, 122), Port::INPUT, module, Branches::IN1_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(55, 122), Port::INPUT, module, Branches::P1_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(9, 160), Port::OUTPUT, module, Branches::OUT1A_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(55, 160), Port::OUTPUT, module, Branches::OUT1B_OUTPUT));
 
-	addParam(createParam<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
-	addParam(createParam<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
-	addInput(createInput<PJ301MPort>(Vec(9, 278), module, Branches::IN2_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(55, 278), module, Branches::P2_INPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(9, 316), module, Branches::OUT2A_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(55, 316), module, Branches::OUT2B_OUTPUT));
+	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
+	addParam(ParamWidget::create<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
+	addInput(Port::create<PJ301MPort>(Vec(9, 278), Port::INPUT, module, Branches::IN2_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(55, 278), Port::INPUT, module, Branches::P2_INPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(9, 316), Port::OUTPUT, module, Branches::OUT2A_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(55, 316), Port::OUTPUT, module, Branches::OUT2B_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
-	addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
 }
 
 

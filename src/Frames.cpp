@@ -297,47 +297,47 @@ FramesWidget::FramesWidget() {
 		addChild(panel);
 	}
 
-	addChild(createScrew<ScrewSilver>(Vec(15, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 0)));
-	addChild(createScrew<ScrewSilver>(Vec(15, 365)));
-	addChild(createScrew<ScrewSilver>(Vec(box.size.x-30, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
+	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
-	addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
-	addParam(createParam<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
+	addParam(ParamWidget::create<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
+	addParam(ParamWidget::create<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(createInput<PJ301MPort>(Vec(16, 273), module, Frames::ALL_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(59, 273), module, Frames::IN1_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(102, 273), module, Frames::IN2_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(145, 273), module, Frames::IN3_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(188, 273), module, Frames::IN4_INPUT));
-	addInput(createInput<PJ301MPort>(Vec(231, 273), module, Frames::FRAME_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(16, 273), Port::INPUT, module, Frames::ALL_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(59, 273), Port::INPUT, module, Frames::IN1_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(102, 273), Port::INPUT, module, Frames::IN2_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(145, 273), Port::INPUT, module, Frames::IN3_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(188, 273), Port::INPUT, module, Frames::IN4_INPUT));
+	addInput(Port::create<PJ301MPort>(Vec(231, 273), Port::INPUT, module, Frames::FRAME_INPUT));
 
-	addOutput(createOutput<PJ301MPort>(Vec(16, 315), module, Frames::MIX_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(59, 315), module, Frames::OUT1_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(102, 315), module, Frames::OUT2_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(145, 315), module, Frames::OUT3_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(188, 315), module, Frames::OUT4_OUTPUT));
-	addOutput(createOutput<PJ301MPort>(Vec(231, 315), module, Frames::FRAME_STEP_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(16, 315), Port::OUTPUT, module, Frames::MIX_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(59, 315), Port::OUTPUT, module, Frames::OUT1_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(102, 315), Port::OUTPUT, module, Frames::OUT2_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(145, 315), Port::OUTPUT, module, Frames::OUT3_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(188, 315), Port::OUTPUT, module, Frames::OUT4_OUTPUT));
+	addOutput(Port::create<PJ301MPort>(Vec(231, 315), Port::OUTPUT, module, Frames::FRAME_STEP_OUTPUT));
 
-	addChild(createLight<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
-	addChild(createLight<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
-	addChild(createLight<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
-	addChild(createLight<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
-	addChild(createLight<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
+	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
+	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
+	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
+	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
+	addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
 
 	struct FrameLight : RedGreenBlueLight {
 		FrameLight() {
 			box.size = Vec(71, 71);
 		}
 	};
-	addChild(createLight<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
+	addChild(ModuleLightWidget::create<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
 }
 
 
