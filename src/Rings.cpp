@@ -118,9 +118,6 @@ Rings::Rings() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	strummer.Init(0.01, 44100.0 / 24);
 	part.Init(reverb_buffer);
 	string_synth.Init(reverb_buffer);
-
-	polyphonyTrigger.setThresholds(0.0, 1.0);
-	modelTrigger.setThresholds(0.0, 1.0);
 }
 
 void Rings::step() {

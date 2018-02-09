@@ -306,7 +306,7 @@ struct ElementsModalItem : MenuItem {
 		elements->setModel(model);
 	}
 	void step() override {
-		rightText = (elements->getModel() == model) ? "✔" : "";
+		rightText = CHECKMARK(elements->getModel() == model);
 		MenuItem::step();
 	}
 };

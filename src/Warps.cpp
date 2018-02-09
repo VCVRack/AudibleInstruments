@@ -73,8 +73,6 @@ struct Warps : Module {
 Warps::Warps() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	memset(&modulator, 0, sizeof(modulator));
 	modulator.Init(96000.0f);
-
-	stateTrigger.setThresholds(0.0, 1.0);
 }
 
 void Warps::step() {

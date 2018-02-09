@@ -34,9 +34,7 @@ struct Kinks : Module {
 	SchmittTrigger trigger;
 	float sample = 0.0;
 
-	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-		trigger.setThresholds(0.0, 0.7);
-	}
+	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 	void step() override;
 };
 
@@ -46,7 +44,7 @@ void Kinks::step() {
 	float noise = 2.0 * randomNormal();
 
 	// S&H
-	if (trigger.process(inputs[TRIG_INPUT].value)) {
+	if (trigger.process(inputs[TRIG_INPUT].value * 0.7)) {
 		sample = inputs[SH_INPUT].normalize(noise);
 	}
 
