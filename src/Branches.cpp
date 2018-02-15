@@ -62,7 +62,8 @@ void Branches::step() {
 		if (gateTrigger[i].process(gate)) {
 			// trigger
 			float r = randomf();
-			bool toss = (r < params[THRESHOLD1_PARAM + i].value + inputs[P1_INPUT + i].value);
+			float threshold = clamp(params[THRESHOLD1_PARAM + i].value + inputs[P1_INPUT + i].value / 10.f, 0.f, 1.f);
+			bool toss = (r < threshold);
 			if (!mode[i]) {
 				// direct mode
 				outcome[i] = toss;
