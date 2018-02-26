@@ -287,7 +287,13 @@ struct CKSSRot : SVGSwitch, ToggleSwitch {
 
 struct FramesWidget : ModuleWidget {
 	FramesWidget(Frames *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Frames.svg")));
+		box.size = Vec(15*18, 380);
+		{
+			Panel *panel = new LightPanel();
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Frames.png"));
+			panel->box.size = box.size;
+			addChild(panel);
+		}
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));

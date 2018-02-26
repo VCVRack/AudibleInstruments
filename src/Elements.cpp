@@ -229,7 +229,13 @@ struct ElementsModalItem : MenuItem {
 
 struct ElementsWidget : ModuleWidget {
 	ElementsWidget(Elements *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Elements.svg")));
+		box.size = Vec(15*34, 380);
+		{
+			Panel *panel = new LightPanel();
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Elements.png"));
+			panel->box.size = box.size;
+			addChild(panel);
+		}
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(480, 0)));

@@ -310,7 +310,13 @@ struct CloudsWidget : ModuleWidget {
 	ParamWidget *reverbParam;
 
 	CloudsWidget(Clouds *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Clouds.svg")));
+		box.size = Vec(15*18, 380);
+		{
+			Panel *panel = new LightPanel();
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Clouds.png"));
+			panel->box.size = box.size;
+			addChild(panel);
+		}
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(240, 0)));

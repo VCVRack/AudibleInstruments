@@ -209,6 +209,7 @@ struct TidesWidget : ModuleWidget {
 	Panel *sheepPanel;
 
 	TidesWidget(Tides *module) : ModuleWidget(module) {
+		box.size = Vec(15*14, 380);
 		{
 			tidesPanel = new LightPanel();
 			tidesPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));

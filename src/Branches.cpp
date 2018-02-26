@@ -91,7 +91,13 @@ void Branches::step() {
 
 struct BranchesWidget : ModuleWidget {
 	BranchesWidget(Branches *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Branches.svg")));
+		box.size = Vec(15*6, 380);
+		{
+			Panel *panel = new LightPanel();
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Branches.png"));
+			panel->box.size = box.size;
+			addChild(panel);
+		}
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));

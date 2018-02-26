@@ -128,7 +128,13 @@ struct AlgorithmLight : RedGreenBlueLight {
 
 struct WarpsWidget : ModuleWidget {
 	WarpsWidget(Warps *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Warps.svg")));
+		box.size = Vec(15*10, 380);
+		{
+			Panel *panel = new LightPanel();
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Blinds.png"));
+			panel->box.size = box.size;
+			addChild(panel);
+		}
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(120, 0)));

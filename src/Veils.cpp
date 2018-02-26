@@ -70,7 +70,13 @@ void Veils::step() {
 
 struct VeilsWidget : ModuleWidget {
 	VeilsWidget(Veils *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Veils.svg")));
+		box.size = Vec(15*12, 380);
+		{
+			Panel *panel = new LightPanel();
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Veils.png"));
+			panel->box.size = box.size;
+			addChild(panel);
+		}
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
