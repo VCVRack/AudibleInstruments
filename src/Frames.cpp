@@ -422,3 +422,6 @@ struct FramesWidget : ModuleWidget {
 		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
 	}
 };
+
+
+Model *modelFrames = Model::create<Frames, FramesWidget>("Audible Instruments", "Frames", "Keyframer/Mixer", MIXER_TAG, ATTENUATOR_TAG, LFO_TAG);

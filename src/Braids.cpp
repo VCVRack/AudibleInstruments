@@ -340,3 +340,6 @@ struct BraidsWidget : ModuleWidget {
 		menu->addChild(construct<BraidsLowCpuItem>(&MenuItem::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
 	}
 };
+
+
+Model *modelBraids = Model::create<Braids, BraidsWidget>("Audible Instruments", "Braids", "Macro Oscillator", OSCILLATOR_TAG, WAVESHAPER_TAG);

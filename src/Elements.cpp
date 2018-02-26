@@ -227,8 +227,8 @@ struct ElementsModalItem : MenuItem {
 };
 
 
-struct RampageWidget : ModuleWidget {
-	RampageWidget(Elements *module) : ModuleWidget(module) {
+struct ElementsWidget : ModuleWidget {
+	ElementsWidget(Elements *module) : ModuleWidget(module) {
 		setPanel(SVG::load(assetPlugin(plugin, "res/Elements.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
@@ -315,3 +315,6 @@ struct RampageWidget : ModuleWidget {
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
 	}
 };
+
+
+Model *modelElements = Model::create<Elements, ElementsWidget>("Audible Instruments", "Elements", "Modal Synthesizer", PHYSICAL_MODELING_TAG);

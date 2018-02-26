@@ -277,3 +277,6 @@ struct TidesWidget : ModuleWidget {
 		menu->addChild(construct<TidesSheepItem>(&MenuItem::text, "Sheep", &TidesSheepItem::tides, tides));
 	}
 };
+
+
+Model *modelTides = Model::create<Tides, TidesWidget>("Audible Instruments", "Tides", "Tidal Modulator", LFO_TAG, OSCILLATOR_TAG, WAVESHAPER_TAG, FUNCTION_GENERATOR_TAG);

@@ -61,7 +61,7 @@ void Branches::step() {
 
 		if (gateTrigger[i].process(gate)) {
 			// trigger
-			float r = randomf();
+			float r = randomUniform();
 			float threshold = clamp(params[THRESHOLD1_PARAM + i].value + inputs[P1_INPUT + i].value / 10.f, 0.f, 1.f);
 			bool toss = (r < threshold);
 			if (!mode[i]) {
@@ -137,3 +137,6 @@ struct BranchesWidget : ModuleWidget {
 		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));
 	}
 };
+
+
+Model *modelBranches = Model::create<Branches, BranchesWidget>("Audible Instruments", "Branches", "Bernoulli Gate", RANDOM_TAG, DUAL_TAG);

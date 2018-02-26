@@ -157,3 +157,6 @@ struct WarpsWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
 	}
 };
+
+
+Model *modelWarps = Model::create<Warps, WarpsWidget>("Audible Instruments", "Warps", "Meta Modulator", RING_MODULATOR_TAG, WAVESHAPER_TAG);

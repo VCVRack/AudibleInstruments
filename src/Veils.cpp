@@ -108,3 +108,6 @@ struct VeilsWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Veils::OUT4_POS_LIGHT));
 	}
 };
+
+
+Model *modelVeils = Model::create<Veils, VeilsWidget>("Audible Instruments", "Veils", "Quad VCA", MIXER_TAG);

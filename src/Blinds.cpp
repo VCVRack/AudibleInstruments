@@ -114,3 +114,6 @@ struct BlindsWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::OUT4_POS_LIGHT));
 	}
 };
+
+
+Model *modelBlinds = Model::create<Blinds, BlindsWidget>("Audible Instruments", "Blinds", "Quad VC-polarizer", MIXER_TAG, ATTENUATOR_TAG);

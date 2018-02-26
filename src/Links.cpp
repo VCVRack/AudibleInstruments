@@ -83,3 +83,6 @@ struct LinksWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_POS_LIGHT));
 	}
 };
+
+
+Model *modelLinks = Model::create<Links, LinksWidget>("Audible Instruments", "Links", "Multiples", MULTIPLE_TAG, MIXER_TAG);

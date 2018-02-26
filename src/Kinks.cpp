@@ -95,3 +95,6 @@ struct KinksWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(11, 262), module, Kinks::SH_POS_LIGHT));
 	}
 };
+
+
+Model *modelKinks = Model::create<Kinks, KinksWidget>("Audible Instruments", "Kinks", "Utilities", UTILITY_TAG, NOISE_TAG);

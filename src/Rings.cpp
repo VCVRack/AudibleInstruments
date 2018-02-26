@@ -327,3 +327,6 @@ struct RingsWidget : ModuleWidget {
 		menu->addChild(construct<RingsEasterEggItem>(&MenuItem::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
 	}
 };
+
+
+Model *modelRings = Model::create<Rings, RingsWidget>("Audible Instruments", "Rings", "Resonator", PHYSICAL_MODELING_TAG);

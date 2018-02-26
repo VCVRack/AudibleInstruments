@@ -88,3 +88,6 @@ struct ShadesWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(41, 326), module, Shades::OUT3_POS_LIGHT));
 	}
 };
+
+
+Model *modelShades = Model::create<Shades, ShadesWidget>("Audible Instruments", "Shades", "Mixer", MIXER_TAG);

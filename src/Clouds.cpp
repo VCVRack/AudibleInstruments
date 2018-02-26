@@ -395,3 +395,6 @@ struct CloudsWidget : ModuleWidget {
 		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
 	}
 };
+
+
+Model *modelClouds = Model::create<Clouds, CloudsWidget>("Audible Instruments", "Clouds", "Texture Synthesizer", GRANULAR_TAG, REVERB_TAG);
