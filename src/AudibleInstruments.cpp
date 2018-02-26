@@ -8,17 +8,17 @@ void init(rack::Plugin *p) {
 	p->slug = TOSTRING(SLUG);
 	p->version = TOSTRING(VERSION);
 
-	p->addModel(modelBraidsWidget);
-	p->addModel(modelElementsWidget);
-	p->addModel(modelTidesWidget);
-	p->addModel(modelCloudsWidget);
-	p->addModel(modelWarpsWidget);
-	p->addModel(modelRingsWidget);
-	p->addModel(modelLinksWidget);
-	p->addModel(modelKinksWidget);
-	p->addModel(modelShadesWidget);
-	p->addModel(modelBranchesWidget);
-	p->addModel(modelBlindsWidget);
-	p->addModel(modelVeilsWidget);
-	p->addModel(modelFramesWidget);
+	p->addModel(modelBraids);
+	p->addModel(modelElements);
+	p->addModel(modelTides);
+	p->addModel(modelClouds);
+	p->addModel(modelWarps);
+	p->addModel(modelRings);
+	p->addModel(modelLinks);
+	p->addModel(modelKinks);
+	p->addModel(modelShades);
+	p->addModel(modelBranches);
+	p->addModel(modelBlinds);
+	p->addModel(modelVeils);
+	p->addModel(modelFrames);
 }
