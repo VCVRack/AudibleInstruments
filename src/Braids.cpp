@@ -267,49 +267,6 @@ struct BraidsDisplay : TransparentWidget {
 };
 
 
-BraidsWidget::BraidsWidget() {
-	Braids *module = new Braids();
-	setModule(module);
-	box.size = Vec(15*16, 380);
-
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Braids.png"));
-		panel->box.size = box.size;
-		addChild(panel);
-	}
-
-	{
-		BraidsDisplay *display = new BraidsDisplay();
-		display->box.pos = Vec(14, 53);
-		display->box.size = Vec(148, 56);
-		display->module = module;
-		addChild(display);
-	}
-
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(210, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(210, 365)));
-
-	addParam(ParamWidget::create<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
-
-	addParam(ParamWidget::create<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
-	addParam(ParamWidget::create<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
-
-	addParam(ParamWidget::create<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
-
-	addInput(Port::create<PJ301MPort>(Vec(10, 316), Port::INPUT, module, Braids::TRIG_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(47, 316), Port::INPUT, module, Braids::PITCH_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(84, 316), Port::INPUT, module, Braids::FM_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(122, 316), Port::INPUT, module, Braids::TIMBRE_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(160, 316), Port::INPUT, module, Braids::COLOR_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(205, 316), Port::OUTPUT, module, Braids::OUT_OUTPUT));
-}
-
 struct BraidsSettingItem : MenuItem {
 	uint8_t *setting = NULL;
 	uint8_t offValue = 0;
@@ -335,18 +292,51 @@ struct BraidsLowCpuItem : MenuItem {
 	}
 };
 
-Menu *BraidsWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
 
-	Braids *braids = dynamic_cast<Braids*>(module);
-	assert(braids);
+struct BraidsWidget : ModuleWidget {
+	BraidsWidget(Braids *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Braids.svg")));
 
-	menu->addChild(construct<MenuLabel>());
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Options"));
-	menu->addChild(construct<BraidsSettingItem>(&MenuEntry::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
-	menu->addChild(construct<BraidsSettingItem>(&MenuEntry::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
-	menu->addChild(construct<BraidsSettingItem>(&MenuEntry::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
-	menu->addChild(construct<BraidsLowCpuItem>(&MenuEntry::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
+		{
+			BraidsDisplay *display = new BraidsDisplay();
+			display->box.pos = Vec(14, 53);
+			display->box.size = Vec(148, 56);
+			display->module = module;
+			addChild(display);
+		}
 
-	return menu;
-}
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(210, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(210, 365)));
+
+		addParam(ParamWidget::create<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
+
+		addParam(ParamWidget::create<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
+		addParam(ParamWidget::create<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
+
+		addParam(ParamWidget::create<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
+
+		addInput(Port::create<PJ301MPort>(Vec(10, 316), Port::INPUT, module, Braids::TRIG_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(47, 316), Port::INPUT, module, Braids::PITCH_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(84, 316), Port::INPUT, module, Braids::FM_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(122, 316), Port::INPUT, module, Braids::TIMBRE_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(160, 316), Port::INPUT, module, Braids::COLOR_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(205, 316), Port::OUTPUT, module, Braids::OUT_OUTPUT));
+	}
+
+	void appendContextMenu(Menu *menu) override {
+		Braids *braids = dynamic_cast<Braids*>(module);
+		assert(braids);
+
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Options"));
+		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
+		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
+		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
+		menu->addChild(construct<BraidsLowCpuItem>(&MenuItem::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
+	}
+};

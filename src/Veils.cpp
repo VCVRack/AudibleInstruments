@@ -68,50 +68,43 @@ void Veils::step() {
 }
 
 
-VeilsWidget::VeilsWidget() {
-	Veils *module = new Veils();
-	setModule(module);
-	box.size = Vec(15*12, 380);
+struct VeilsWidget : ModuleWidget {
+	VeilsWidget(Veils *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Veils.svg")));
 
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Veils.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(150, 365)));
+
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 210), module, Veils::GAIN3_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 288), module, Veils::GAIN4_PARAM, 0.0, 1.0, 0.0));
+
+		addParam(ParamWidget::create<Trimpot>(Vec(72, 56), module, Veils::RESPONSE1_PARAM, 0.0, 1.0, 1.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(72, 135), module, Veils::RESPONSE2_PARAM, 0.0, 1.0, 1.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(72, 214), module, Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(72, 292), module, Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0));
+
+		addInput(Port::create<PJ301MPort>(Vec(110, 41), Port::INPUT, module, Veils::IN1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(110, 120), Port::INPUT, module, Veils::IN2_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(110, 198), Port::INPUT, module, Veils::IN3_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(110, 277), Port::INPUT, module, Veils::IN4_INPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(110, 80), Port::INPUT, module, Veils::CV1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(110, 159), Port::INPUT, module, Veils::CV2_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(110, 238), Port::INPUT, module, Veils::CV3_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(110, 316), Port::INPUT, module, Veils::CV4_INPUT));
+
+		addOutput(Port::create<PJ301MPort>(Vec(144, 41), Port::OUTPUT, module, Veils::OUT1_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(144, 120), Port::OUTPUT, module, Veils::OUT2_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(144, 198), Port::OUTPUT, module, Veils::OUT3_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(144, 277), Port::OUTPUT, module, Veils::OUT4_OUTPUT));
+
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 87), module, Veils::OUT1_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 166), module, Veils::OUT2_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 245), module, Veils::OUT3_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Veils::OUT4_POS_LIGHT));
 	}
-
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(150, 365)));
-
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 52), module, Veils::GAIN1_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 131), module, Veils::GAIN2_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 210), module, Veils::GAIN3_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(8, 288), module, Veils::GAIN4_PARAM, 0.0, 1.0, 0.0));
-
-	addParam(ParamWidget::create<Trimpot>(Vec(72, 56), module, Veils::RESPONSE1_PARAM, 0.0, 1.0, 1.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(72, 135), module, Veils::RESPONSE2_PARAM, 0.0, 1.0, 1.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(72, 214), module, Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(72, 292), module, Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0));
-
-	addInput(Port::create<PJ301MPort>(Vec(110, 41), Port::INPUT, module, Veils::IN1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(110, 120), Port::INPUT, module, Veils::IN2_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(110, 198), Port::INPUT, module, Veils::IN3_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(110, 277), Port::INPUT, module, Veils::IN4_INPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(110, 80), Port::INPUT, module, Veils::CV1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(110, 159), Port::INPUT, module, Veils::CV2_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(110, 238), Port::INPUT, module, Veils::CV3_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(110, 316), Port::INPUT, module, Veils::CV4_INPUT));
-
-	addOutput(Port::create<PJ301MPort>(Vec(144, 41), Port::OUTPUT, module, Veils::OUT1_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(144, 120), Port::OUTPUT, module, Veils::OUT2_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(144, 198), Port::OUTPUT, module, Veils::OUT3_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(144, 277), Port::OUTPUT, module, Veils::OUT4_OUTPUT));
-
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 87), module, Veils::OUT1_POS_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 166), module, Veils::OUT2_POS_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 245), module, Veils::OUT3_POS_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Veils::OUT4_POS_LIGHT));
-}
+};

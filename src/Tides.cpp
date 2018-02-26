@@ -192,71 +192,6 @@ void Tides::step() {
 }
 
 
-TidesWidget::TidesWidget() {
-	Tides *module = new Tides();
-	setModule(module);
-	box.size = Vec(15 * 14, 380);
-
-	{
-		tidesPanel = new LightPanel();
-		tidesPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));
-		tidesPanel->box.size = box.size;
-		addChild(tidesPanel);
-	}
-	{
-		sheepPanel = new LightPanel();
-		sheepPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
-		sheepPanel->box.size = box.size;
-		addChild(sheepPanel);
-	}
-
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(180, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(180, 365)));
-
-	addParam(ParamWidget::create<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM, 0.0, 1.0, 0.0));
-
-	addParam(ParamWidget::create<Rogan3PSGreen>(Vec(78, 60), module, Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(156, 66), module, Tides::FM_PARAM, -12.0, 12.0, 0.0));
-
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(13, 155), module, Tides::SHAPE_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(85, 155), module, Tides::SLOPE_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(156, 155), module, Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0));
-
-	addInput(Port::create<PJ301MPort>(Vec(21, 219), Port::INPUT, module, Tides::SHAPE_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(93, 219), Port::INPUT, module, Tides::SLOPE_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(164, 219), Port::INPUT, module, Tides::SMOOTHNESS_INPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(21, 274), Port::INPUT, module, Tides::TRIG_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(57, 274), Port::INPUT, module, Tides::FREEZE_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(93, 274), Port::INPUT, module, Tides::PITCH_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(128, 274), Port::INPUT, module, Tides::FM_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(164, 274), Port::INPUT, module, Tides::LEVEL_INPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(21, 316), Port::INPUT, module, Tides::CLOCK_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(57, 316), Port::OUTPUT, module, Tides::HIGH_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(93, 316), Port::OUTPUT, module, Tides::LOW_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(128, 316), Port::OUTPUT, module, Tides::UNI_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(164, 316), Port::OUTPUT, module, Tides::BI_OUTPUT));
-
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(56, 61), module, Tides::MODE_GREEN_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(56, 82), module, Tides::PHASE_GREEN_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(56, 102), module, Tides::RANGE_GREEN_LIGHT));
-}
-
-void TidesWidget::step() {
-	Tides *tides = dynamic_cast<Tides*>(module);
-	assert(tides);
-
-	tidesPanel->visible = !tides->sheep;
-	sheepPanel->visible = tides->sheep;
-
-	ModuleWidget::step();
-}
-
-
 struct TidesSheepItem : MenuItem {
 	Tides *tides;
 	void onAction(EventAction &e) override {
@@ -269,14 +204,76 @@ struct TidesSheepItem : MenuItem {
 };
 
 
-Menu *TidesWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
+struct TidesWidget : ModuleWidget {
+	Panel *tidesPanel;
+	Panel *sheepPanel;
 
-	Tides *tides = dynamic_cast<Tides*>(module);
-	assert(tides);
+	TidesWidget(Tides *module) : ModuleWidget(module) {
+		{
+			tidesPanel = new LightPanel();
+			tidesPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));
+			tidesPanel->box.size = box.size;
+			addChild(tidesPanel);
+		}
+		{
+			sheepPanel = new LightPanel();
+			sheepPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
+			sheepPanel->box.size = box.size;
+			addChild(sheepPanel);
+		}
 
-	menu->addChild(construct<MenuEntry>());
-	menu->addChild(construct<TidesSheepItem>(&MenuEntry::text, "Sheep", &TidesSheepItem::tides, tides));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(180, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(180, 365)));
 
-	return menu;
-}
+		addParam(ParamWidget::create<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM, 0.0, 1.0, 0.0));
+
+		addParam(ParamWidget::create<Rogan3PSGreen>(Vec(78, 60), module, Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSGreen>(Vec(156, 66), module, Tides::FM_PARAM, -12.0, 12.0, 0.0));
+
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(13, 155), module, Tides::SHAPE_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(85, 155), module, Tides::SLOPE_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(156, 155), module, Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0));
+
+		addInput(Port::create<PJ301MPort>(Vec(21, 219), Port::INPUT, module, Tides::SHAPE_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(93, 219), Port::INPUT, module, Tides::SLOPE_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(164, 219), Port::INPUT, module, Tides::SMOOTHNESS_INPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(21, 274), Port::INPUT, module, Tides::TRIG_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(57, 274), Port::INPUT, module, Tides::FREEZE_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(93, 274), Port::INPUT, module, Tides::PITCH_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(128, 274), Port::INPUT, module, Tides::FM_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(164, 274), Port::INPUT, module, Tides::LEVEL_INPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(21, 316), Port::INPUT, module, Tides::CLOCK_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(57, 316), Port::OUTPUT, module, Tides::HIGH_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(93, 316), Port::OUTPUT, module, Tides::LOW_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(128, 316), Port::OUTPUT, module, Tides::UNI_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(164, 316), Port::OUTPUT, module, Tides::BI_OUTPUT));
+
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(56, 61), module, Tides::MODE_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(56, 82), module, Tides::PHASE_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(56, 102), module, Tides::RANGE_GREEN_LIGHT));
+	}
+
+	void step() override {
+		Tides *tides = dynamic_cast<Tides*>(module);
+		assert(tides);
+
+		tidesPanel->visible = !tides->sheep;
+		sheepPanel->visible = tides->sheep;
+
+		ModuleWidget::step();
+	}
+
+
+	void appendContextMenu(Menu *menu) override {
+		Tides *tides = dynamic_cast<Tides*>(module);
+		assert(tides);
+
+		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<TidesSheepItem>(&MenuItem::text, "Sheep", &TidesSheepItem::tides, tides));
+	}
+};

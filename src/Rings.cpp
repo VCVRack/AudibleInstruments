@@ -246,96 +246,84 @@ void Rings::step() {
 }
 
 
-RingsWidget::RingsWidget() {
-	Rings *module = new Rings();
-	setModule(module);
-	box.size = Vec(15*14, 380);
+struct RingsWidget : ModuleWidget {
+	RingsWidget(Rings *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Rings.svg")));
 
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Rings.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(180, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(180, 365)));
+
+		addParam(ParamWidget::create<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
+
+		addParam(ParamWidget::create<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
+		addParam(ParamWidget::create<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+
+		addParam(ParamWidget::create<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+
+		addInput(Port::create<PJ301MPort>(Vec(15, 273), Port::INPUT, module, Rings::BRIGHTNESS_MOD_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(54, 273), Port::INPUT, module, Rings::FREQUENCY_MOD_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(92, 273), Port::INPUT, module, Rings::DAMPING_MOD_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(131, 273), Port::INPUT, module, Rings::STRUCTURE_MOD_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(169, 273), Port::INPUT, module, Rings::POSITION_MOD_INPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(15, 316), Port::INPUT, module, Rings::STRUM_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(54, 316), Port::INPUT, module, Rings::PITCH_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(92, 316), Port::INPUT, module, Rings::IN_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(131, 316), Port::OUTPUT, module, Rings::ODD_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(169, 316), Port::OUTPUT, module, Rings::EVEN_OUTPUT));
+
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
 	}
 
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(180, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(180, 365)));
+	void appendContextMenu(Menu *menu) override {
+		Rings *rings = dynamic_cast<Rings*>(module);
+		assert(rings);
 
-	addParam(ParamWidget::create<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
+		struct RingsModelItem : MenuItem {
+			Rings *rings;
+			rings::ResonatorModel model;
+			void onAction(EventAction &e) override {
+				rings->model = model;
+			}
+			void step() override {
+				rightText = (rings->model == model) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
 
-	addParam(ParamWidget::create<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
-	addParam(ParamWidget::create<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+		struct RingsEasterEggItem : MenuItem {
+			Rings *rings;
+			void onAction(EventAction &e) override {
+				rings->easterEgg = !rings->easterEgg;
+			}
+			void step() override {
+				rightText = (rings->easterEgg) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
 
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
+		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
+		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
+		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Modulated/inharmonic string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING));
+		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "FM voice", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_FM_VOICE));
+		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
+		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
 
-	addParam(ParamWidget::create<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
-
-	addInput(Port::create<PJ301MPort>(Vec(15, 273), Port::INPUT, module, Rings::BRIGHTNESS_MOD_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(54, 273), Port::INPUT, module, Rings::FREQUENCY_MOD_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(92, 273), Port::INPUT, module, Rings::DAMPING_MOD_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(131, 273), Port::INPUT, module, Rings::STRUCTURE_MOD_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(169, 273), Port::INPUT, module, Rings::POSITION_MOD_INPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(15, 316), Port::INPUT, module, Rings::STRUM_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(54, 316), Port::INPUT, module, Rings::PITCH_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(92, 316), Port::INPUT, module, Rings::IN_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(131, 316), Port::OUTPUT, module, Rings::ODD_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(169, 316), Port::OUTPUT, module, Rings::EVEN_OUTPUT));
-
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
-}
-
-
-struct RingsModelItem : MenuItem {
-	Rings *rings;
-	rings::ResonatorModel model;
-	void onAction(EventAction &e) override {
-		rings->model = model;
-	}
-	void step() override {
-		rightText = (rings->model == model) ? "✔" : "";
-		MenuItem::step();
+		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<RingsEasterEggItem>(&MenuItem::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
 	}
 };
-
-struct RingsEasterEggItem : MenuItem {
-	Rings *rings;
-	void onAction(EventAction &e) override {
-		rings->easterEgg = !rings->easterEgg;
-	}
-	void step() override {
-		rightText = (rings->easterEgg) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-Menu *RingsWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-
-	Rings *rings = dynamic_cast<Rings*>(module);
-	assert(rings);
-
-	menu->addChild(construct<MenuEntry>());
-	menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
-	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
-	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
-	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Modulated/inharmonic string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING));
-	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "FM voice", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_FM_VOICE));
-	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
-	menu->addChild(construct<RingsModelItem>(&MenuEntry::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
-
-	menu->addChild(construct<MenuEntry>());
-	menu->addChild(construct<RingsEasterEggItem>(&MenuEntry::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
-
-	return menu;
-}

@@ -89,64 +89,51 @@ void Branches::step() {
 }
 
 
-BranchesWidget::BranchesWidget() {
-	Branches *module = new Branches();
-	setModule(module);
-	box.size = Vec(15*6, 380);
+struct BranchesWidget : ModuleWidget {
+	BranchesWidget(Branches *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Branches.svg")));
 
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Branches.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+
+		addParam(ParamWidget::create<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
+		addInput(Port::create<PJ301MPort>(Vec(9, 122), Port::INPUT, module, Branches::IN1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(55, 122), Port::INPUT, module, Branches::P1_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(9, 160), Port::OUTPUT, module, Branches::OUT1A_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(55, 160), Port::OUTPUT, module, Branches::OUT1B_OUTPUT));
+
+		addParam(ParamWidget::create<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
+		addInput(Port::create<PJ301MPort>(Vec(9, 278), Port::INPUT, module, Branches::IN2_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(55, 278), Port::INPUT, module, Branches::P2_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(9, 316), Port::OUTPUT, module, Branches::OUT2A_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(55, 316), Port::OUTPUT, module, Branches::OUT2B_OUTPUT));
+
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
 	}
 
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+	void appendContextMenu(Menu *menu) override {
+		Branches *branches = dynamic_cast<Branches*>(module);
+		assert(branches);
 
-	addParam(ParamWidget::create<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
-	addInput(Port::create<PJ301MPort>(Vec(9, 122), Port::INPUT, module, Branches::IN1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(55, 122), Port::INPUT, module, Branches::P1_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(9, 160), Port::OUTPUT, module, Branches::OUT1A_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(55, 160), Port::OUTPUT, module, Branches::OUT1B_OUTPUT));
+		struct BranchesModeItem : MenuItem {
+			Branches *branches;
+			int channel;
+			void onAction(EventAction &e) override {
+				branches->mode[channel] ^= 1;
+			}
+			void step() override {
+				rightText = branches->mode[channel] ? "Toggle" : "Latch";
+				MenuItem::step();
+			}
+		};
 
-	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
-	addInput(Port::create<PJ301MPort>(Vec(9, 278), Port::INPUT, module, Branches::IN2_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(55, 278), Port::INPUT, module, Branches::P2_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(9, 316), Port::OUTPUT, module, Branches::OUT2A_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(55, 316), Port::OUTPUT, module, Branches::OUT2B_OUTPUT));
+		menu->addChild(construct<MenuLabel>());
 
-	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
-	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
-}
-
-
-struct BranchesModeItem : MenuItem {
-	Branches *branches;
-	int channel;
-	void onAction(EventAction &e) override {
-		branches->mode[channel] ^= 1;
-	}
-	void step() override {
-		rightText = branches->mode[channel] ? "Toggle" : "Latch";
-		MenuItem::step();
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channels"));
+		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));
+		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));
 	}
 };
-
-
-Menu *BranchesWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-
-	Branches *branches = dynamic_cast<Branches*>(module);
-	assert(branches);
-
-	menu->addChild(construct<MenuLabel>());
-
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Channels"));
-	menu->addChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));
-	menu->addChild(construct<BranchesModeItem>(&MenuEntry::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));
-
-	return menu;
-}

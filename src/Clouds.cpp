@@ -255,80 +255,13 @@ void Clouds::step() {
 }
 
 
-CloudsWidget::CloudsWidget() {
-	Clouds *module = new Clouds();
-	setModule(module);
-	box.size = Vec(15*18, 380);
 
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Clouds.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+struct FreezeLight : YellowLight {
+	FreezeLight() {
+		box.size = Vec(28-6, 28-6);
+		bgColor = COLOR_BLACK_TRANSPARENT;
 	}
-
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(240, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(240, 365)));
-
-	addParam(ParamWidget::create<Rogan3PSRed>(Vec(27, 93), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan3PSGreen>(Vec(108, 93), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan3PSWhite>(Vec(190, 93), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
-
-	addParam(ParamWidget::create<Rogan1PSRed>(Vec(14, 180), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan1PSRed>(Vec(81, 180), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(146, 180), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
-	blendParam = ParamWidget::create<Rogan1PSWhite>(Vec(213, 180), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
-	addParam(blendParam);
-	spreadParam = ParamWidget::create<Rogan1PSRed>(Vec(213, 180), module, Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
-	addParam(spreadParam);
-	feedbackParam = ParamWidget::create<Rogan1PSGreen>(Vec(213, 180), module, Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
-	addParam(feedbackParam);
-	reverbParam = ParamWidget::create<Rogan1PSBlue>(Vec(213, 180), module, Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
-	addParam(reverbParam);
-
-	addParam(ParamWidget::create<CKD6>(Vec(12, 43), module, Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<TL1105>(Vec(211, 50), module, Clouds::MODE_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<TL1105>(Vec(239, 50), module, Clouds::LOAD_PARAM, 0.0, 1.0, 0.0));
-
-	addInput(Port::create<PJ301MPort>(Vec(15, 274), Port::INPUT, module, Clouds::FREEZE_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(58, 274), Port::INPUT, module, Clouds::TRIG_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(101, 274), Port::INPUT, module, Clouds::POSITION_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(144, 274), Port::INPUT, module, Clouds::SIZE_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(188, 274), Port::INPUT, module, Clouds::PITCH_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(230, 274), Port::INPUT, module, Clouds::BLEND_INPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(15, 317), Port::INPUT, module, Clouds::IN_L_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(58, 317), Port::INPUT, module, Clouds::IN_R_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(101, 317), Port::INPUT, module, Clouds::DENSITY_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(144, 317), Port::INPUT, module, Clouds::TEXTURE_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(188, 317), Port::OUTPUT, module, Clouds::OUT_L_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(230, 317), Port::OUTPUT, module, Clouds::OUT_R_OUTPUT));
-
-	struct FreezeLight : YellowLight {
-		FreezeLight() {
-			box.size = Vec(28-6, 28-6);
-			bgColor = COLOR_BLACK_TRANSPARENT;
-		}
-	};
-	addChild(ModuleLightWidget::create<FreezeLight>(Vec(12+3, 43+3), module, Clouds::FREEZE_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
-	addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
-}
-
-void CloudsWidget::step() {
-	Clouds *module = dynamic_cast<Clouds*>(this->module);
-
-	blendParam->visible = (module->blendMode == 0);
-	spreadParam->visible = (module->blendMode == 1);
-	feedbackParam->visible = (module->blendMode == 2);
-	reverbParam->visible = (module->blendMode == 3);
-
-	ModuleWidget::step();
-}
+};
 
 
 struct CloudsBlendItem : MenuItem {
@@ -370,30 +303,95 @@ struct CloudsQualityItem : MenuItem {
 };
 
 
-Menu *CloudsWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-	Clouds *module = dynamic_cast<Clouds*>(this->module);
+struct CloudsWidget : ModuleWidget {
+	ParamWidget *blendParam;
+	ParamWidget *spreadParam;
+	ParamWidget *feedbackParam;
+	ParamWidget *reverbParam;
 
-	menu->addChild(construct<MenuLabel>());
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Blend knob"));
-	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 0));
-	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 1));
-	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 2));
-	menu->addChild(construct<CloudsBlendItem>(&MenuEntry::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 3));
+	CloudsWidget(Clouds *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Clouds.svg")));
 
-	menu->addChild(construct<MenuLabel>());
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Alternative mode"));
-	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Granular", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_GRANULAR));
-	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Pitch-shifter/time-stretcher", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_STRETCH));
-	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Looping delay", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_LOOPING_DELAY));
-	menu->addChild(construct<CloudsPlaybackItem>(&MenuEntry::text, "Spectral madness", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_SPECTRAL));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(240, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(240, 365)));
 
-	menu->addChild(construct<MenuLabel>());
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Quality"));
-	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "1s 32kHz 16-bit stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 0));
-	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "2s 32kHz 16-bit mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 1));
-	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "4s 16kHz 8-bit µ-law stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 2));
-	menu->addChild(construct<CloudsQualityItem>(&MenuEntry::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
+		addParam(ParamWidget::create<Rogan3PSRed>(Vec(27, 93), module, Clouds::POSITION_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan3PSGreen>(Vec(108, 93), module, Clouds::SIZE_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan3PSWhite>(Vec(190, 93), module, Clouds::PITCH_PARAM, -2.0, 2.0, 0.0));
 
-	return menu;
-}
+		addParam(ParamWidget::create<Rogan1PSRed>(Vec(14, 180), module, Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan1PSRed>(Vec(81, 180), module, Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<Rogan1PSGreen>(Vec(146, 180), module, Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5));
+		blendParam = ParamWidget::create<Rogan1PSWhite>(Vec(213, 180), module, Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
+		addParam(blendParam);
+		spreadParam = ParamWidget::create<Rogan1PSRed>(Vec(213, 180), module, Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
+		addParam(spreadParam);
+		feedbackParam = ParamWidget::create<Rogan1PSGreen>(Vec(213, 180), module, Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
+		addParam(feedbackParam);
+		reverbParam = ParamWidget::create<Rogan1PSBlue>(Vec(213, 180), module, Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
+		addParam(reverbParam);
+
+		addParam(ParamWidget::create<CKD6>(Vec(12, 43), module, Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<TL1105>(Vec(211, 50), module, Clouds::MODE_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<TL1105>(Vec(239, 50), module, Clouds::LOAD_PARAM, 0.0, 1.0, 0.0));
+
+		addInput(Port::create<PJ301MPort>(Vec(15, 274), Port::INPUT, module, Clouds::FREEZE_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(58, 274), Port::INPUT, module, Clouds::TRIG_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(101, 274), Port::INPUT, module, Clouds::POSITION_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(144, 274), Port::INPUT, module, Clouds::SIZE_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(188, 274), Port::INPUT, module, Clouds::PITCH_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(230, 274), Port::INPUT, module, Clouds::BLEND_INPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(15, 317), Port::INPUT, module, Clouds::IN_L_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(58, 317), Port::INPUT, module, Clouds::IN_R_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(101, 317), Port::INPUT, module, Clouds::DENSITY_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(144, 317), Port::INPUT, module, Clouds::TEXTURE_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(188, 317), Port::OUTPUT, module, Clouds::OUT_L_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(230, 317), Port::OUTPUT, module, Clouds::OUT_R_OUTPUT));
+
+		addChild(ModuleLightWidget::create<FreezeLight>(Vec(12+3, 43+3), module, Clouds::FREEZE_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
+	}
+
+	void step() override {
+		Clouds *module = dynamic_cast<Clouds*>(this->module);
+
+		blendParam->visible = (module->blendMode == 0);
+		spreadParam->visible = (module->blendMode == 1);
+		feedbackParam->visible = (module->blendMode == 2);
+		reverbParam->visible = (module->blendMode == 3);
+
+		ModuleWidget::step();
+	}
+
+	void appendContextMenu(Menu *menu) override {
+		Clouds *module = dynamic_cast<Clouds*>(this->module);
+		assert(module);
+
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Blend knob"));
+		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 0));
+		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 1));
+		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 2));
+		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 3));
+
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Alternative mode"));
+		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Granular", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_GRANULAR));
+		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Pitch-shifter/time-stretcher", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_STRETCH));
+		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Looping delay", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_LOOPING_DELAY));
+		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Spectral madness", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_SPECTRAL));
+
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Quality"));
+		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "1s 32kHz 16-bit stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 0));
+		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "2s 32kHz 16-bit mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 1));
+		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "4s 16kHz 8-bit µ-law stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 2));
+		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
+	}
+};

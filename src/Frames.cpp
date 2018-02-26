@@ -285,154 +285,140 @@ struct CKSSRot : SVGSwitch, ToggleSwitch {
 };
 
 
-FramesWidget::FramesWidget() {
-	Frames *module = new Frames();
-	setModule(module);
-	box.size = Vec(15*18, 380);
+struct FramesWidget : ModuleWidget {
+	FramesWidget(Frames *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Frames.svg")));
 
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Frames.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
+		addParam(ParamWidget::create<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
+
+		addInput(Port::create<PJ301MPort>(Vec(16, 273), Port::INPUT, module, Frames::ALL_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(59, 273), Port::INPUT, module, Frames::IN1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(102, 273), Port::INPUT, module, Frames::IN2_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(145, 273), Port::INPUT, module, Frames::IN3_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(188, 273), Port::INPUT, module, Frames::IN4_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(231, 273), Port::INPUT, module, Frames::FRAME_INPUT));
+
+		addOutput(Port::create<PJ301MPort>(Vec(16, 315), Port::OUTPUT, module, Frames::MIX_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(59, 315), Port::OUTPUT, module, Frames::OUT1_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(102, 315), Port::OUTPUT, module, Frames::OUT2_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(145, 315), Port::OUTPUT, module, Frames::OUT3_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(188, 315), Port::OUTPUT, module, Frames::OUT4_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(231, 315), Port::OUTPUT, module, Frames::FRAME_STEP_OUTPUT));
+
+		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
+		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
+		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
+		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
+		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
+
+		struct FrameLight : RedGreenBlueLight {
+			FrameLight() {
+				box.size = Vec(71, 71);
+			}
+		};
+		addChild(ModuleLightWidget::create<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
 	}
 
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
-	addParam(ParamWidget::create<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
 
-	addInput(Port::create<PJ301MPort>(Vec(16, 273), Port::INPUT, module, Frames::ALL_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(59, 273), Port::INPUT, module, Frames::IN1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(102, 273), Port::INPUT, module, Frames::IN2_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(145, 273), Port::INPUT, module, Frames::IN3_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(188, 273), Port::INPUT, module, Frames::IN4_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(231, 273), Port::INPUT, module, Frames::FRAME_INPUT));
 
-	addOutput(Port::create<PJ301MPort>(Vec(16, 315), Port::OUTPUT, module, Frames::MIX_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(59, 315), Port::OUTPUT, module, Frames::OUT1_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(102, 315), Port::OUTPUT, module, Frames::OUT2_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(145, 315), Port::OUTPUT, module, Frames::OUT3_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(188, 315), Port::OUTPUT, module, Frames::OUT4_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(231, 315), Port::OUTPUT, module, Frames::FRAME_STEP_OUTPUT));
+	void appendContextMenu(Menu *menu) override {
+		Frames *frames = dynamic_cast<Frames*>(module);
+		assert(frames);
 
-	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
-	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
-	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
-	addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
-	addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
+		struct FramesCurveItem : MenuItem {
+			Frames *frames;
+			uint8_t channel;
+			frames::EasingCurve curve;
+			void onAction(EventAction &e) override {
+				frames->keyframer.mutable_settings(channel)->easing_curve = curve;
+			}
+			void step() override {
+				rightText = (frames->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
 
-	struct FrameLight : RedGreenBlueLight {
-		FrameLight() {
-			box.size = Vec(71, 71);
+		struct FramesResponseItem : MenuItem {
+			Frames *frames;
+			uint8_t channel;
+			uint8_t response;
+			void onAction(EventAction &e) override {
+				frames->keyframer.mutable_settings(channel)->response = response;
+			}
+			void step() override {
+				rightText = (frames->keyframer.mutable_settings(channel)->response == response) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
+
+		struct FramesChannelSettingsItem : MenuItem {
+			Frames *frames;
+			uint8_t channel;
+			Menu *createChildMenu() override {
+				Menu *menu = new Menu();
+
+				menu->addChild(construct<MenuLabel>(&MenuLabel::text, stringf("Channel %d", channel + 1)));
+				menu->addChild(construct<MenuLabel>());
+
+				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interpolation Curve"));
+				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
+				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
+				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Accelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_IN_QUARTIC));
+				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
+				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
+				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
+				menu->addChild(construct<MenuLabel>());
+				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Response Curve"));
+				menu->addChild(construct<FramesResponseItem>(&MenuItem::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
+				menu->addChild(construct<FramesResponseItem>(&MenuItem::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
+
+				return menu;
+			}
+		};
+
+		struct FramesClearItem : MenuItem {
+			Frames *frames;
+			void onAction(EventAction &e) override {
+				frames->keyframer.Clear();
+			}
+		};
+
+		struct FramesModeItem : MenuItem {
+			Frames *frames;
+			bool poly_lfo_mode;
+			void onAction(EventAction &e) override {
+				frames->poly_lfo_mode = poly_lfo_mode;
+			}
+			void step() override {
+				rightText = (frames->poly_lfo_mode == poly_lfo_mode) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
+
+		menu->addChild(construct<MenuLabel>());
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channel Settings"));
+		for (int i = 0; i < 4; i++) {
+			menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, stringf("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
 		}
-	};
-	addChild(ModuleLightWidget::create<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
-}
+		menu->addChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
 
-
-struct FramesCurveItem : MenuItem {
-	Frames *frames;
-	uint8_t channel;
-	frames::EasingCurve curve;
-	void onAction(EventAction &e) override {
-		frames->keyframer.mutable_settings(channel)->easing_curve = curve;
-	}
-	void step() override {
-		rightText = (frames->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
-struct FramesResponseItem : MenuItem {
-	Frames *frames;
-	uint8_t channel;
-	uint8_t response;
-	void onAction(EventAction &e) override {
-		frames->keyframer.mutable_settings(channel)->response = response;
-	}
-	void step() override {
-		rightText = (frames->keyframer.mutable_settings(channel)->response == response) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
-struct FramesChannelSettingsItem : MenuItem {
-	Frames *frames;
-	uint8_t channel;
-	Menu *createChildMenu() override {
-		Menu *menu = new Menu();
-
-		menu->addChild(construct<MenuLabel>(&MenuEntry::text, stringf("Channel %d", channel + 1)));
 		menu->addChild(construct<MenuLabel>());
-
-		menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Interpolation Curve"));
-		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
-		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
-		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Accelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_IN_QUARTIC));
-		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
-		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
-		menu->addChild(construct<FramesCurveItem>(&MenuEntry::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
-		menu->addChild(construct<MenuLabel>());
-		menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Response Curve"));
-		menu->addChild(construct<FramesResponseItem>(&MenuEntry::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
-		menu->addChild(construct<FramesResponseItem>(&MenuEntry::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
-
-		return menu;
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Mode"));
+		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
+		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
 	}
 };
-
-
-struct FramesClearItem : MenuItem {
-	Frames *frames;
-	void onAction(EventAction &e) override {
-		frames->keyframer.Clear();
-	}
-};
-
-
-struct FramesModeItem : MenuItem {
-	Frames *frames;
-	bool poly_lfo_mode;
-	void onAction(EventAction &e) override {
-		frames->poly_lfo_mode = poly_lfo_mode;
-	}
-	void step() override {
-		rightText = (frames->poly_lfo_mode == poly_lfo_mode) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
-Menu *FramesWidget::createContextMenu() {
-	Menu *menu = ModuleWidget::createContextMenu();
-
-	Frames *frames = dynamic_cast<Frames*>(module);
-	assert(frames);
-
-	menu->addChild(construct<MenuLabel>());
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Channel Settings"));
-	for (int i = 0; i < 4; i++) {
-		menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, stringf("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
-	}
-	menu->addChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
-
-	menu->addChild(construct<MenuLabel>());
-	menu->addChild(construct<MenuLabel>(&MenuEntry::text, "Mode"));
-	menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
-	menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
-
-	return menu;
-}

@@ -56,37 +56,30 @@ void Links::step() {
 }
 
 
-LinksWidget::LinksWidget() {
-	Links *module = new Links();
-	setModule(module);
-	box.size = Vec(15*4, 380);
+struct LinksWidget : ModuleWidget {
+	LinksWidget(Links *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Links.svg")));
 
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Links.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+
+		addInput(Port::create<PJ301MPort>(Vec(4, 75), Port::INPUT, module, Links::A1_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(31, 75), Port::OUTPUT, module, Links::A1_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(4, 113), Port::OUTPUT, module, Links::A2_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(31, 113), Port::OUTPUT, module, Links::A3_OUTPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(4, 177), Port::INPUT, module, Links::B1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(31, 177), Port::INPUT, module, Links::B2_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(4, 214), Port::OUTPUT, module, Links::B1_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(31, 214), Port::OUTPUT, module, Links::B2_OUTPUT));
+
+		addInput(Port::create<PJ301MPort>(Vec(4, 278), Port::INPUT, module, Links::C1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(31, 278), Port::INPUT, module, Links::C2_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(4, 316), Port::INPUT, module, Links::C3_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(31, 316), Port::OUTPUT, module, Links::C1_OUTPUT));
+
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 59), module, Links::A_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 161), module, Links::B_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_POS_LIGHT));
 	}
-
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-
-	addInput(Port::create<PJ301MPort>(Vec(4, 75), Port::INPUT, module, Links::A1_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(31, 75), Port::OUTPUT, module, Links::A1_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(4, 113), Port::OUTPUT, module, Links::A2_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(31, 113), Port::OUTPUT, module, Links::A3_OUTPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(4, 177), Port::INPUT, module, Links::B1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(31, 177), Port::INPUT, module, Links::B2_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(4, 214), Port::OUTPUT, module, Links::B1_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(31, 214), Port::OUTPUT, module, Links::B2_OUTPUT));
-
-	addInput(Port::create<PJ301MPort>(Vec(4, 278), Port::INPUT, module, Links::C1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(31, 278), Port::INPUT, module, Links::C2_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(4, 316), Port::INPUT, module, Links::C3_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(31, 316), Port::OUTPUT, module, Links::C1_OUTPUT));
-
-	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 59), module, Links::A_POS_LIGHT));
-	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 161), module, Links::B_POS_LIGHT));
-	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_POS_LIGHT));
-}
+};

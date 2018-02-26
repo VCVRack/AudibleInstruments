@@ -119,46 +119,41 @@ void Warps::step() {
 }
 
 
-WarpsWidget::WarpsWidget() {
-	Warps *module = new Warps();
-	setModule(module);
-	box.size = Vec(15*10, 380);
-
-	{
-		Panel *panel = new LightPanel();
-		panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Warps.png"));
-		panel->box.size = box.size;
-		addChild(panel);
+struct AlgorithmLight : RedGreenBlueLight {
+	AlgorithmLight() {
+		box.size = Vec(71, 71);
 	}
+};
 
-	addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(120, 0)));
-	addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-	addChild(Widget::create<ScrewSilver>(Vec(120, 365)));
 
-	addParam(ParamWidget::create<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
+struct WarpsWidget : ModuleWidget {
+	WarpsWidget(Warps *module) : ModuleWidget(module) {
+		setPanel(SVG::load(assetPlugin(plugin, "res/Warps.svg")));
 
-	addParam(ParamWidget::create<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-	addParam(ParamWidget::create<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
-	addParam(ParamWidget::create<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(120, 0)));
+		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(Widget::create<ScrewSilver>(Vec(120, 365)));
 
-	addInput(Port::create<PJ301MPort>(Vec(8, 273), Port::INPUT, module, Warps::LEVEL1_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(44, 273), Port::INPUT, module, Warps::LEVEL2_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(80, 273), Port::INPUT, module, Warps::ALGORITHM_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(116, 273), Port::INPUT, module, Warps::TIMBRE_INPUT));
+		addParam(ParamWidget::create<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
-	addInput(Port::create<PJ301MPort>(Vec(8, 316), Port::INPUT, module, Warps::CARRIER_INPUT));
-	addInput(Port::create<PJ301MPort>(Vec(44, 316), Port::INPUT, module, Warps::MODULATOR_INPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(80, 316), Port::OUTPUT, module, Warps::MODULATOR_OUTPUT));
-	addOutput(Port::create<PJ301MPort>(Vec(116, 316), Port::OUTPUT, module, Warps::AUX_OUTPUT));
+		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
+		addParam(ParamWidget::create<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
-	addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(20, 167), module, Warps::CARRIER_GREEN_LIGHT));
+		addInput(Port::create<PJ301MPort>(Vec(8, 273), Port::INPUT, module, Warps::LEVEL1_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(44, 273), Port::INPUT, module, Warps::LEVEL2_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(80, 273), Port::INPUT, module, Warps::ALGORITHM_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(116, 273), Port::INPUT, module, Warps::TIMBRE_INPUT));
 
-	struct AlgorithmLight : RedGreenBlueLight {
-		AlgorithmLight() {
-			box.size = Vec(71, 71);
-		}
-	};
-	addChild(ModuleLightWidget::create<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
-}
+		addInput(Port::create<PJ301MPort>(Vec(8, 316), Port::INPUT, module, Warps::CARRIER_INPUT));
+		addInput(Port::create<PJ301MPort>(Vec(44, 316), Port::INPUT, module, Warps::MODULATOR_INPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(80, 316), Port::OUTPUT, module, Warps::MODULATOR_OUTPUT));
+		addOutput(Port::create<PJ301MPort>(Vec(116, 316), Port::OUTPUT, module, Warps::AUX_OUTPUT));
+
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(20, 167), module, Warps::CARRIER_GREEN_LIGHT));
+
+		addChild(ModuleLightWidget::create<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
+	}
+};
