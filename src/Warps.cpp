@@ -131,7 +131,7 @@ struct WarpsWidget : ModuleWidget {
 		box.size = Vec(15*10, 380);
 		{
 			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Blinds.png"));
+			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Warps.png"));
 			panel->box.size = box.size;
 			addChild(panel);
 		}
