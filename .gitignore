@@ -1,2 +1,3 @@
 /build
 plugin.*
+*.DS_Store
