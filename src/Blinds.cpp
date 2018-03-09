@@ -71,13 +71,7 @@ void Blinds::step() {
 
 struct BlindsWidget : ModuleWidget {
 	BlindsWidget(Blinds *module) : ModuleWidget(module) {
-		box.size = Vec(15*12, 380);
-		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Blinds.png"));
-			panel->box.size = box.size;
-			addChild(panel);
-		}
+		setPanel(SVG::load(assetPlugin(plugin, "res/Blinds.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
@@ -109,15 +103,15 @@ struct BlindsWidget : ModuleWidget {
 		addOutput(Port::create<PJ301MPort>(Vec(144, 198), Port::OUTPUT, module, Blinds::OUT3_OUTPUT));
 		addOutput(Port::create<PJ301MPort>(Vec(144, 277), Port::OUTPUT, module, Blinds::OUT4_OUTPUT));
 
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 96), module, Blinds::CV1_POS_LIGHT));
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 175), module, Blinds::CV2_POS_LIGHT));
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 254), module, Blinds::CV3_POS_LIGHT));
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(77, 333), module, Blinds::CV4_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(78, 96), module, Blinds::CV1_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(78, 175), module, Blinds::CV2_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(78, 254), module, Blinds::CV3_POS_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(78, 333), module, Blinds::CV4_POS_LIGHT));
 
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 87), module, Blinds::OUT1_POS_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 166), module, Blinds::OUT2_POS_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 245), module, Blinds::OUT3_POS_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Blinds::OUT4_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 87), module, Blinds::OUT1_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 166), module, Blinds::OUT2_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 245), module, Blinds::OUT3_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 324), module, Blinds::OUT4_POS_LIGHT));
 	}
 };
 

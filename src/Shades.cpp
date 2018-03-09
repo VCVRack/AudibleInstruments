@@ -62,13 +62,7 @@ void Shades::step() {
 
 struct ShadesWidget : ModuleWidget {
 	ShadesWidget(Shades *module) : ModuleWidget(module) {
-		box.size = Vec(15*6, 380);
-		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Shades.png"));
-			panel->box.size = box.size;
-			addChild(panel);
-		}
+		setPanel(SVG::load(assetPlugin(plugin, "res/Shades.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));

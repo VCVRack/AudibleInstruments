@@ -70,13 +70,7 @@ void Veils::step() {
 
 struct VeilsWidget : ModuleWidget {
 	VeilsWidget(Veils *module) : ModuleWidget(module) {
-		box.size = Vec(15*12, 380);
-		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Veils.png"));
-			panel->box.size = box.size;
-			addChild(panel);
-		}
+		setPanel(SVG::load(assetPlugin(plugin, "res/Veils.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(150, 0)));
@@ -108,10 +102,10 @@ struct VeilsWidget : ModuleWidget {
 		addOutput(Port::create<PJ301MPort>(Vec(144, 198), Port::OUTPUT, module, Veils::OUT3_OUTPUT));
 		addOutput(Port::create<PJ301MPort>(Vec(144, 277), Port::OUTPUT, module, Veils::OUT4_OUTPUT));
 
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 87), module, Veils::OUT1_POS_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 166), module, Veils::OUT2_POS_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 245), module, Veils::OUT3_POS_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(150, 324), module, Veils::OUT4_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 87), module, Veils::OUT1_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 166), module, Veils::OUT2_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 245), module, Veils::OUT3_POS_LIGHT));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(152, 324), module, Veils::OUT4_POS_LIGHT));
 	}
 };
 

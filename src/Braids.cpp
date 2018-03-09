@@ -295,13 +295,7 @@ struct BraidsLowCpuItem : MenuItem {
 
 struct BraidsWidget : ModuleWidget {
 	BraidsWidget(Braids *module) : ModuleWidget(module) {
-		box.size = Vec(15*16, 380);
-		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Braids.png"));
-			panel->box.size = box.size;
-			addChild(panel);
-		}
+		setPanel(SVG::load(assetPlugin(plugin, "res/Braids.svg")));
 
 		{
 			BraidsDisplay *display = new BraidsDisplay();
