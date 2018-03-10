@@ -320,7 +320,7 @@ struct RingsWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
 		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
 		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
@@ -329,7 +329,7 @@ struct RingsWidget : ModuleWidget {
 		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
 		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
 
-		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<RingsEasterEggItem>(&MenuItem::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
 	}
 };

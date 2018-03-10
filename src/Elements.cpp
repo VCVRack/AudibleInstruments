@@ -314,7 +314,7 @@ struct ElementsWidget : ModuleWidget {
 		Elements *elements = dynamic_cast<Elements*>(module);
 		assert(elements);
 
-		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Alternative models"));
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));

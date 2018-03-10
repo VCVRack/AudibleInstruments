@@ -274,7 +274,7 @@ struct TidesWidget : ModuleWidget {
 		Tides *tides = dynamic_cast<Tides*>(module);
 		assert(tides);
 
-		menu->addChild(construct<MenuEntry>());
+		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<TidesSheepItem>(&MenuItem::text, "Sheep", &TidesSheepItem::tides, tides));
 	}
 };
