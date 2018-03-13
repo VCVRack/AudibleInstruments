@@ -21,4 +21,5 @@ void init(rack::Plugin *p) {
 	p->addModel(modelBlinds);
 	p->addModel(modelVeils);
 	p->addModel(modelFrames);
+	// p->addModel(modelPeaks);
 }

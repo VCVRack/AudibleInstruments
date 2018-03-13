@@ -47,6 +47,17 @@ SOURCES += eurorack/warps/resources.cc
 SOURCES += eurorack/frames/keyframer.cc
 SOURCES += eurorack/frames/resources.cc
 SOURCES += eurorack/frames/poly_lfo.cc
+SOURCES += eurorack/peaks/processors.cc
+SOURCES += eurorack/peaks/resources.cc
+SOURCES += eurorack/peaks/drums/bass_drum.cc
+SOURCES += eurorack/peaks/drums/fm_drum.cc
+SOURCES += eurorack/peaks/drums/high_hat.cc
+SOURCES += eurorack/peaks/drums/snare_drum.cc
+SOURCES += eurorack/peaks/modulations/lfo.cc
+SOURCES += eurorack/peaks/modulations/multistage_envelope.cc
+SOURCES += eurorack/peaks/pulse_processor/pulse_shaper.cc
+SOURCES += eurorack/peaks/pulse_processor/pulse_randomizer.cc
+SOURCES += eurorack/peaks/number_station/number_station.cc
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 
