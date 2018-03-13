@@ -193,6 +193,62 @@ struct Peaks : Module {
 		setFunction(1, function_[1]);
 	}
 
+	json_t *toJson() override {
+
+		saveState();
+
+		json_t *rootJ = json_object();
+
+		json_object_set_new(rootJ, "edit_mode", json_integer((int)settings_.edit_mode));
+		json_object_set_new(rootJ, "fcn_channel_1", json_integer((int)settings_.function[0]));
+		json_object_set_new(rootJ, "fcn_channel_2", json_integer((int)settings_.function[1]));
+
+		json_t *potValuesJ = json_array();
+		for (int p : pot_value_) {
+			json_t *pJ = json_integer(p);
+			json_array_append_new(potValuesJ, pJ);
+		}
+		json_object_set_new(rootJ, "pot_values", potValuesJ);
+
+		json_object_set_new(rootJ, "snap_mode", json_boolean(settings_.snap_mode));
+
+		return rootJ;
+	}
+
+	void fromJson(json_t *rootJ) override {
+		json_t *editModeJ = json_object_get(rootJ, "edit_mode");
+		if (editModeJ) {
+			settings_.edit_mode = static_cast<EditMode>(json_integer_value(editModeJ));
+		}
+
+		json_t *fcnChannel1J = json_object_get(rootJ, "fcn_channel_1");
+		if (fcnChannel1J) {
+			settings_.function[0] = static_cast<Function>(json_integer_value(fcnChannel1J));
+		}
+
+		json_t *fcnChannel2J = json_object_get(rootJ, "fcn_channel_2");
+		if (fcnChannel2J) {
+			settings_.function[1] = static_cast<Function>(json_integer_value(fcnChannel2J));
+		}
+
+		json_t *snapModeJ = json_object_get(rootJ, "snap_mode");
+		if (snapModeJ) {
+			settings_.snap_mode = json_boolean_value(snapModeJ);
+		}
+
+		json_t *potValuesJ = json_object_get(rootJ, "pot_values");
+		size_t potValueId;
+		json_t *pJ;
+		json_array_foreach(potValuesJ, potValueId, pJ) {
+			if (potValueId < sizeof(pot_value_) / sizeof(pot_value_)[0]) {
+				settings_.pot_value[potValueId] = json_integer_value(pJ);
+			}
+		}
+
+		// Update module internal state from settings.
+		init();
+	}
+
 	void step() override {
 		poll();
 		pollPots();
@@ -257,64 +313,6 @@ struct Peaks : Module {
 			outputs[OUT_1_OUTPUT].value = rescale(static_cast<float>(f.samples[0]), 0.0f, 65535.f, -8.0f, 8.0f);
 			outputs[OUT_2_OUTPUT].value = rescale(static_cast<float>(f.samples[1]), 0.0f, 65535.f, -8.0f, 8.0f);
 		}
-	}
-
-
-
-	json_t *toJson() override {
-
-		saveState();
-
-		json_t *rootJ = json_object();
-
-		json_object_set_new(rootJ, "edit_mode", json_integer((int)settings_.edit_mode));
-		json_object_set_new(rootJ, "fcn_channel_1", json_integer((int)settings_.function[0]));
-		json_object_set_new(rootJ, "fcn_channel_2", json_integer((int)settings_.function[1]));
-
-		json_t *potValuesJ = json_array();
-		for (int p : pot_value_) {
-			json_t *pJ = json_integer(p);
-			json_array_append_new(potValuesJ, pJ);
-		}
-		json_object_set_new(rootJ, "pot_values", potValuesJ);
-
-		json_object_set_new(rootJ, "snap_mode", json_boolean(settings_.snap_mode));
-
-		return rootJ;
-	}
-
-	void fromJson(json_t *rootJ) override {
-		json_t *editModeJ = json_object_get(rootJ, "edit_mode");
-		if (editModeJ) {
-			settings_.edit_mode = static_cast<EditMode>(json_integer_value(editModeJ));
-		}
-
-		json_t *fcnChannel1J = json_object_get(rootJ, "fcn_channel_1");
-		if (fcnChannel1J) {
-			settings_.function[0] = static_cast<Function>(json_integer_value(fcnChannel1J));
-		}
-
-		json_t *fcnChannel2J = json_object_get(rootJ, "fcn_channel_2");
-		if (fcnChannel2J) {
-			settings_.function[1] = static_cast<Function>(json_integer_value(fcnChannel2J));
-		}
-
-		json_t *snapModeJ = json_object_get(rootJ, "snap_mode");
-		if (snapModeJ) {
-			settings_.snap_mode = json_boolean_value(snapModeJ);
-		}
-
-		json_t *potValuesJ = json_object_get(rootJ, "pot_values");
-		size_t potValueId;
-		json_t *pJ;
-		json_array_foreach(potValuesJ, potValueId, pJ) {
-			if (potValueId < sizeof(pot_value_) / sizeof(pot_value_)[0]) {
-				settings_.pot_value[potValueId] = json_integer_value(pJ);
-			}
-		}
-
-		// Update module internal state from settings.
-		init();
 	}
 
 	inline Function function() const {
