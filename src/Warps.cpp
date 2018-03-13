@@ -128,13 +128,7 @@ struct AlgorithmLight : RedGreenBlueLight {
 
 struct WarpsWidget : ModuleWidget {
 	WarpsWidget(Warps *module) : ModuleWidget(module) {
-		box.size = Vec(15*10, 380);
-		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Warps.png"));
-			panel->box.size = box.size;
-			addChild(panel);
-		}
+		setPanel(SVG::load(assetPlugin(plugin, "res/Warps.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(120, 0)));
@@ -158,7 +152,7 @@ struct WarpsWidget : ModuleWidget {
 		addOutput(Port::create<PJ301MPort>(Vec(80, 316), Port::OUTPUT, module, Warps::MODULATOR_OUTPUT));
 		addOutput(Port::create<PJ301MPort>(Vec(116, 316), Port::OUTPUT, module, Warps::AUX_OUTPUT));
 
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(20, 167), module, Warps::CARRIER_GREEN_LIGHT));
+		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
 
 		addChild(ModuleLightWidget::create<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
 	}

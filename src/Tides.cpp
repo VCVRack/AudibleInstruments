@@ -205,20 +205,20 @@ struct TidesSheepItem : MenuItem {
 
 
 struct TidesWidget : ModuleWidget {
-	Panel *tidesPanel;
-	Panel *sheepPanel;
+	SVGPanel *tidesPanel;
+	SVGPanel *sheepPanel;
 
 	TidesWidget(Tides *module) : ModuleWidget(module) {
 		box.size = Vec(15*14, 380);
 		{
-			tidesPanel = new LightPanel();
-			tidesPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Tides.png"));
+			tidesPanel = new SVGPanel();
+			tidesPanel->setBackground(SVG::load(assetPlugin(plugin, "res/Tides.svg")));
 			tidesPanel->box.size = box.size;
 			addChild(tidesPanel);
 		}
 		{
-			sheepPanel = new LightPanel();
-			sheepPanel->backgroundImage = Image::load(assetPlugin(plugin, "res/Sheep.png"));
+			sheepPanel = new SVGPanel();
+			sheepPanel->setBackground(SVG::load(assetPlugin(plugin, "res/Sheep.svg")));
 			sheepPanel->box.size = box.size;
 			addChild(sheepPanel);
 		}
