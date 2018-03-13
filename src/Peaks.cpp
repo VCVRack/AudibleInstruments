@@ -53,6 +53,32 @@ static const uint16_t kAdcThresholdUnlocked = 1 << (16 - 10);  // 10 bits
 static const uint16_t kAdcThresholdLocked = 1 << (16 - 8);  // 8 bits
 
 
+// Global scope, so variables can be accessed by process() function.
+int16_t gOutputBuffer[peaks::kBlockSize];
+int16_t gBrightness[2] = {0, 0};
+
+
+static void set_led_brightness(int channel, int16_t value) {
+	gBrightness[channel] = value;
+}
+
+// File scope because of IOBuffer function signature.
+// It cannot refer to a member function of class Peaks().
+static void process(peaks::IOBuffer::Block* block, size_t size) {
+	for (size_t i = 0; i < peaks::kNumChannels; ++i) {
+		// TODO
+		// processors[i].Process(block->input[i], gOutputBuffer, size);
+		set_led_brightness(i, gOutputBuffer[0]);
+		for (size_t j = 0; j < size; ++j) {
+			// From calibration_data.h, shifting signed to unsigned values.
+			int32_t shifted_value = 32767 + static_cast<int32_t>(gOutputBuffer[j]);
+			CONSTRAIN(shifted_value, 0, 65535);
+			block->output[i][j] = static_cast<uint16_t>(shifted_value);
+		}
+	}
+}
+
+
 struct Peaks : Module {
 	enum ParamIds {
 		KNOB_1_PARAM,
@@ -86,15 +112,154 @@ struct Peaks : Module {
 		NUM_LIGHTS
 	};
 
-	Peaks();
-	~Peaks();
+	static const peaks::ProcessorFunction function_table_[FUNCTION_LAST][2];
 
-	void step() override;
+	EditMode edit_mode_ = EDIT_MODE_TWIN;
+	Function function_[2] = {FUNCTION_ENVELOPE, FUNCTION_ENVELOPE};
+	Settings settings_;
+
+	uint8_t pot_value_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+	bool snap_mode_ = false;
+	bool snapped_[4] = {false, false, false, false};
+
+	int32_t adc_lp_[kNumAdcChannels] = {0, 0, 0, 0};
+	int32_t adc_value_[kNumAdcChannels] = {0, 0, 0, 0};
+	int32_t adc_threshold_[kNumAdcChannels] = {0, 0, 0, 0};
+	long long press_time_[2] = {0, 0};
+
+	SchmittTrigger switches_[2];
+
+	peaks::IOBuffer ioBuffer;
+
+	peaks::GateFlags gate_flags[2] = {0, 0};
+
+	SampleRateConverter<2> outputSrc;
+	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
+
+	bool initNumberStation = false;
+
+	peaks::Processors processors[2];
+
+	Peaks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+		settings_.edit_mode = EDIT_MODE_TWIN;
+		settings_.function[0] = FUNCTION_ENVELOPE;
+		settings_.function[1] = FUNCTION_ENVELOPE;
+		settings_.snap_mode = false;
+		std::fill(&settings_.pot_value[0], &settings_.pot_value[8], 0);
+
+		memset(&ioBuffer, 0, sizeof(ioBuffer));
+		memset(&processors[0], 0, sizeof(processors[0]));
+		memset(&processors[1], 0, sizeof(processors[1]));
+		ioBuffer.Init();
+		processors[0].Init(0);
+		processors[1].Init(1);
+	}
+
 	void onReset() override {
 		init();
 	}
 
-	void init();
+	void init() {
+		std::fill(&pot_value_[0], &pot_value_[8], 0);
+		std::fill(&press_time_[0], &press_time_[1], 0);
+		std::fill(&gBrightness[0], &gBrightness[1], 0);
+		std::fill(&adc_lp_[0], &adc_lp_[kNumAdcChannels], 0);
+		std::fill(&adc_value_[0], &adc_value_[kNumAdcChannels], 0);
+		std::fill(&adc_threshold_[0], &adc_threshold_[kNumAdcChannels], 0);
+		std::fill(&snapped_[0], &snapped_[kNumAdcChannels], false);
+
+		edit_mode_ = static_cast<EditMode>(settings_.edit_mode);
+		function_[0] = static_cast<Function>(settings_.function[0]);
+		function_[1] = static_cast<Function>(settings_.function[1]);
+		std::copy(&settings_.pot_value[0], &settings_.pot_value[8], &pot_value_[0]);
+
+		if (edit_mode_ == EDIT_MODE_FIRST || edit_mode_ == EDIT_MODE_SECOND) {
+			lockPots();
+			for (uint8_t i = 0; i < 4; ++i) {
+				processors[0].set_parameter(
+				    i,
+				    static_cast<uint16_t>(pot_value_[i]) << 8);
+				processors[1].set_parameter(
+				    i,
+				    static_cast<uint16_t>(pot_value_[i + 4]) << 8);
+			}
+		}
+
+		snap_mode_ = settings_.snap_mode;
+
+		changeControlMode();
+		setFunction(0, function_[0]);
+		setFunction(1, function_[1]);
+	}
+
+	void step() override {
+		poll();
+		pollPots();
+
+		// Initialize "secret" number station mode.
+		if (initNumberStation) {
+			processors[0].set_function(peaks::PROCESSOR_FUNCTION_NUMBER_STATION);
+			processors[1].set_function(peaks::PROCESSOR_FUNCTION_NUMBER_STATION);
+			initNumberStation = false;
+		}
+
+		if (outputBuffer.empty()) {
+			ioBuffer.Process(process);
+
+			uint32_t external_gate_inputs = 0;
+			external_gate_inputs |= (inputs[GATE_1_INPUT].value ? 1 : 0);
+			external_gate_inputs |= (inputs[GATE_2_INPUT].value ? 2 : 0);
+
+			uint32_t buttons = 0;
+			buttons |= (params[TRIG_1_PARAM].value ? 1 : 0);
+			buttons |= (params[TRIG_2_PARAM].value ? 2 : 0);
+
+			uint32_t gate_inputs = external_gate_inputs | buttons;
+
+			// Prepare sample rate conversion.
+			// Peaks is sampling at 48kHZ.
+			outputSrc.setRates(48000, engineGetSampleRate());
+			int inLen = peaks::kBlockSize;
+			int outLen = outputBuffer.capacity();
+			Frame<2> f[peaks::kBlockSize];
+
+			// Process an entire block of data from the IOBuffer.
+			for (size_t k = 0; k < peaks::kBlockSize; ++k) {
+
+				peaks::IOBuffer::Slice slice = ioBuffer.NextSlice(1);
+
+				for (size_t i = 0; i < peaks::kNumChannels; ++i) {
+					gate_flags[i] = peaks::ExtractGateFlags(
+					                    gate_flags[i],
+					                    gate_inputs & (1 << i));
+
+					f[k].samples[i] = slice.block->output[i][slice.frame_index];
+				}
+
+				// A hack to make channel 1 aware of what's going on in channel 2. Used to
+				// reset the sequencer.
+				slice.block->input[0][slice.frame_index] = gate_flags[0] | (gate_flags[1] << 4) | (buttons & 8 ? peaks::GATE_FLAG_FROM_BUTTON : 0);
+
+				slice.block->input[1][slice.frame_index] = gate_flags[1] | (buttons & 2 ? peaks::GATE_FLAG_FROM_BUTTON : 0);
+			}
+
+			outputSrc.process(f, &inLen, outputBuffer.endData(), &outLen);
+			outputBuffer.endIncr(outLen);
+		}
+
+		// Update outputs.
+		if (!outputBuffer.empty()) {
+			Frame<2> f = outputBuffer.shift();
+
+			// Peaks manual says output spec is 0..8V for envelopes and 10Vpp for audio/CV.
+			// TODO Check the output values against an actual device.
+			outputs[OUT_1_OUTPUT].value = rescale(static_cast<float>(f.samples[0]), 0.0f, 65535.f, -8.0f, 8.0f);
+			outputs[OUT_2_OUTPUT].value = rescale(static_cast<float>(f.samples[1]), 0.0f, 65535.f, -8.0f, 8.0f);
+		}
+	}
+
+
 
 	json_t *toJson() override {
 
@@ -167,33 +332,6 @@ struct Peaks : Module {
 	void refreshLeds();
 
 	long long getSystemTimeMs();
-
-	static const peaks::ProcessorFunction function_table_[FUNCTION_LAST][2];
-
-	EditMode edit_mode_ = EDIT_MODE_TWIN;
-	Function function_[2] = {FUNCTION_ENVELOPE, FUNCTION_ENVELOPE};
-	Settings settings_;
-
-	uint8_t pot_value_[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-	bool snap_mode_ = false;
-	bool snapped_[4] = {false, false, false, false};
-
-	int32_t adc_lp_[kNumAdcChannels] = {0, 0, 0, 0};
-	int32_t adc_value_[kNumAdcChannels] = {0, 0, 0, 0};
-	int32_t adc_threshold_[kNumAdcChannels] = {0, 0, 0, 0};
-	long long press_time_[2] = {0, 0};
-
-	SchmittTrigger switches_[2];
-
-	std::shared_ptr<peaks::IOBuffer> ioBuffer;
-
-	peaks::GateFlags gate_flags[2] = {0, 0};
-
-	SampleRateConverter<2> outputSrc;
-	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
-
-	bool initNumberStation = false;
 };
 
 const peaks::ProcessorFunction Peaks::function_table_[FUNCTION_LAST][2] = {
@@ -208,153 +346,6 @@ const peaks::ProcessorFunction Peaks::function_table_[FUNCTION_LAST][2] = {
 	{ peaks::PROCESSOR_FUNCTION_FM_DRUM, peaks::PROCESSOR_FUNCTION_FM_DRUM },
 };
 
-Peaks::Peaks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-	ioBuffer = std::make_shared<peaks::IOBuffer>();
-
-	settings_.edit_mode = EDIT_MODE_TWIN;
-	settings_.function[0] = FUNCTION_ENVELOPE;
-	settings_.function[1] = FUNCTION_ENVELOPE;
-	settings_.snap_mode = false;
-	std::fill(&settings_.pot_value[0], &settings_.pot_value[8], 0);
-
-	ioBuffer->Init();
-	peaks::processors[0].Init(0);
-	peaks::processors[1].Init(1);
-}
-
-Peaks::~Peaks() {
-}
-
-
-// Global scope, so variables can be accessed by process() function.
-int16_t gOutputBuffer[peaks::kBlockSize];
-int16_t gBrightness[2] = {0, 0};
-
-void set_led_brightness(int channel, int16_t value) {
-	gBrightness[channel] = value;
-}
-
-// File scope because of IOBuffer function signature.
-// It cannot refer to a member function of class Peaks().
-void process(peaks::IOBuffer::Block* block, size_t size) {
-	for (size_t i = 0; i < peaks::kNumChannels; ++i) {
-		peaks::processors[i].Process(block->input[i], gOutputBuffer, size);
-		set_led_brightness(i, gOutputBuffer[0]);
-		for (size_t j = 0; j < size; ++j) {
-			// From calibration_data.h, shifting signed to unsigned values.
-			int32_t shifted_value = 32767 + static_cast<int32_t>(gOutputBuffer[j]);
-			CONSTRAIN(shifted_value, 0, 65535);
-			block->output[i][j] = static_cast<uint16_t>(shifted_value);
-		}
-	}
-}
-
-void Peaks::init() {
-	std::fill(&pot_value_[0], &pot_value_[8], 0);
-	std::fill(&press_time_[0], &press_time_[1], 0);
-	std::fill(&gBrightness[0], &gBrightness[1], 0);
-	std::fill(&adc_lp_[0], &adc_lp_[kNumAdcChannels], 0);
-	std::fill(&adc_value_[0], &adc_value_[kNumAdcChannels], 0);
-	std::fill(&adc_threshold_[0], &adc_threshold_[kNumAdcChannels], 0);
-	std::fill(&snapped_[0], &snapped_[kNumAdcChannels], false);
-
-	edit_mode_ = static_cast<EditMode>(settings_.edit_mode);
-	function_[0] = static_cast<Function>(settings_.function[0]);
-	function_[1] = static_cast<Function>(settings_.function[1]);
-	std::copy(&settings_.pot_value[0], &settings_.pot_value[8], &pot_value_[0]);
-
-	if (edit_mode_ == EDIT_MODE_FIRST || edit_mode_ == EDIT_MODE_SECOND) {
-		lockPots();
-		for (uint8_t i = 0; i < 4; ++i) {
-			peaks::processors[0].set_parameter(
-			    i,
-			    static_cast<uint16_t>(pot_value_[i]) << 8);
-			peaks::processors[1].set_parameter(
-			    i,
-			    static_cast<uint16_t>(pot_value_[i + 4]) << 8);
-		}
-	}
-
-	snap_mode_ = settings_.snap_mode;
-
-	changeControlMode();
-	setFunction(0, function_[0]);
-	setFunction(1, function_[1]);
-}
-
-void Peaks::step() {
-
-	poll();
-	pollPots();
-
-	// Initialize "secret" number station mode.
-	if (initNumberStation) {
-		peaks::processors[0].set_function(peaks::PROCESSOR_FUNCTION_NUMBER_STATION);
-		peaks::processors[1].set_function(peaks::PROCESSOR_FUNCTION_NUMBER_STATION);
-		initNumberStation = false;
-	}
-
-	if (outputBuffer.empty()) {
-
-		ioBuffer->Process(process);
-
-		uint32_t external_gate_inputs = 0;
-		external_gate_inputs |= (inputs[GATE_1_INPUT].value ? 1 : 0);
-		external_gate_inputs |= (inputs[GATE_2_INPUT].value ? 2 : 0);
-
-		uint32_t buttons = 0;
-		buttons |= (params[TRIG_1_PARAM].value ? 1 : 0);
-		buttons |= (params[TRIG_2_PARAM].value ? 2 : 0);
-
-		uint32_t gate_inputs = external_gate_inputs | buttons;
-
-		// Prepare sample rate conversion.
-		// Peaks is sampling at 48kHZ.
-		outputSrc.setRates(48000, engineGetSampleRate());
-		int inLen = peaks::kBlockSize;
-		int outLen = outputBuffer.capacity();
-		Frame<2> f[peaks::kBlockSize];
-
-		// Process an entire block of data from the IOBuffer.
-		for (size_t k = 0; k < peaks::kBlockSize; ++k) {
-
-			peaks::IOBuffer::Slice slice = ioBuffer->NextSlice(1);
-
-			for (size_t i = 0; i < peaks::kNumChannels; ++i) {
-				gate_flags[i] = peaks::ExtractGateFlags(
-				                    gate_flags[i],
-				                    gate_inputs & (1 << i));
-
-				f[k].samples[i] = slice.block->output[i][slice.frame_index];
-			}
-
-			// A hack to make channel 1 aware of what's going on in channel 2. Used to
-			// reset the sequencer.
-			slice.block->input[0][slice.frame_index] = gate_flags[0] \
-			        | (gate_flags[1] << 4) \
-			        | (buttons & 8 ? peaks::GATE_FLAG_FROM_BUTTON : 0);
-
-			slice.block->input[1][slice.frame_index] = gate_flags[1] \
-			        | (buttons & 2 ? peaks::GATE_FLAG_FROM_BUTTON : 0);
-
-		}
-
-		outputSrc.process(f, &inLen, outputBuffer.endData(), &outLen);
-		outputBuffer.endIncr(outLen);
-	}
-
-	// Update outputs.
-	if (!outputBuffer.empty()) {
-		Frame<2> f = outputBuffer.shift();
-
-		// Peaks manual says output spec is 0..8V for envelopes and 10Vpp for audio/CV.
-		// TODO Check the output values against an actual device.
-		outputs[OUT_1_OUTPUT].value = \
-		                              rescale(static_cast<float>(f.samples[0]), 0.0f, 65535.f, -8.0f, 8.0f);
-		outputs[OUT_2_OUTPUT].value = \
-		                              rescale(static_cast<float>(f.samples[1]), 0.0f, 65535.f, -8.0f, 8.0f);
-	}
-}
 
 void Peaks::changeControlMode() {
 	uint16_t parameters[4];
@@ -363,32 +354,32 @@ void Peaks::changeControlMode() {
 	}
 
 	if (edit_mode_ == EDIT_MODE_SPLIT) {
-		peaks::processors[0].CopyParameters(&parameters[0], 2);
-		peaks::processors[1].CopyParameters(&parameters[2], 2);
-		peaks::processors[0].set_control_mode(peaks::CONTROL_MODE_HALF);
-		peaks::processors[1].set_control_mode(peaks::CONTROL_MODE_HALF);
+		processors[0].CopyParameters(&parameters[0], 2);
+		processors[1].CopyParameters(&parameters[2], 2);
+		processors[0].set_control_mode(peaks::CONTROL_MODE_HALF);
+		processors[1].set_control_mode(peaks::CONTROL_MODE_HALF);
 	}
 	else if (edit_mode_ == EDIT_MODE_TWIN) {
-		peaks::processors[0].CopyParameters(&parameters[0], 4);
-		peaks::processors[1].CopyParameters(&parameters[0], 4);
-		peaks::processors[0].set_control_mode(peaks::CONTROL_MODE_FULL);
-		peaks::processors[1].set_control_mode(peaks::CONTROL_MODE_FULL);
+		processors[0].CopyParameters(&parameters[0], 4);
+		processors[1].CopyParameters(&parameters[0], 4);
+		processors[0].set_control_mode(peaks::CONTROL_MODE_FULL);
+		processors[1].set_control_mode(peaks::CONTROL_MODE_FULL);
 	}
 	else {
-		peaks::processors[0].set_control_mode(peaks::CONTROL_MODE_FULL);
-		peaks::processors[1].set_control_mode(peaks::CONTROL_MODE_FULL);
+		processors[0].set_control_mode(peaks::CONTROL_MODE_FULL);
+		processors[1].set_control_mode(peaks::CONTROL_MODE_FULL);
 	}
 }
 
 void Peaks::setFunction(uint8_t index, Function f) {
 	if (edit_mode_ == EDIT_MODE_SPLIT || edit_mode_ == EDIT_MODE_TWIN) {
 		function_[0] = function_[1] = f;
-		peaks::processors[0].set_function(function_table_[f][0]);
-		peaks::processors[1].set_function(function_table_[f][1]);
+		processors[0].set_function(function_table_[f][0]);
+		processors[1].set_function(function_table_[f][1]);
 	}
 	else {
 		function_[index] = f;
-		peaks::processors[index].set_function(function_table_[f][index]);
+		processors[index].set_function(function_table_[f][index]);
 	}
 }
 
@@ -399,8 +390,8 @@ void Peaks::onSwitchReleased(uint16_t id, uint16_t data) {
 			edit_mode_ = static_cast<EditMode>(
 			                 (edit_mode_ + EDIT_MODE_FIRST) % EDIT_MODE_LAST);
 			function_[0] = function_[1];
-			peaks::processors[0].set_function(function_table_[function_[0]][0]);
-			peaks::processors[1].set_function(function_table_[function_[0]][1]);
+			processors[0].set_function(function_table_[function_[0]][0]);
+			processors[1].set_function(function_table_[function_[0]][1]);
 			lockPots();
 		}
 		else {
@@ -470,17 +461,17 @@ void Peaks::pollPots() {
 void Peaks::onPotChanged(uint16_t id, uint16_t value) {
 	switch (edit_mode_) {
 	case EDIT_MODE_TWIN:
-		peaks::processors[0].set_parameter(id, value);
-		peaks::processors[1].set_parameter(id, value);
+		processors[0].set_parameter(id, value);
+		processors[1].set_parameter(id, value);
 		pot_value_[id] = value >> 8;
 		break;
 
 	case EDIT_MODE_SPLIT:
 		if (id < 2) {
-			peaks::processors[0].set_parameter(id, value);
+			processors[0].set_parameter(id, value);
 		}
 		else {
-			peaks::processors[1].set_parameter(id - 2, value);
+			processors[1].set_parameter(id - 2, value);
 		}
 		pot_value_[id] = value >> 8;
 		break;
@@ -488,7 +479,7 @@ void Peaks::onPotChanged(uint16_t id, uint16_t value) {
 	case EDIT_MODE_FIRST:
 	case EDIT_MODE_SECOND: {
 		uint8_t index = id + (edit_mode_ - EDIT_MODE_FIRST) * 4;
-		peaks::Processors* p = &peaks::processors[edit_mode_ - EDIT_MODE_FIRST];
+		peaks::Processors* p = &processors[edit_mode_ - EDIT_MODE_FIRST];
 
 		int16_t delta = static_cast<int16_t>(pot_value_[index]) - \
 		                static_cast<int16_t>(value >> 8);
@@ -594,16 +585,15 @@ void Peaks::refreshLeds() {
 		}
 	}
 
-	if (peaks::processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION) {
-		uint8_t pattern = \
-		                  peaks::processors[0].number_station().digit() ^ \
-		                  peaks::processors[1].number_station().digit();
+	if (processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION) {
+		uint8_t pattern = processors[0].number_station().digit()
+			^ processors[1].number_station().digit();
 		for (size_t i = 0; i < 4; ++i) {
 			lights[FUNC_1_LIGHT + i].value = (pattern & 1) ? 1.0f : 0.0f;
 			pattern = pattern >> 1;
 		}
-		b[0] = peaks::processors[0].number_station().gate() ? 255 : 0;
-		b[1] = peaks::processors[1].number_station().gate() ? 255 : 0;
+		b[0] = processors[0].number_station().gate() ? 255 : 0;
+		b[1] = processors[1].number_station().gate() ? 255 : 0;
 	}
 
 	lights[TRIG_1_LIGHT].value = rescale(static_cast<float>(b[0]), 0.0f, 255.0f, 0.0f, 1.0f);
