@@ -564,7 +564,7 @@ void Peaks::refreshLeds() {
 		switch (function_[i]) {
 		case FUNCTION_DRUM_GENERATOR:
 		case FUNCTION_FM_DRUM_GENERATOR:
-			b[i] = std::abs(gBrightness[i]) >> 8;
+			b[i] = (int16_t) std::abs(gBrightness[i]) >> 8;
 			b[i] = b[i] >= 255 ? 255 : b[i];
 			break;
 		case FUNCTION_LFO:
