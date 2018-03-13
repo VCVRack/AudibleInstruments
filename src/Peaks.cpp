@@ -601,14 +601,7 @@ void Peaks::refreshLeds() {
 
 struct PeaksWidget : ModuleWidget {
 	PeaksWidget(Peaks *module) : ModuleWidget(module) {
-		box.size = Vec(15 * 8, 380);
-
-		{
-			Panel *panel = new LightPanel();
-			panel->backgroundImage = Image::load(assetPlugin(plugin, "res/Peaks.png"));
-			panel->box.size = box.size;
-			addChild(panel);
-		}
+		setPanel(SVG::load(assetPlugin(plugin, "res/Peaks.svg")));
 
 		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
 		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
