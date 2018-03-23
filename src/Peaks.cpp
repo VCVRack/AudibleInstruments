@@ -53,21 +53,20 @@ static const uint16_t kAdcThresholdUnlocked = 1 << (16 - 10);  // 10 bits
 static const uint16_t kAdcThresholdLocked = 1 << (16 - 8);  // 8 bits
 
 
-// Global scope, so variables can be accessed by process() function.
-int16_t gOutputBuffer[peaks::kBlockSize];
-int16_t gBrightness[2] = {0, 0};
+// File scope, so resources can be accessed by process() function.
+static int16_t gOutputBuffer[peaks::kBlockSize];
+static int16_t gBrightness[peaks::kNumChannels] = {0, 0};
 
-
-static void set_led_brightness(int channel, int16_t value) {
-	gBrightness[channel] = value;
-}
+static peaks::Processors processors[2];
 
 // File scope because of IOBuffer function signature.
 // It cannot refer to a member function of class Peaks().
+static void set_led_brightness(int channel, int16_t value) {
+	gBrightness[channel] = value;
+}
 static void process(peaks::IOBuffer::Block* block, size_t size) {
 	for (size_t i = 0; i < peaks::kNumChannels; ++i) {
-		// TODO
-		// processors[i].Process(block->input[i], gOutputBuffer, size);
+		processors[i].Process(block->input[i], gOutputBuffer, size);
 		set_led_brightness(i, gOutputBuffer[0]);
 		for (size_t j = 0; j < size; ++j) {
 			// From calibration_data.h, shifting signed to unsigned values.
@@ -77,7 +76,6 @@ static void process(peaks::IOBuffer::Block* block, size_t size) {
 		}
 	}
 }
-
 
 struct Peaks : Module {
 	enum ParamIds {
@@ -138,8 +136,6 @@ struct Peaks : Module {
 	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
 
 	bool initNumberStation = false;
-
-	peaks::Processors processors[2];
 
 	Peaks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		settings_.edit_mode = EDIT_MODE_TWIN;
@@ -564,7 +560,7 @@ void Peaks::refreshLeds() {
 		switch (function_[i]) {
 		case FUNCTION_DRUM_GENERATOR:
 		case FUNCTION_FM_DRUM_GENERATOR:
-			b[i] = (int16_t) std::abs(gBrightness[i]) >> 8;
+			b[i] = (int16_t) abs(gBrightness[i]) >> 8;
 			b[i] = b[i] >= 255 ? 255 : b[i];
 			break;
 		case FUNCTION_LFO:
@@ -650,6 +646,10 @@ struct PeaksWidget : ModuleWidget {
 			Peaks *peaks;
 			void onAction(EventAction &e) override {
 				peaks->initNumberStation = true;
+			}
+			void step() override {
+				rightText = (processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION) ? "✔" : "";
+				MenuItem::step();
 			}
 		};
 
