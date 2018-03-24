@@ -5,7 +5,6 @@
 #include "dsp/samplerate.hpp"
 #include "dsp/ringbuffer.hpp"
 
-#include "peaks/io_buffer.h"
 #include "peaks/processors.h"
 
 #include "AudibleInstruments.hpp"
@@ -107,12 +106,10 @@ struct Peaks : Module {
 
 	peaks::Processors processors[2];
 
-	int16_t output[peaks::kBlockSize];
-	int16_t brightness[peaks::kNumChannels] = {0, 0};
+	int16_t output[kBlockSize];
+	int16_t brightness[kNumChannels] = {0, 0};
 
 	SchmittTrigger switches_[2];
-
-	peaks::IOBuffer ioBuffer;
 
 	peaks::GateFlags gate_flags[2] = {0, 0};
 
@@ -144,10 +141,8 @@ struct Peaks : Module {
 		settings_.snap_mode = false;
 		std::fill(&settings_.pot_value[0], &settings_.pot_value[8], 0);
 
-		memset(&ioBuffer, 0, sizeof(ioBuffer));
 		memset(&processors[0], 0, sizeof(processors[0]));
 		memset(&processors[1], 0, sizeof(processors[1]));
-		ioBuffer.Init();
 		processors[0].Init(0);
 		processors[1].Init(1);
 	}
@@ -276,16 +271,16 @@ struct Peaks : Module {
 			// Prepare sample rate conversion.
 			// Peaks is sampling at 48kHZ.
 			outputSrc.setRates(48000, engineGetSampleRate());
-			int inLen = peaks::kBlockSize;
+			int inLen = kBlockSize;
 			int outLen = outputBuffer.capacity();
-			Frame<2> f[peaks::kBlockSize];
+			Frame<2> f[kBlockSize];
 
 			// Process an entire block of data from the IOBuffer.
-			for (size_t k = 0; k < peaks::kBlockSize; ++k) {
+			for (size_t k = 0; k < kBlockSize; ++k) {
 
 				Slice slice = NextSlice(1);
 
-				for (size_t i = 0; i < peaks::kNumChannels; ++i) {
+				for (size_t i = 0; i < kNumChannels; ++i) {
 					gate_flags[i] = peaks::ExtractGateFlags(
 					                    gate_flags[i],
 					                    gate_inputs & (1 << i));
@@ -336,7 +331,7 @@ struct Peaks : Module {
 	}
 
 	inline void process(Block* block, size_t size) {
-		for (size_t i = 0; i < peaks::kNumChannels; ++i) {
+		for (size_t i = 0; i < kNumChannels; ++i) {
 			processors[i].Process(block->input[i], output, size);
 			set_led_brightness(i, output[0]);
 			for (size_t j = 0; j < size; ++j) {
