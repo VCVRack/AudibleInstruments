@@ -192,18 +192,6 @@ void Tides::step() {
 }
 
 
-struct TidesSheepItem : MenuItem {
-	Tides *tides;
-	void onAction(EventAction &e) override {
-		tides->sheep ^= true;
-	}
-	void step() override {
-		rightText = (tides->sheep) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
 struct TidesWidget : ModuleWidget {
 	SVGPanel *tidesPanel;
 	SVGPanel *sheepPanel;
@@ -271,11 +259,19 @@ struct TidesWidget : ModuleWidget {
 
 
 	void appendContextMenu(Menu *menu) override {
-		Tides *tides = dynamic_cast<Tides*>(module);
-		assert(tides);
+		Tides *module = dynamic_cast<Tides*>(this->module);
 
-		menu->addChild(construct<MenuLabel>());
-		menu->addChild(construct<TidesSheepItem>(&MenuItem::text, "Sheep", &TidesSheepItem::tides, tides));
+		struct SheepItem : MenuItem {
+			Tides *module;
+			void onAction(EventAction &e) override {
+				module->sheep ^= true;
+			}
+		};
+
+		menu->addChild(MenuEntry::create());
+		SheepItem *sheepItem = MenuItem::create<SheepItem>("Sheep", CHECKMARK(module->sheep));
+		sheepItem->module = module;
+		menu->addChild(sheepItem);
 	}
 };
 
