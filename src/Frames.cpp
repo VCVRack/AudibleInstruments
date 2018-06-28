@@ -204,15 +204,15 @@ void Frames::step() {
 			}
 		}
 		if (sequencer_mode) {
-			if (stepTrigger.process(rescale(inputs[FRAME_INPUT].value, 0.1f, 2.f, 0.f, 1.f))) {
+			if (stepTrigger.process(rescale(inputs[FRAME_INPUT].value * params[MODULATION_PARAM].value, 0.1f, 2.f, 0.f, 1.f))) {
 				++sequencer_step;
 			}
 			if (sequencer_step >= keyframer.num_keyframes())
 				sequencer_step = 0;
-			
+
 			timestampMod = keyframer.keyframe(sequencer_step).timestamp;
 		}
-		
+
 		keyframer.Evaluate(timestampMod);
 	}
 
@@ -420,6 +420,8 @@ struct FramesWidget : ModuleWidget {
 			bool poly_lfo_mode;
 			void onAction(EventAction &e) override {
 				frames->poly_lfo_mode = poly_lfo_mode;
+				if (frames->poly_lfo_mode)
+					frames->sequencer_mode = false;
 			}
 			void step() override {
 				rightText = (frames->poly_lfo_mode == poly_lfo_mode) ? "✔" : "";
@@ -432,6 +434,8 @@ struct FramesWidget : ModuleWidget {
 			bool sequencer_mode;
 			void onAction(EventAction &e) override {
 				frames->sequencer_mode = !frames->sequencer_mode;
+				if (frames->sequencer_mode)
+					frames->poly_lfo_mode = false;
 			}
 			void step() override {
 				rightText = frames->sequencer_mode ? "✔" : "";
