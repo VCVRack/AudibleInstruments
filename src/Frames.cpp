@@ -46,10 +46,13 @@ struct Frames : Module {
 	frames::Keyframer keyframer;
 	frames::PolyLfo poly_lfo;
 	bool poly_lfo_mode = false;
+	bool sequencer_mode = false;
 	uint16_t lastControls[4] = {};
+	uint8_t sequencer_step = 0;
 
 	SchmittTrigger addTrigger;
 	SchmittTrigger delTrigger;
+	SchmittTrigger stepTrigger;
 
 	Frames();
 	void step() override;
@@ -57,6 +60,7 @@ struct Frames : Module {
 	json_t *toJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
+		json_object_set_new(rootJ, "seqMode", json_boolean(sequencer_mode));
 
 		json_t *keyframesJ = json_array();
 		for (int i = 0; i < keyframer.num_keyframes(); i++) {
@@ -86,6 +90,10 @@ struct Frames : Module {
 		json_t *polyLfoJ = json_object_get(rootJ, "polyLfo");
 		if (polyLfoJ)
 			poly_lfo_mode = json_boolean_value(polyLfoJ);
+
+		json_t *seqModeJ = json_object_get(rootJ, "seqMode");
+		if (seqModeJ)
+			sequencer_mode = json_boolean_value(seqModeJ);
 
 		json_t *keyframesJ = json_object_get(rootJ, "keyframes");
 		if (keyframesJ) {
@@ -195,6 +203,16 @@ void Frames::step() {
 				keyframer.RemoveKeyframe(nearestTimestamp);
 			}
 		}
+		if (sequencer_mode) {
+			if (stepTrigger.process(rescale(inputs[FRAME_INPUT].value, 0.1f, 2.f, 0.f, 1.f))) {
+				++sequencer_step;
+			}
+			if (sequencer_step >= keyframer.num_keyframes())
+				sequencer_step = 0;
+			
+			timestampMod = keyframer.keyframe(sequencer_step).timestamp;
+		}
+		
 		keyframer.Evaluate(timestampMod);
 	}
 
@@ -409,6 +427,18 @@ struct FramesWidget : ModuleWidget {
 			}
 		};
 
+		struct FramesSeqModeItem : MenuItem {
+			Frames *frames;
+			bool sequencer_mode;
+			void onAction(EventAction &e) override {
+				frames->sequencer_mode = !frames->sequencer_mode;
+			}
+			void step() override {
+				rightText = frames->sequencer_mode ? "✔" : "";
+				MenuItem::step();
+			}
+		};
+
 		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channel Settings"));
 		for (int i = 0; i < 4; i++) {
@@ -420,6 +450,7 @@ struct FramesWidget : ModuleWidget {
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Mode"));
 		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
 		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
+		menu->addChild(construct<FramesSeqModeItem>(&MenuItem::text, "Sequencer", &FramesSeqModeItem::frames, frames));
 	}
 };
 
