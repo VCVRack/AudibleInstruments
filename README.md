@@ -89,9 +89,7 @@ Based on [Veils](https://mutable-instruments.net/modules/veils), [Manual](https:
 
 ### [Edges](https://mutable-instruments.net/modules/edges)
 [Manual](https://mutable-instruments.net/modules/edges/manual/)
-- GPL, will not port
 
 ### [Grids](https://mutable-instruments.net/modules/grids)
 [Manual](https://mutable-instruments.net/modules/grids/manual/)
-- GPL, will not port
 
