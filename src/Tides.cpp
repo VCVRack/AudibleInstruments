@@ -145,7 +145,7 @@ void Tides::step() {
 		// Sync
 		// Slight deviation from spec here.
 		// Instead of toggling sync by holding the range button, just enable it if the clock port is plugged in.
-		generator.set_sync(inputs[CLOCK_INPUT].active);
+		generator.set_sync(inputs[CLOCK_INPUT].active && !sheep);
 
 		// Generator
 		generator.Process(sheep);

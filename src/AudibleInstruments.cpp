@@ -9,6 +9,7 @@ void init(rack::Plugin *p) {
 	p->version = TOSTRING(VERSION);
 
 	p->addModel(modelBraids);
+	p->addModel(modelPlaits);
 	p->addModel(modelElements);
 	p->addModel(modelTides);
 	p->addModel(modelClouds);
