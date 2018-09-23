@@ -202,8 +202,9 @@ struct Plaits : Module {
 		// Set output
 		if (!outputBuffer.empty()) {
 			Frame<2> outputFrame = outputBuffer.shift();
-			outputs[OUT_OUTPUT].value = outputFrame.samples[0] * 5.f;
-			outputs[AUX_OUTPUT].value = outputFrame.samples[1] * 5.f;
+			// Inverting op-amp on outputs
+			outputs[OUT_OUTPUT].value = -outputFrame.samples[0] * 5.f;
+			outputs[AUX_OUTPUT].value = -outputFrame.samples[1] * 5.f;
 		}
 	}
 };
