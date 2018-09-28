@@ -21,3 +21,4 @@ extern Model *modelBlinds;
 extern Model *modelVeils;
 extern Model *modelFrames;
 extern Model *modelPeaks;
+extern Model *modelStages;

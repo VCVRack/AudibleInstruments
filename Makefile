@@ -74,6 +74,11 @@ SOURCES += eurorack/peaks/pulse_processor/pulse_shaper.cc
 SOURCES += eurorack/peaks/pulse_processor/pulse_randomizer.cc
 SOURCES += eurorack/peaks/number_station/number_station.cc
 
+SOURCES += eurorack/stages/segment_generator.cc
+SOURCES += eurorack/stages/ramp_extractor.cc
+# SOURCES += eurorack/stages/chain_state.cc
+SOURCES += eurorack/stages/resources.cc
+
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 
 RACK_DIR ?= ../..
