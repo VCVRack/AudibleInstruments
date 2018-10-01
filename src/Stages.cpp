@@ -110,7 +110,10 @@ struct Stages : Module {
 	}
 
 	void onReset() override {
+		stages::kSampleRate = engineGetSampleRate();
+
 		abloop = false;
+
 		for (size_t i = 0; i < NUM_CHANNELS; ++i) {
 			segment_generator[i].Init();
 			oscillator[i].Init();
@@ -149,6 +152,13 @@ struct Stages : Module {
 				if (loopJ)
 					configurations[i].loop = json_boolean_value(loopJ);
 			}
+		}
+	}
+
+	void onSampleRateChange() override {
+		stages::kSampleRate = engineGetSampleRate();
+		for (int i = 0; i < NUM_CHANNELS; i++) {
+			// segment_generator[i].InitRamps();
 		}
 	}
 
@@ -282,7 +292,7 @@ struct Stages : Module {
 		int loopcount = 0;
 		for (int i = 0; i < NUM_CHANNELS; i++) {
 			float envelope = envelopeBuffer[i][blockIndex];
-			outputs[ENVELOPE_OUTPUTS + i].value = envelope * 10.f;
+			outputs[ENVELOPE_OUTPUTS + i].value = envelope * 8.f;
 			lights[ENVELOPE_LIGHTS + i].setBrightnessSmooth(envelope);
 
 			if (currentGroupSize <= 0) {
