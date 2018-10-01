@@ -167,7 +167,7 @@ struct Stages : Module {
 		float primaries[NUM_CHANNELS];
 		float secondaries[NUM_CHANNELS];
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			primaries[i] = clamp(params[LEVEL_PARAMS + i].value + inputs[LEVEL_INPUTS].value / 8.f, 0.f, 1.f);
+			primaries[i] = clamp(params[LEVEL_PARAMS + i].value + inputs[LEVEL_INPUTS + i].value / 8.f, 0.f, 1.f);
 			secondaries[i] = params[SHAPE_PARAMS + i].value;
 		}
 
