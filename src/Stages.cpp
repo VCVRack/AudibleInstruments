@@ -351,7 +351,7 @@ struct Stages : Module {
 			} else if (configurations[i].loop && loopcount == 1) {
 				flashlevel = abs(oscillator[i].step(0.f));
 			} else {
-				flashlevel = 1 - abs(oscillator[i].step(0.0625f));
+				flashlevel = abs(oscillator[i].step(0.25f));
 			}
 
 			lights[TYPE_LIGHTS + i*2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * flashlevel);
