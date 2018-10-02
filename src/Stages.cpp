@@ -4,10 +4,65 @@
 #include "stages/segment_generator.h"
 #include "stages/oscillator.h"
 
-
 // Must match io_buffer.h
 static const int NUM_CHANNELS = 6;
 static const int BLOCK_SIZE = 8;
+
+struct SineOscillator {
+	float phase = 0.f;
+
+	float step(float offset) {
+
+		// Implement a simple sine oscillator
+		float deltaTime = engineGetSampleTime();
+
+		float freq = 0.5f;
+
+		// Accumulate the phase
+		phase += freq * deltaTime;
+		if (phase >= 1.0f)
+			phase -= 1.0f;
+
+		// Compute the sine output
+		float sine = sinf(2.0f * M_PI * (phase + offset));
+		return sine;
+	}
+};
+
+struct LongPressButton {
+
+	enum Events {
+		NO_PRESS,
+		SHORT_PRESS,
+		LONG_PRESS
+	};
+
+	float pressedTime = 0.f;
+	BooleanTrigger trigger;
+
+	Events step(Param& param) {
+		auto result = NO_PRESS;
+
+		bool pressed = param.value > 0.f;
+		if (pressed && pressedTime >= 0.f) {
+			pressedTime += engineGetSampleTime();
+			if (pressedTime >= 1.f) {
+				pressedTime = -1.f;
+				result = LONG_PRESS;
+			}
+		}
+
+		// Check if released
+		if (trigger.process(!pressed)) {
+			if (pressedTime >= 0.f) {
+				result = SHORT_PRESS;
+			}
+			pressedTime = 0.f;
+		}
+
+		return result;
+	}
+};
 
 struct GroupBuilder {
 
@@ -59,6 +114,8 @@ struct GroupBuilder {
 
 			currentGroupSize -= 1;
 		}
+
+		return segment;
 	}
 };
 
@@ -87,18 +144,16 @@ struct Stages : Module {
 	stages::segment::Configuration configurations[NUM_CHANNELS];
 	bool configuration_changed[NUM_CHANNELS];
 	stages::SegmentGenerator segment_generator[NUM_CHANNELS];
-	stages::Oscillator oscillator[NUM_CHANNELS];
+	SineOscillator oscillator[NUM_CHANNELS];
 	bool abloop;
 	// stages::ChainState chain_state;
 	// stages::Settings settings;
 
 	// Buttons
-	BooleanTrigger typeTriggers[NUM_CHANNELS];
-	float pressedTime = 0.f;
+	LongPressButton typeButtons[NUM_CHANNELS];
 
 	// Buffers
 	float envelopeBuffer[NUM_CHANNELS][BLOCK_SIZE] = {};
-	float typeLightsBuffer[NUM_CHANNELS][BLOCK_SIZE] = {};
 	stmlib::GateFlags last_gate_flags[NUM_CHANNELS] = {};
 	stmlib::GateFlags gate_flags[NUM_CHANNELS][BLOCK_SIZE] = {};
 	int blockIndex = 0;
@@ -116,7 +171,6 @@ struct Stages : Module {
 
 		for (size_t i = 0; i < NUM_CHANNELS; ++i) {
 			segment_generator[i].Init();
-			oscillator[i].Init();
 
 			configurations[i].type = stages::segment::TYPE_RAMP;
 			configurations[i].loop = false;
@@ -181,7 +235,7 @@ struct Stages : Module {
 			// Check if the config needs applying to the segment generator for this group
 			bool segment_changed = groups_changed;
 			int numberOfLoops = 0;
-			for (size_t j = 0; j < max(1, groupBuilder.groupSize[i]); j += 1) {
+			for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j += 1) {
 				numberOfLoops += configurations[i + j].loop ? 1 : 0;
 				segment_changed |= configuration_changed[i + j];
 				configuration_changed[i + j] = false;
@@ -189,7 +243,7 @@ struct Stages : Module {
 
 			if (segment_changed) {
 				if (numberOfLoops > 2) {
-					for (size_t j = 0; j < max(1, groupBuilder.groupSize[i]); j += 1) {
+					for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j += 1) {
 						configurations[i + j].loop = false;
 					}
 				}
@@ -197,15 +251,11 @@ struct Stages : Module {
 			}
 
 			// Set the segment parameters on the generator we're about to process
-			for (size_t j = 0; j < segment_generator[i].num_segments(); j += 1) {
+			for (int j = 0; j < segment_generator[i].num_segments(); j += 1) {
 				segment_generator[i].set_segment_parameters(j, primaries[i + j], secondaries[i + j]);
-
-        oscillator[i + j].Render<stages::OSCILLATOR_SHAPE_TRIANGLE>(
-					0.00001f, 0.5f, typeLightsBuffer[i + j], BLOCK_SIZE
-				);
 			}
 
-			bool led_state = segment_generator[i].Process(gate_flags[i], out, BLOCK_SIZE);
+			segment_generator[i].Process(gate_flags[i], out, BLOCK_SIZE);
 
 			// Set the outputs for the active segment in each output sample
 			// All outputs also go to the first segment
@@ -220,56 +270,49 @@ struct Stages : Module {
 		}
 	}
 
+	void toggleMode(int i) {
+		configurations[i].type = (stages::segment::Type) ((configurations[i].type + 1) % 3);
+		configuration_changed[i] = true;
+	}
+
+	void toggleLoop(int i) {
+		configuration_changed[i] = true;
+		configurations[i].loop = !configurations[i].loop;
+
+		// ensure that we're the only loop item in the group
+		if (configurations[i].loop) {
+			int group = groupBuilder.groupForSegment(i);
+
+			// See how many loop items we have
+			int loopitems = 0;
+
+			for (size_t j = 0; j < groupBuilder.groupSize[group]; j += 1) {
+				loopitems += configurations[group + j].loop ? 1 : 0;
+			}
+
+			// If we've got too many loop items, clear down to the one loop
+			if ((abloop && loopitems > 2) || (!abloop && loopitems > 1)) {
+				for (size_t j = 0; j < groupBuilder.groupSize[group]; j += 1) {
+					configurations[group + j].loop = (group + (int)j) == i;
+				}
+				loopitems = 1;
+			}
+
+			// Turn abloop off if we've got 2 or more loops
+			if (loopitems >= 2) {
+				abloop = false;
+			}
+		}
+	}
+
 	void step() override {
 		// Buttons
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			bool pressed = params[TYPE_PARAMS + i].value > 0.f;
-			if (pressed && pressedTime >= 0.f) {
-				pressedTime += engineGetSampleTime();
-				if (pressedTime >= 1.f) {
-					pressedTime = -1.f;
-					configuration_changed[i] = true;
-					configurations[i].loop = !configurations[i].loop;
-
-					// ensure that we're the only loop item in the group
-					if (configurations[i].loop) {
-						int group = groupBuilder.groupForSegment(i);
-
-						if (abloop) {
-							// See how many loop items we have
-							int loopitems = 0;
-
-							for (int j = 0; j < groupBuilder.groupSize[group]; j += 1) {
-								loopitems += configurations[group + j].loop ? 1 : 0;
-							}
-
-							// Turn abloop off if we've got 2 or more loops
-							if (loopitems >= 2) {
-								abloop = false;
-							}
-
-							// If we've got >2 loops, clear down to the one loop
-							if (loopitems > 2) {
-								for (int j = 0; j < groupBuilder.groupSize[group]; j += 1) {
-									configurations[group + j].loop = (group + j) == i;
-								}
-							}
-						} else {
-							for (int j = 0; j < groupBuilder.groupSize[group]; j += 1) {
-								configurations[group + j].loop = (group + j) == i;
-							}
-						}
-					}
-				}
-			}
-
-			// Check if released
-			if (typeTriggers[i].process(!pressed)) {
-				if (pressedTime >= 0.f) {
-					configurations[i].type = (stages::segment::Type) ((configurations[i].type + 1) % 3);
-					configuration_changed[i] = true;
-				}
-				pressedTime = 0.f;
+			switch (typeButtons[i].step(params[TYPE_PARAMS + i])) {
+				default:
+				case LongPressButton::NO_PRESS: break;
+				case LongPressButton::SHORT_PRESS: toggleMode(i); break;
+				case LongPressButton::LONG_PRESS: toggleLoop(i); break;
 			}
 		}
 
@@ -287,7 +330,6 @@ struct Stages : Module {
 		}
 
 		// Output
-		int group = 0;
 		int currentGroupSize = 0;
 		int loopcount = 0;
 		for (int i = 0; i < NUM_CHANNELS; i++) {
@@ -297,22 +339,24 @@ struct Stages : Module {
 
 			if (currentGroupSize <= 0) {
 				currentGroupSize = max(1, groupBuilder.groupSize[i]);
-				group = i;
 				loopcount = 0;
 			}
 			currentGroupSize -= 1;
 
 			loopcount += configurations[i].loop ? 1 : 0;
+			auto flashlevel = 1.f;
+
 			if (!configurations[i].loop) {
-				lights[TYPE_LIGHTS + i*2 + 0].setBrightness(configurations[i].type == 0 || configurations[i].type == 1);
-				lights[TYPE_LIGHTS + i*2 + 1].setBrightness(configurations[i].type == 1 || configurations[i].type == 2);
+				oscillator[i].step(0.f); // move the oscillator on to keep the lights in sync
 			} else if (configurations[i].loop && loopcount == 1) {
-				lights[TYPE_LIGHTS + i*2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * abs(typeLightsBuffer[i][blockIndex]));
-				lights[TYPE_LIGHTS + i*2 + 1].setBrightness((configurations[i].type == 1 || configurations[i].type == 2) * abs(typeLightsBuffer[i][blockIndex]));
+				flashlevel = abs(oscillator[i].step(0.f));
 			} else {
-				lights[TYPE_LIGHTS + i*2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * (1.f - abs(typeLightsBuffer[i][blockIndex])));
-				lights[TYPE_LIGHTS + i*2 + 1].setBrightness((configurations[i].type == 1 || configurations[i].type == 2) * (1.f - abs(typeLightsBuffer[i][blockIndex])));
+				flashlevel = 1 - abs(oscillator[i].step(0.0625f));
 			}
+
+			lights[TYPE_LIGHTS + i*2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * flashlevel);
+			lights[TYPE_LIGHTS + i*2 + 1].setBrightness((configurations[i].type == 1 || configurations[i].type == 2) * flashlevel);
+
 		}
 	}
 };
