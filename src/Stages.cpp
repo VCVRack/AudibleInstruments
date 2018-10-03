@@ -261,7 +261,7 @@ struct Stages : Module {
 			// All outputs also go to the first segment
 			for (int j = 0; j < BLOCK_SIZE; j++) {
 				for (int k = 1; k < segment_generator[i].num_segments(); k += 1) {
-					envelopeBuffer[i + k][j] = k == out[j].segment ? out[j].value : 0.f;
+					envelopeBuffer[i + k][j] = k == out[j].segment ? 1- out[j].phase : 0.f;
 				}
 				envelopeBuffer[i][j] = out[j].value;
 			}
