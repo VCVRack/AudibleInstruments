@@ -124,7 +124,6 @@ struct Stages : Module {
 	bool configuration_changed[NUM_CHANNELS];
 	stages::SegmentGenerator segment_generator[NUM_CHANNELS];
 	float lightOscillatorPhase;
-	bool abLoop;
 
 	// Buttons
 	LongPressButton typeButtons[NUM_CHANNELS];
@@ -141,8 +140,6 @@ struct Stages : Module {
 	}
 
 	void onReset() override {
-		abLoop = false;
-
 		for (size_t i = 0; i < NUM_CHANNELS; ++i) {
 			segment_generator[i].Init();
 
@@ -266,17 +263,12 @@ struct Stages : Module {
 				loopitems += configurations[group + j].loop ? 1 : 0;
 			}
 
-			// If we've got too many loop items, clear down to the one loop
-			if ((abLoop && loopitems > 2) || (!abLoop && loopitems > 1)) {
+			// If we've got too many loop items, clear down to the one looping segment
+			if (loopitems > 2) {
 				for (size_t j = 0; j < groupBuilder.groupSize[group]; j++) {
 					configurations[group + j].loop = (group + (int)j) == i;
 				}
 				loopitems = 1;
-			}
-
-			// Turn abLoop off if we've got 2 or more loops
-			if (loopitems >= 2) {
-				abLoop = false;
 			}
 		}
 	}
@@ -405,22 +397,6 @@ struct StagesWidget : ModuleWidget {
 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(36.63671, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 3));
 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(48.07649, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 4));
 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(59.51696, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 5));
-	}
-
-	void appendContextMenu(Menu *menu) override {
-		Stages *module = dynamic_cast<Stages*>(this->module);
-
-		struct ABLoopItem : MenuItem {
-			Stages *module;
-			void onAction(EventAction &e) override {
-				module->abLoop = true;
-			}
-		};
-
-		menu->addChild(MenuEntry::create());
-		ABLoopItem *abLoopItem = MenuItem::create<ABLoopItem>("Set A/B Loop", CHECKMARK(module->abLoop));
-		abLoopItem->module = module;
-		menu->addChild(abLoopItem);
 	}
 };
 
