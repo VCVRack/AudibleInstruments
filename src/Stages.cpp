@@ -42,59 +42,78 @@ struct LongPressButton {
 	}
 };
 
+struct GroupInfo {
+	int first_segment = 0;
+	int segment_count = 0;
+	bool gated = false;
+};
 
 struct GroupBuilder {
-	GroupBuilder() {
-		for (size_t i = 0; i < NUM_CHANNELS; i++) {
-			groupSize[i] = 0;
+
+	GroupInfo groups[NUM_CHANNELS];
+	int groupCount = 0;
+
+	bool buildGroups(std::vector<Input> *gateInputs, size_t first, size_t count) {
+		bool any_gates = false;
+
+		GroupInfo nextGroups[NUM_CHANNELS];
+
+		int currentGroup = 0;
+		for (int i = 0; i < NUM_CHANNELS; i++) {
+			bool gated = (*gateInputs)[first + i].active;
+
+			if (!any_gates) {
+				if (!gated) {
+					// No gates at all yet, segments are all single segment groups
+					nextGroups[currentGroup].first_segment = i;
+					nextGroups[currentGroup].segment_count = 1;
+					nextGroups[currentGroup].gated = false;
+					currentGroup++;
+				}
+				else {
+					// first gate, current group is start of a segment group
+					any_gates = true;
+					nextGroups[currentGroup].first_segment = i;
+					nextGroups[currentGroup].segment_count = 1;
+					nextGroups[currentGroup].gated = true;
+					currentGroup++;
+				}
+			}
+			else {
+				if (!gated) {
+					// We've had a gate, this ungated segment is part of the previous group
+					nextGroups[currentGroup-1].segment_count++;
+				}
+				else {
+					// This gated input indicates the start of the next group
+					nextGroups[currentGroup].first_segment = i;
+					nextGroups[currentGroup].segment_count = 1;
+					nextGroups[currentGroup].gated = true;
+					currentGroup++;
+				}
+			}
 		}
-	}
 
-	size_t groupSize[NUM_CHANNELS];
-	bool isPatched = false;
-
-	bool buildGroups(std::vector<Input> *inputs, size_t first, size_t count) {
 		bool changed = false;
-		isPatched = false;
-		size_t activeGroup = 0;
 
-		for (int i = count - 1; i >= 0; i -= 1) {
-			bool patched = (*inputs)[first + i].active;
+		if (currentGroup != groupCount) {
+			changed = true;
+			groupCount = currentGroup;
+		}
 
-			activeGroup++;
-			if (!patched) {
-				changed = changed || (groupSize[i] != 0);
-				groupSize[i] = 0;
+		for (int i = 0; i < groupCount; i++) {
+			if (nextGroups[i].segment_count != groups[i].segment_count || 
+					nextGroups[i].gated != groups[i].gated ||
+					nextGroups[i].first_segment != groups[i].first_segment) {
+				changed = true;
 			}
-			else if (patched) {
-				isPatched = true;
-				changed = changed || (groupSize[i] != activeGroup);
-				groupSize[i] = activeGroup;
-				activeGroup = 0;
-			}
+
+			groups[i].first_segment = nextGroups[i].first_segment;
+			groups[i].segment_count = nextGroups[i].segment_count;
+			groups[i].gated = nextGroups[i].gated;
 		}
 
 		return changed;
-	}
-
-	int groupForSegment(int segment) {
-		int group = 0;
-		int currentGroupSize = 0;
-
-		for (int i = 0; i < NUM_CHANNELS; i++) {
-			if (currentGroupSize <= 0) {
-				currentGroupSize = max(1, groupSize[i]);
-				group = i;
-			}
-
-			if (segment == i) {
-				return group;
-			}
-
-			currentGroupSize -= 1;
-		}
-
-		return segment;
 	}
 };
 
@@ -203,42 +222,53 @@ struct Stages : Module {
 
 		// Process block
 		stages::SegmentGenerator::Output out[BLOCK_SIZE] = {};
-		for (int i = 0; i < NUM_CHANNELS;) {
+		for (int i = 0; i < groupBuilder.groupCount; i++) {
+			GroupInfo &group = groupBuilder.groups[i];
+
 			// Check if the config needs applying to the segment generator for this group
-			bool segment_changed = groups_changed;
-			int numberOfLoops = 0;
-			for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j++) {
-				numberOfLoops += configurations[i + j].loop ? 1 : 0;
-				segment_changed |= configuration_changed[i + j];
-				configuration_changed[i + j] = false;
+			bool apply_config = groups_changed;
+			int numberOfLoopsInGroup = 0;
+			for (int j = 0; j < group.segment_count; j++) {
+				int segment = group.first_segment + j;
+				numberOfLoopsInGroup += configurations[segment].loop ? 1 : 0;
+				apply_config |= configuration_changed[segment];
+				configuration_changed[segment] = false;
 			}
 
-			if (segment_changed) {
-				if (numberOfLoops > 2) {
-					for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j++) {
-						configurations[i + j].loop = false;
-					}
+			if (numberOfLoopsInGroup > 2) {
+				// Too many segments are looping, turn them all off
+				apply_config = true;
+				for (int j = 0; j < group.segment_count; j++) {
+					configurations[group.first_segment + j].loop = false;
 				}
-				segment_generator[i].Configure(groupBuilder.groupSize[i] > 0, &configurations[i], max(1, groupBuilder.groupSize[i]));
+			}
+
+			if (apply_config) {
+				segment_generator[i].Configure(group.gated, &configurations[group.first_segment], group.segment_count);
 			}
 
 			// Set the segment parameters on the generator we're about to process
-			for (int j = 0; j < segment_generator[i].num_segments(); j++) {
-				segment_generator[i].set_segment_parameters(j, primaries[i + j], secondaries[i + j]);
+			for (int j = 0; j < group.segment_count; j++) {
+				segment_generator[i].set_segment_parameters(j, primaries[group.first_segment + j], secondaries[group.first_segment + j]);
 			}
 
-			segment_generator[i].Process(gate_flags[i], out, BLOCK_SIZE);
+			segment_generator[i].Process(gate_flags[group.first_segment], out, BLOCK_SIZE);
 
-			// Set the outputs for the active segment in each output sample
-			// All outputs also go to the first segment
 			for (int j = 0; j < BLOCK_SIZE; j++) {
-				for (int k = 1; k < segment_generator[i].num_segments(); k++) {
-					envelopeBuffer[i + k][j] = k == out[j].segment ? 1 - out[j].phase : 0.f;
+				for (int k = 1; k < group.segment_count; k++) {
+					int segment = group.first_segment + k;
+					if (k == out[j].segment) {
+						// Set the phase output for the active segment
+						envelopeBuffer[segment][j] = 1.f - out[j].phase;
+					}
+					else {
+						// Non active segments have 0.f output
+						envelopeBuffer[segment][j] = 0.f;
+					}
 				}
-				envelopeBuffer[i][j] = out[j].value;
+				// First group segment gets the actual output
+				envelopeBuffer[group.first_segment][j] = out[j].value;
 			}
-
-			i += segment_generator[i].num_segments();
 		}
 	}
 
@@ -247,27 +277,35 @@ struct Stages : Module {
 		configuration_changed[i] = true;
 	}
 
-	void toggleLoop(int i) {
-		configuration_changed[i] = true;
-		configurations[i].loop = !configurations[i].loop;
+	void toggleLoop(int segment) {
+		configuration_changed[segment] = true;
+		configurations[segment].loop = !configurations[segment].loop;
 
-		// ensure that we're the only loop item in the group
-		if (configurations[i].loop) {
-			int group = groupBuilder.groupForSegment(i);
+		// ensure that we don't have too many looping segments in the group
+		if (configurations[segment].loop) {
+			int segment_count = 0;
+			for (int i = 0; i < groupBuilder.groupCount; i++) {
+				segment_count += groupBuilder.groups[i].segment_count;
 
-			// See how many loop items we have
-			int loopitems = 0;
+				if (segment_count > segment) {
+					GroupInfo &group = groupBuilder.groups[i];
 
-			for (size_t j = 0; j < groupBuilder.groupSize[group]; j++) {
-				loopitems += configurations[group + j].loop ? 1 : 0;
-			}
+					// See how many loop items we have
+					int numberOfLoopsInGroup = 0;
 
-			// If we've got too many loop items, clear down to the one looping segment
-			if (loopitems > 2) {
-				for (size_t j = 0; j < groupBuilder.groupSize[group]; j++) {
-					configurations[group + j].loop = (group + (int)j) == i;
+					for (int j = 0; j < group.segment_count; j++) {
+						numberOfLoopsInGroup += configurations[group.first_segment + j].loop ? 1 : 0;
+					}
+
+					// If we've got too many loop items, clear down to the one looping segment
+					if (numberOfLoopsInGroup > 2) {
+						for (int j = 0; j < group.segment_count; j++) {
+							configurations[group.first_segment + j].loop = (group.first_segment + j) == segment;
+						}
+					}
+
+					break;
 				}
-				loopitems = 1;
 			}
 		}
 	}
@@ -302,35 +340,34 @@ struct Stages : Module {
 		}
 
 		// Output
-		int currentGroupSize = 0;
-		int loopcount = 0;
-		for (int i = 0; i < NUM_CHANNELS; i++) {
-			float envelope = envelopeBuffer[i][blockIndex];
-			outputs[ENVELOPE_OUTPUTS + i].value = envelope * 8.f;
-			lights[ENVELOPE_LIGHTS + i].setBrightnessSmooth(envelope);
+		for (int i = 0; i < groupBuilder.groupCount; i++) {
+			GroupInfo &group = groupBuilder.groups[i];
 
-			if (currentGroupSize <= 0) {
-				currentGroupSize = max(1, groupBuilder.groupSize[i]);
-				loopcount = 0;
+			int numberOfLoopsInGroup = 0;
+			for (int j = 0; j < group.segment_count; j++) {
+				int segment = group.first_segment + j;
+
+				float envelope = envelopeBuffer[segment][blockIndex];
+				outputs[ENVELOPE_OUTPUTS + segment].value = envelope * 8.f;
+				lights[ENVELOPE_LIGHTS + segment].setBrightnessSmooth(envelope);
+
+				numberOfLoopsInGroup += configurations[segment].loop ? 1 : 0;
+				float flashlevel = 1.f;
+
+				if (configurations[segment].loop && numberOfLoopsInGroup == 1) {
+					flashlevel = abs(sinf(2.0f * M_PI * lightOscillatorPhase));
+				}
+				else if (configurations[segment].loop && numberOfLoopsInGroup > 1) {
+					float advancedPhase = lightOscillatorPhase + 0.25f;
+					if (advancedPhase > 1.0f)
+						advancedPhase -= 1.0f;
+
+					flashlevel = abs(sinf(2.0f * M_PI * advancedPhase));
+				}
+
+				lights[TYPE_LIGHTS + segment * 2 + 0].setBrightness((configurations[segment].type == 0 || configurations[segment].type == 1) * flashlevel);
+				lights[TYPE_LIGHTS + segment * 2 + 1].setBrightness((configurations[segment].type == 1 || configurations[segment].type == 2) * flashlevel);
 			}
-			currentGroupSize -= 1;
-
-			loopcount += configurations[i].loop ? 1 : 0;
-			float flashlevel = 1.f;
-
-			if (configurations[i].loop && loopcount == 1) {
-				flashlevel = abs(sinf(2.0f * M_PI * lightOscillatorPhase));
-			}
-			else if (configurations[i].loop && loopcount > 1) {
-				float advancedPhase = lightOscillatorPhase + 0.25f;
-				if (advancedPhase > 1.0f)
-					advancedPhase -= 1.0f;
-
-				flashlevel = abs(sinf(2.0f * M_PI * advancedPhase));
-			}
-
-			lights[TYPE_LIGHTS + i * 2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * flashlevel);
-			lights[TYPE_LIGHTS + i * 2 + 1].setBrightness((configurations[i].type == 1 || configurations[i].type == 2) * flashlevel);
 		}
 	}
 };
