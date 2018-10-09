@@ -184,9 +184,8 @@ struct Stages : Module {
 	}
 
 	void onSampleRateChange() override {
-		stages::kSampleRate = engineGetSampleRate();
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			segment_generator[i].InitRamps();
+			segment_generator[i].SetSampleRate(engineGetSampleRate());
 		}
 	}
 
