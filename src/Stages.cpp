@@ -8,29 +8,6 @@
 static const int NUM_CHANNELS = 6;
 static const int BLOCK_SIZE = 8;
 
-
-struct SineOscillator {
-	float phase = 0.f;
-
-	float step(float offset) {
-
-		// Implement a simple sine oscillator
-		float deltaTime = engineGetSampleTime();
-
-		float freq = 0.5f;
-
-		// Accumulate the phase
-		phase += freq * deltaTime;
-		if (phase >= 1.0f)
-			phase -= 1.0f;
-
-		// Compute the sine output
-		float sine = sinf(2.0f * M_PI * (phase + offset));
-		return sine;
-	}
-};
-
-
 struct LongPressButton {
 	enum Events {
 		NO_PRESS,
@@ -146,7 +123,7 @@ struct Stages : Module {
 	stages::segment::Configuration configurations[NUM_CHANNELS];
 	bool configuration_changed[NUM_CHANNELS];
 	stages::SegmentGenerator segment_generator[NUM_CHANNELS];
-	SineOscillator oscillator[NUM_CHANNELS];
+	float lightOscillatorPhase;
 	bool abLoop;
 
 	// Buttons
@@ -174,6 +151,7 @@ struct Stages : Module {
 			configuration_changed[i] = true;
 		}
 
+		lightOscillatorPhase = 0.f;
 		onSampleRateChange();
 	}
 
@@ -304,6 +282,11 @@ struct Stages : Module {
 	}
 
 	void step() override {
+		// Oscillate flashing the type lights
+		lightOscillatorPhase += 0.5f * engineGetSampleTime();
+		if (lightOscillatorPhase >= 1.0f)
+			lightOscillatorPhase -= 1.0f;
+
 		// Buttons
 		for (int i = 0; i < NUM_CHANNELS; i++) {
 			switch (typeButtons[i].step(params[TYPE_PARAMS + i])) {
@@ -344,14 +327,15 @@ struct Stages : Module {
 			loopcount += configurations[i].loop ? 1 : 0;
 			float flashlevel = 1.f;
 
-			if (!configurations[i].loop) {
-				oscillator[i].step(0.f); // move the oscillator on to keep the lights in sync
+			if (configurations[i].loop && loopcount == 1) {
+				flashlevel = abs(sinf(2.0f * M_PI * lightOscillatorPhase));
 			}
-			else if (configurations[i].loop && loopcount == 1) {
-				flashlevel = abs(oscillator[i].step(0.f));
-			}
-			else {
-				flashlevel = abs(oscillator[i].step(0.25f));
+			else if (configurations[i].loop && loopcount > 1) {
+				float advancedPhase = lightOscillatorPhase + 0.25f;
+				if (advancedPhase > 1.0f)
+					advancedPhase -= 1.0f;
+
+				flashlevel = abs(sinf(2.0f * M_PI * advancedPhase));
 			}
 
 			lights[TYPE_LIGHTS + i * 2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * flashlevel);
