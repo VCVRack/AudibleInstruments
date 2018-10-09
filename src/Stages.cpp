@@ -1,12 +1,13 @@
 #include "AudibleInstruments.hpp"
 #include "dsp/digital.hpp"
-// #include "stages/chain_state.h"
 #include "stages/segment_generator.h"
 #include "stages/oscillator.h"
+
 
 // Must match io_buffer.h
 static const int NUM_CHANNELS = 6;
 static const int BLOCK_SIZE = 8;
+
 
 struct SineOscillator {
 	float phase = 0.f;
@@ -29,8 +30,8 @@ struct SineOscillator {
 	}
 };
 
-struct LongPressButton {
 
+struct LongPressButton {
 	enum Events {
 		NO_PRESS,
 		SHORT_PRESS,
@@ -40,8 +41,8 @@ struct LongPressButton {
 	float pressedTime = 0.f;
 	BooleanTrigger trigger;
 
-	Events step(Param& param) {
-		auto result = NO_PRESS;
+	Events step(Param &param) {
+		Events result = NO_PRESS;
 
 		bool pressed = param.value > 0.f;
 		if (pressed && pressedTime >= 0.f) {
@@ -64,10 +65,10 @@ struct LongPressButton {
 	}
 };
 
-struct GroupBuilder {
 
+struct GroupBuilder {
 	GroupBuilder() {
-		for (size_t i = 0; i < NUM_CHANNELS; i += 1) {
+		for (size_t i = 0; i < NUM_CHANNELS; i++) {
 			groupSize[i] = 0;
 		}
 	}
@@ -80,16 +81,17 @@ struct GroupBuilder {
 		isPatched = false;
 		size_t activeGroup = 0;
 
-		for (int i = count-1; i >= 0; i -= 1) {
-			auto patched = (*inputs)[first + i].active;
+		for (int i = count - 1; i >= 0; i -= 1) {
+			bool patched = (*inputs)[first + i].active;
 
-			activeGroup += 1;
+			activeGroup++;
 			if (!patched) {
-				changed = changed || groupSize[i] != 0;
+				changed = changed || (groupSize[i] != 0);
 				groupSize[i] = 0;
-			} else if (patched) {
+			}
+			else if (patched) {
 				isPatched = true;
-				changed = changed || groupSize[i] != activeGroup;
+				changed = changed || (groupSize[i] != activeGroup);
 				groupSize[i] = activeGroup;
 				activeGroup = 0;
 			}
@@ -102,7 +104,7 @@ struct GroupBuilder {
 		int group = 0;
 		int currentGroupSize = 0;
 
-		for (int i = 0; i < NUM_CHANNELS; i += 1) {
+		for (int i = 0; i < NUM_CHANNELS; i++) {
 			if (currentGroupSize <= 0) {
 				currentGroupSize = max(1, groupSize[i]);
 				group = i;
@@ -136,7 +138,7 @@ struct Stages : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(TYPE_LIGHTS, NUM_CHANNELS*2),
+		ENUMS(TYPE_LIGHTS, NUM_CHANNELS * 2),
 		ENUMS(ENVELOPE_LIGHTS, NUM_CHANNELS),
 		NUM_LIGHTS
 	};
@@ -145,9 +147,7 @@ struct Stages : Module {
 	bool configuration_changed[NUM_CHANNELS];
 	stages::SegmentGenerator segment_generator[NUM_CHANNELS];
 	SineOscillator oscillator[NUM_CHANNELS];
-	bool abloop;
-	// stages::ChainState chain_state;
-	// stages::Settings settings;
+	bool abLoop;
 
 	// Buttons
 	LongPressButton typeButtons[NUM_CHANNELS];
@@ -160,14 +160,11 @@ struct Stages : Module {
 	GroupBuilder groupBuilder;
 
 	Stages() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
-		// chain_state.Init(NULL, NULL);
 		onReset();
 	}
 
 	void onReset() override {
-		stages::kSampleRate = engineGetSampleRate();
-
-		abloop = false;
+		abLoop = false;
 
 		for (size_t i = 0; i < NUM_CHANNELS; ++i) {
 			segment_generator[i].Init();
@@ -176,6 +173,8 @@ struct Stages : Module {
 			configurations[i].loop = false;
 			configuration_changed[i] = true;
 		}
+
+		onSampleRateChange();
 	}
 
 	json_t *toJson() override {
@@ -226,16 +225,15 @@ struct Stages : Module {
 		}
 
 		// See if the group associations have changed since the last group
-		auto groups_changed = groupBuilder.buildGroups(&inputs, GATE_INPUTS, NUM_CHANNELS);
+		bool groups_changed = groupBuilder.buildGroups(&inputs, GATE_INPUTS, NUM_CHANNELS);
 
 		// Process block
 		stages::SegmentGenerator::Output out[BLOCK_SIZE] = {};
 		for (int i = 0; i < NUM_CHANNELS;) {
-			
 			// Check if the config needs applying to the segment generator for this group
 			bool segment_changed = groups_changed;
 			int numberOfLoops = 0;
-			for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j += 1) {
+			for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j++) {
 				numberOfLoops += configurations[i + j].loop ? 1 : 0;
 				segment_changed |= configuration_changed[i + j];
 				configuration_changed[i + j] = false;
@@ -243,7 +241,7 @@ struct Stages : Module {
 
 			if (segment_changed) {
 				if (numberOfLoops > 2) {
-					for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j += 1) {
+					for (int j = 0; j < max(1, groupBuilder.groupSize[i]); j++) {
 						configurations[i + j].loop = false;
 					}
 				}
@@ -251,7 +249,7 @@ struct Stages : Module {
 			}
 
 			// Set the segment parameters on the generator we're about to process
-			for (int j = 0; j < segment_generator[i].num_segments(); j += 1) {
+			for (int j = 0; j < segment_generator[i].num_segments(); j++) {
 				segment_generator[i].set_segment_parameters(j, primaries[i + j], secondaries[i + j]);
 			}
 
@@ -260,8 +258,8 @@ struct Stages : Module {
 			// Set the outputs for the active segment in each output sample
 			// All outputs also go to the first segment
 			for (int j = 0; j < BLOCK_SIZE; j++) {
-				for (int k = 1; k < segment_generator[i].num_segments(); k += 1) {
-					envelopeBuffer[i + k][j] = k == out[j].segment ? 1- out[j].phase : 0.f;
+				for (int k = 1; k < segment_generator[i].num_segments(); k++) {
+					envelopeBuffer[i + k][j] = k == out[j].segment ? 1 - out[j].phase : 0.f;
 				}
 				envelopeBuffer[i][j] = out[j].value;
 			}
@@ -286,21 +284,21 @@ struct Stages : Module {
 			// See how many loop items we have
 			int loopitems = 0;
 
-			for (size_t j = 0; j < groupBuilder.groupSize[group]; j += 1) {
+			for (size_t j = 0; j < groupBuilder.groupSize[group]; j++) {
 				loopitems += configurations[group + j].loop ? 1 : 0;
 			}
 
 			// If we've got too many loop items, clear down to the one loop
-			if ((abloop && loopitems > 2) || (!abloop && loopitems > 1)) {
-				for (size_t j = 0; j < groupBuilder.groupSize[group]; j += 1) {
+			if ((abLoop && loopitems > 2) || (!abLoop && loopitems > 1)) {
+				for (size_t j = 0; j < groupBuilder.groupSize[group]; j++) {
 					configurations[group + j].loop = (group + (int)j) == i;
 				}
 				loopitems = 1;
 			}
 
-			// Turn abloop off if we've got 2 or more loops
+			// Turn abLoop off if we've got 2 or more loops
 			if (loopitems >= 2) {
-				abloop = false;
+				abLoop = false;
 			}
 		}
 	}
@@ -344,19 +342,20 @@ struct Stages : Module {
 			currentGroupSize -= 1;
 
 			loopcount += configurations[i].loop ? 1 : 0;
-			auto flashlevel = 1.f;
+			float flashlevel = 1.f;
 
 			if (!configurations[i].loop) {
 				oscillator[i].step(0.f); // move the oscillator on to keep the lights in sync
-			} else if (configurations[i].loop && loopcount == 1) {
+			}
+			else if (configurations[i].loop && loopcount == 1) {
 				flashlevel = abs(oscillator[i].step(0.f));
-			} else {
+			}
+			else {
 				flashlevel = abs(oscillator[i].step(0.25f));
 			}
 
-			lights[TYPE_LIGHTS + i*2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * flashlevel);
-			lights[TYPE_LIGHTS + i*2 + 1].setBrightness((configurations[i].type == 1 || configurations[i].type == 2) * flashlevel);
-
+			lights[TYPE_LIGHTS + i * 2 + 0].setBrightness((configurations[i].type == 0 || configurations[i].type == 1) * flashlevel);
+			lights[TYPE_LIGHTS + i * 2 + 1].setBrightness((configurations[i].type == 1 || configurations[i].type == 2) * flashlevel);
 		}
 	}
 };
@@ -410,12 +409,12 @@ struct StagesWidget : ModuleWidget {
 		addOutput(Port::create<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 4));
 		addOutput(Port::create<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 5));
 
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0*2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1*2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2*2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3*2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4*2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5*2));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
+		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(2.29462, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 0));
 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(13.73509, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 1));
 		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(25.17556, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 2));
@@ -430,14 +429,14 @@ struct StagesWidget : ModuleWidget {
 		struct ABLoopItem : MenuItem {
 			Stages *module;
 			void onAction(EventAction &e) override {
-				module->abloop = true;
+				module->abLoop = true;
 			}
 		};
 
 		menu->addChild(MenuEntry::create());
-		ABLoopItem *abloopItem = MenuItem::create<ABLoopItem>("Set A/B Loop", CHECKMARK(module->abloop));
-		abloopItem->module = module;
-		menu->addChild(abloopItem);
+		ABLoopItem *abLoopItem = MenuItem::create<ABLoopItem>("Set A/B Loop", CHECKMARK(module->abLoop));
+		abLoopItem->module = module;
+		menu->addChild(abLoopItem);
 	}
 };
 
