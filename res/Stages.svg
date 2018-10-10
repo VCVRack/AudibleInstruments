@@ -10,9 +10,9 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="70.887665mm"
+   width="71.120003mm"
    height="128.5889mm"
-   viewBox="0 0 70.887665 128.5889"
+   viewBox="0 0 71.120003 128.5889"
    version="1.1"
    id="svg1428"
    inkscape:version="0.92.2 2405546, 2018-03-11"
@@ -1173,11 +1173,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.98994949"
-     inkscape:cx="191.99827"
-     inkscape:cy="232.47187"
+     inkscape:zoom="5.6"
+     inkscape:cx="149.63939"
+     inkscape:cy="511.43702"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer2"
+     inkscape:current-layer="layer1"
      showgrid="false"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -1186,7 +1186,7 @@
      inkscape:window-width="1600"
      inkscape:window-height="882"
      inkscape:window-x="0"
-     inkscape:window-y="18"
+     inkscape:window-y="27"
      inkscape:window-maximized="0"
      inkscape:snap-bbox="true"
      inkscape:snap-bbox-midpoints="false"
@@ -1194,7 +1194,8 @@
      inkscape:snap-page="true"
      inkscape:bbox-nodes="true"
      inkscape:snap-bbox-edge-midpoints="true"
-     inkscape:bbox-paths="true" />
+     inkscape:bbox-paths="true"
+     units="mm" />
   <metadata
      id="metadata1425">
     <rdf:RDF>
@@ -1213,11 +1214,11 @@
      id="layer1"
      transform="translate(0.04409722,-168.45588)">
     <rect
-       style="display:inline;fill:#e6e6e6;stroke-width:0.36505559"
+       style="display:inline;fill:#e6e6e6;stroke-width:0.36565334"
        y="168.45589"
        x="-0.044097219"
        height="128.58888"
-       width="70.887665"
+       width="71.120003"
        id="background" />
     <path
        inkscape:connector-curvature="0"
