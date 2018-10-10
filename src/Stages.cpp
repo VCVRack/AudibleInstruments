@@ -394,12 +394,12 @@ struct StagesWidget : ModuleWidget {
 		addParam(ParamWidget::create<TL1105>(mm2px(Vec(38.51399, 32.37248)), module, Stages::TYPE_PARAMS + 3, 0.0, 1.0, 0.0));
 		addParam(ParamWidget::create<TL1105>(mm2px(Vec(49.95446, 32.37248)), module, Stages::TYPE_PARAMS + 4, 0.0, 1.0, 0.0));
 		addParam(ParamWidget::create<TL1105>(mm2px(Vec(61.39424, 32.37248)), module, Stages::TYPE_PARAMS + 5, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(3.36193, 43.06508)), module, Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 1.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(14.81619, 43.06508)), module, Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 1.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(26.26975, 43.06508)), module, Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 1.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(37.70265, 43.06508)), module, Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 1.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(49.15759, 43.06508)), module, Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 1.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(60.61184, 43.06508)), module, Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 1.0));
+		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(3.36193, 43.06508)), module, Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(14.81619, 43.06508)), module, Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(26.26975, 43.06508)), module, Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(37.70265, 43.06508)), module, Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(49.15759, 43.06508)), module, Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 0.5));
+		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(60.61184, 43.06508)), module, Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 0.5));
 
 		addInput(Port::create<PJ301MPort>(mm2px(Vec(2.70756, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 0));
 		addInput(Port::create<PJ301MPort>(mm2px(Vec(14.14734, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 1));
