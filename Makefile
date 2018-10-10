@@ -1,5 +1,5 @@
 SLUG = AudibleInstruments
-VERSION = 0.6.1
+VERSION = 0.6.2
 
 FLAGS += \
 	-DTEST \
@@ -76,8 +76,19 @@ SOURCES += eurorack/peaks/number_station/number_station.cc
 
 SOURCES += eurorack/stages/segment_generator.cc
 SOURCES += eurorack/stages/ramp_extractor.cc
-# SOURCES += eurorack/stages/chain_state.cc
 SOURCES += eurorack/stages/resources.cc
+
+SOURCES += eurorack/stmlib/utils/random.cc
+SOURCES += eurorack/stmlib/dsp/atan.cc
+SOURCES += eurorack/stmlib/dsp/units.cc
+SOURCES += eurorack/marbles/random/t_generator.cc
+SOURCES += eurorack/marbles/random/x_y_generator.cc
+SOURCES += eurorack/marbles/random/output_channel.cc
+SOURCES += eurorack/marbles/random/lag_processor.cc
+SOURCES += eurorack/marbles/random/quantizer.cc
+SOURCES += eurorack/marbles/ramp/ramp_extractor.cc
+SOURCES += eurorack/marbles/resources.cc
+
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 

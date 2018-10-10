@@ -24,4 +24,5 @@ void init(rack::Plugin *p) {
 	p->addModel(modelFrames);
 	// p->addModel(modelPeaks);
 	// p->addModel(modelStages);
+	p->addModel(modelMarbles);
 }
