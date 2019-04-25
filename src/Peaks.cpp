@@ -5,7 +5,6 @@
 #include "dsp/samplerate.hpp"
 #include "dsp/ringbuffer.hpp"
 
-#include "peaks/io_buffer.h"
 #include "peaks/processors.h"
 
 #include "AudibleInstruments.hpp"
@@ -47,36 +46,13 @@ struct Settings {
 };
 
 
+static const size_t kNumBlocks = 2;
+static const size_t kNumChannels = 2;
+static const size_t kBlockSize = 4;
 static const int32_t kLongPressDuration = 600;
 static const uint8_t kNumAdcChannels = 4;
 static const uint16_t kAdcThresholdUnlocked = 1 << (16 - 10);  // 10 bits
 static const uint16_t kAdcThresholdLocked = 1 << (16 - 8);  // 8 bits
-
-
-// Global scope, so variables can be accessed by process() function.
-int16_t gOutputBuffer[peaks::kBlockSize];
-int16_t gBrightness[2] = {0, 0};
-
-
-static void set_led_brightness(int channel, int16_t value) {
-	gBrightness[channel] = value;
-}
-
-// File scope because of IOBuffer function signature.
-// It cannot refer to a member function of class Peaks().
-static void process(peaks::IOBuffer::Block* block, size_t size) {
-	for (size_t i = 0; i < peaks::kNumChannels; ++i) {
-		// TODO
-		// processors[i].Process(block->input[i], gOutputBuffer, size);
-		set_led_brightness(i, gOutputBuffer[0]);
-		for (size_t j = 0; j < size; ++j) {
-			// From calibration_data.h, shifting signed to unsigned values.
-			int32_t shifted_value = 32767 + static_cast<int32_t>(gOutputBuffer[j]);
-			CONSTRAIN(shifted_value, 0, 65535);
-			block->output[i][j] = static_cast<uint16_t>(shifted_value);
-		}
-	}
-}
 
 
 struct Peaks : Module {
@@ -128,9 +104,12 @@ struct Peaks : Module {
 	int32_t adc_threshold_[kNumAdcChannels] = {0, 0, 0, 0};
 	long long press_time_[2] = {0, 0};
 
-	SchmittTrigger switches_[2];
+	peaks::Processors processors[2];
 
-	peaks::IOBuffer ioBuffer;
+	int16_t output[kBlockSize];
+	int16_t brightness[kNumChannels] = {0, 0};
+
+	SchmittTrigger switches_[2];
 
 	peaks::GateFlags gate_flags[2] = {0, 0};
 
@@ -139,7 +118,21 @@ struct Peaks : Module {
 
 	bool initNumberStation = false;
 
-	peaks::Processors processors[2];
+	struct Block {
+		peaks::GateFlags input[kNumChannels][kBlockSize];
+		uint16_t output[kNumChannels][kBlockSize];
+	};
+
+	struct Slice {
+		Block* block;
+		size_t frame_index;
+	};
+
+	Block block_[kNumBlocks];
+	size_t io_frame_ = 0;
+	size_t io_block_ = 0;
+	size_t render_block_ = kNumBlocks / 2;
+
 
 	Peaks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 		settings_.edit_mode = EDIT_MODE_TWIN;
@@ -148,10 +141,8 @@ struct Peaks : Module {
 		settings_.snap_mode = false;
 		std::fill(&settings_.pot_value[0], &settings_.pot_value[8], 0);
 
-		memset(&ioBuffer, 0, sizeof(ioBuffer));
 		memset(&processors[0], 0, sizeof(processors[0]));
 		memset(&processors[1], 0, sizeof(processors[1]));
-		ioBuffer.Init();
 		processors[0].Init(0);
 		processors[1].Init(1);
 	}
@@ -163,7 +154,7 @@ struct Peaks : Module {
 	void init() {
 		std::fill(&pot_value_[0], &pot_value_[8], 0);
 		std::fill(&press_time_[0], &press_time_[1], 0);
-		std::fill(&gBrightness[0], &gBrightness[1], 0);
+		std::fill(&brightness[0], &brightness[1], 0);
 		std::fill(&adc_lp_[0], &adc_lp_[kNumAdcChannels], 0);
 		std::fill(&adc_value_[0], &adc_value_[kNumAdcChannels], 0);
 		std::fill(&adc_threshold_[0], &adc_threshold_[kNumAdcChannels], 0);
@@ -261,7 +252,11 @@ struct Peaks : Module {
 		}
 
 		if (outputBuffer.empty()) {
-			ioBuffer.Process(process);
+
+			while (render_block_ != io_block_) {
+     			process(&block_[render_block_], kBlockSize);
+      			render_block_ = (render_block_ + 1) % kNumBlocks;
+    		}
 
 			uint32_t external_gate_inputs = 0;
 			external_gate_inputs |= (inputs[GATE_1_INPUT].value ? 1 : 0);
@@ -276,16 +271,16 @@ struct Peaks : Module {
 			// Prepare sample rate conversion.
 			// Peaks is sampling at 48kHZ.
 			outputSrc.setRates(48000, engineGetSampleRate());
-			int inLen = peaks::kBlockSize;
+			int inLen = kBlockSize;
 			int outLen = outputBuffer.capacity();
-			Frame<2> f[peaks::kBlockSize];
+			Frame<2> f[kBlockSize];
 
 			// Process an entire block of data from the IOBuffer.
-			for (size_t k = 0; k < peaks::kBlockSize; ++k) {
+			for (size_t k = 0; k < kBlockSize; ++k) {
 
-				peaks::IOBuffer::Slice slice = ioBuffer.NextSlice(1);
+				Slice slice = NextSlice(1);
 
-				for (size_t i = 0; i < peaks::kNumChannels; ++i) {
+				for (size_t i = 0; i < kNumChannels; ++i) {
 					gate_flags[i] = peaks::ExtractGateFlags(
 					                    gate_flags[i],
 					                    gate_inputs & (1 << i));
@@ -315,8 +310,37 @@ struct Peaks : Module {
 		}
 	}
 
+	inline Slice NextSlice(size_t size) {
+		Slice s;
+		s.block = &block_[io_block_];
+		s.frame_index = io_frame_;
+		io_frame_ += size;
+		if (io_frame_ >= kBlockSize) {
+			io_frame_ -= kBlockSize;
+			io_block_ = (io_block_ + 1) % kNumBlocks;
+		}
+		return s;
+	}
+
 	inline Function function() const {
 		return edit_mode_ == EDIT_MODE_SECOND ? function_[1] : function_[0];
+	}
+
+	inline void set_led_brightness(int channel, int16_t value) {
+		brightness[channel] = value;
+	}
+
+	inline void process(Block* block, size_t size) {
+		for (size_t i = 0; i < kNumChannels; ++i) {
+			processors[i].Process(block->input[i], output, size);
+			set_led_brightness(i, output[0]);
+			for (size_t j = 0; j < size; ++j) {
+				// From calibration_data.h, shifting signed to unsigned values.
+				int32_t shifted_value = 32767 + static_cast<int32_t>(output[j]);
+				CONSTRAIN(shifted_value, 0, 65535);
+				block->output[i][j] = static_cast<uint16_t>(shifted_value);
+			}
+		}
 	}
 
 	void changeControlMode();
@@ -564,21 +588,21 @@ void Peaks::refreshLeds() {
 		switch (function_[i]) {
 		case FUNCTION_DRUM_GENERATOR:
 		case FUNCTION_FM_DRUM_GENERATOR:
-			b[i] = (int16_t) std::abs(gBrightness[i]) >> 8;
+			b[i] = (int16_t) abs(brightness[i]) >> 8;
 			b[i] = b[i] >= 255 ? 255 : b[i];
 			break;
 		case FUNCTION_LFO:
 		case FUNCTION_TAP_LFO:
 		case FUNCTION_MINI_SEQUENCER: {
-			int32_t brightness = int32_t(gBrightness[i]) * 409 >> 8;
-			brightness += 32768;
-			brightness >>= 8;
-			CONSTRAIN(brightness, 0, 255);
-			b[i] = brightness;
+			int32_t brightnessVal = int32_t(brightness[i]) * 409 >> 8;
+			brightnessVal += 32768;
+			brightnessVal >>= 8;
+			CONSTRAIN(brightnessVal, 0, 255);
+			b[i] = brightnessVal;
 		}
 		break;
 		default:
-			b[i] = gBrightness[i] >> 7;
+			b[i] = brightness[i] >> 7;
 			break;
 		}
 	}
@@ -650,6 +674,10 @@ struct PeaksWidget : ModuleWidget {
 			Peaks *peaks;
 			void onAction(EventAction &e) override {
 				peaks->initNumberStation = true;
+			}
+			void step() override {
+				rightText = (peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION) ? "✔" : "";
+				MenuItem::step();
 			}
 		};
 
