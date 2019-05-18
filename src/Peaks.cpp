@@ -666,4 +666,4 @@ struct PeaksWidget : ModuleWidget {
 
 
 
-Model *modelPeaks = Model::create<Peaks, PeaksWidget>("Audible Instruments", "Peaks", "Percussive Synthesizer", UTILITY_TAG, LFO_TAG, DRUM_TAG);
+Model *modelPeaks = Model::create<Peaks, PeaksWidget>("Peaks");

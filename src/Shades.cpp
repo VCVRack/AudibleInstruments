@@ -90,4 +90,4 @@ struct ShadesWidget : ModuleWidget {
 };
 
 
-Model *modelShades = Model::create<Shades, ShadesWidget>("Audible Instruments", "Shades", "Mixer", MIXER_TAG);
+Model *modelShades = Model::create<Shades, ShadesWidget>("Shades");

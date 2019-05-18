@@ -397,4 +397,4 @@ struct CloudsWidget : ModuleWidget {
 };
 
 
-Model *modelClouds = Model::create<Clouds, CloudsWidget>("Audible Instruments", "Clouds", "Texture Synthesizer", GRANULAR_TAG, REVERB_TAG);
+Model *modelClouds = Model::create<Clouds, CloudsWidget>("Clouds");

@@ -159,4 +159,4 @@ struct WarpsWidget : ModuleWidget {
 };
 
 
-Model *modelWarps = Model::create<Warps, WarpsWidget>("Audible Instruments", "Warps", "Meta Modulator", RING_MODULATOR_TAG, WAVESHAPER_TAG);
+Model *modelWarps = Model::create<Warps, WarpsWidget>("Warps");

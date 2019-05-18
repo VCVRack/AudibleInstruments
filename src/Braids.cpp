@@ -342,4 +342,4 @@ struct BraidsWidget : ModuleWidget {
 };
 
 
-Model *modelBraids = Model::create<Braids, BraidsWidget>("Audible Instruments", "Braids", "Macro Oscillator", OSCILLATOR_TAG, WAVESHAPER_TAG);
+Model *modelBraids = Model::create<Braids, BraidsWidget>("Braids");

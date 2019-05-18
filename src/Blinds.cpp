@@ -116,4 +116,4 @@ struct BlindsWidget : ModuleWidget {
 };
 
 
-Model *modelBlinds = Model::create<Blinds, BlindsWidget>("Audible Instruments", "Blinds", "Quad VC-polarizer", MIXER_TAG, ATTENUATOR_TAG);
+Model *modelBlinds = Model::create<Blinds, BlindsWidget>("Blinds");

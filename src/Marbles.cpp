@@ -663,5 +663,5 @@ struct MarblesWidget : ModuleWidget {
 };
 
 
-Model *modelMarbles = createModel<Marbles, MarblesWidget>("Audible Instruments", "Marbles", "Random Sampler");
+Model *modelMarbles = createModel<Marbles, MarblesWidget>("Marbles");
 

@@ -110,4 +110,4 @@ struct VeilsWidget : ModuleWidget {
 };
 
 
-Model *modelVeils = Model::create<Veils, VeilsWidget>("Audible Instruments", "Veils", "Quad VCA", MIXER_TAG);
+Model *modelVeils = Model::create<Veils, VeilsWidget>("Veils");

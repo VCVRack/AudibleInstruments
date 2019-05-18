@@ -1,0 +1,168 @@
+{
+  "slug": "AudibleInstruments",
+  "name": "Audible Instruments",
+  "version": "1.0.0",
+  "license": "BSD-3-Clause",
+  "author": "VCV",
+  "authorEmail": "contact@vcvrack.com",
+  "authorUrl": "https://vcvrack.com/",
+  "pluginUrl": "https://vcvrack.com/AudibleInstruments.html",
+  "manualUrl": "https://vcvrack.com/AudibleInstruments.html#manual",
+  "sourceUrl": "https://github.com/VCVRack/AudibleInstruments",
+  "donateUrl": "",
+  "modules": [
+    {
+      "slug": "Braids",
+      "name": "Macro Oscillator",
+      "description": "",
+      "tags": [
+        "Oscillator"
+      ]
+    },
+    {
+      "slug": "Plaits",
+      "name": "Macro Oscillator 2",
+      "description": "",
+      "tags": [
+        "Oscillator"
+      ]
+    },
+    {
+      "slug": "Elements",
+      "name": "Modal Synthesizer",
+      "description": "",
+      "tags": [
+        "Physical modeling"
+      ]
+    },
+    {
+      "slug": "Tides",
+      "name": "Tidal Modulator",
+      "description": "",
+      "tags": [
+        "LFO",
+        "Oscillator",
+        "Waveshaper",
+        "Function generator"
+      ]
+    },
+    {
+      "slug": "Tides2",
+      "name": "Tidal Modulator 2",
+      "description": "",
+      "tags": [
+        "LFO",
+        "Oscillator",
+        "Waveshaper",
+        "Function generator"
+      ]
+    },
+    {
+      "slug": "Clouds",
+      "name": "Texture Synthesizer",
+      "description": "",
+      "tags": [
+        "Granular",
+        "Reverb"
+      ]
+    },
+    {
+      "slug": "Warps",
+      "name": "Meta Modulator",
+      "description": "",
+      "tags": [
+        "Ring modulator",
+        "Waveshaper"
+      ]
+    },
+    {
+      "slug": "Rings",
+      "name": "Resonator",
+      "description": "",
+      "tags": [
+        "Physical modeling"
+      ]
+    },
+    {
+      "slug": "Links",
+      "name": "Multiples",
+      "description": "",
+      "tags": [
+        "Multiple",
+        "Mixer"
+      ]
+    },
+    {
+      "slug": "Kinks",
+      "name": "Utilities",
+      "description": "",
+      "tags": [
+        "Utility",
+        "Sample and hold",
+        "Noise"
+      ]
+    },
+    {
+      "slug": "Shades",
+      "name": "Mixer",
+      "description": "",
+      "tags": [
+        "Mixer"
+      ]
+    },
+    {
+      "slug": "Branches",
+      "name": "Bernoulli Gate",
+      "description": "",
+      "tags": [
+        "Random",
+        "Dual"
+      ]
+    },
+    {
+      "slug": "Blinds",
+      "name": "Quad VC-polarizer",
+      "description": "",
+      "tags": [
+        "Mixer",
+        "Attenuator"
+      ]
+    },
+    {
+      "slug": "Veils",
+      "name": "Quad VCA",
+      "description": "",
+      "tags": [
+        "Mixer"
+      ]
+    },
+    {
+      "slug": "Frames",
+      "name": "Keyframer/Mixer",
+      "description": "",
+      "tags": [
+        "Oscillator"
+        "Mixer",
+        "Attenuator",
+        "LFO"
+      ]
+    },
+    {
+      "slug": "Stages",
+      "name": "Segment Generator",
+      "description": "",
+      "tags": [
+        "Function generator",
+        "Envelope generator"
+      ]
+    },
+    {
+      "slug": "Marbles",
+      "name": "Random Sampler",
+      "description": "",
+      "tags": [
+        "Random"
+      ]
+    },
+  ]
+}

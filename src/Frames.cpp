@@ -424,4 +424,4 @@ struct FramesWidget : ModuleWidget {
 };
 
 
-Model *modelFrames = Model::create<Frames, FramesWidget>("Audible Instruments", "Frames", "Keyframer/Mixer", MIXER_TAG, ATTENUATOR_TAG, LFO_TAG);
+Model *modelFrames = Model::create<Frames, FramesWidget>("Frames");

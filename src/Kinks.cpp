@@ -97,4 +97,4 @@ struct KinksWidget : ModuleWidget {
 };
 
 
-Model *modelKinks = Model::create<Kinks, KinksWidget>("Audible Instruments", "Kinks", "Utilities", UTILITY_TAG, NOISE_TAG);
+Model *modelKinks = Model::create<Kinks, KinksWidget>("Kinks");

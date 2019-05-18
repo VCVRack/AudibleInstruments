@@ -276,4 +276,4 @@ struct TidesWidget : ModuleWidget {
 };
 
 
-Model *modelTides = Model::create<Tides, TidesWidget>("Audible Instruments", "Tides", "Tidal Modulator", LFO_TAG, OSCILLATOR_TAG, WAVESHAPER_TAG, FUNCTION_GENERATOR_TAG);
+Model *modelTides = Model::create<Tides, TidesWidget>("Tides");

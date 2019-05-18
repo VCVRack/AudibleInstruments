@@ -317,4 +317,4 @@ struct ElementsWidget : ModuleWidget {
 };
 
 
-Model *modelElements = Model::create<Elements, ElementsWidget>("Audible Instruments", "Elements", "Modal Synthesizer", PHYSICAL_MODELING_TAG);
+Model *modelElements = Model::create<Elements, ElementsWidget>("Elements");

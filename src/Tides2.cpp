@@ -295,5 +295,5 @@ struct Tides2Widget : ModuleWidget {
 };
 
 
-Model *modelTides2 = createModel<Tides2, Tides2Widget>("Audible Instruments", "Tides2", "Tidal Modulator 2");
+Model *modelTides2 = createModel<Tides2, Tides2Widget>("Tides2");
 

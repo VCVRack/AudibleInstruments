@@ -161,4 +161,4 @@ struct BranchesWidget : ModuleWidget {
 };
 
 
-Model *modelBranches = Model::create<Branches, BranchesWidget>("Audible Instruments", "Branches", "Bernoulli Gate", RANDOM_TAG, DUAL_TAG);
+Model *modelBranches = Model::create<Branches, BranchesWidget>("Branches");

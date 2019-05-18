@@ -437,4 +437,4 @@ struct StagesWidget : ModuleWidget {
 };
 
 
-Model *modelStages = Model::create<Stages, StagesWidget>("Audible Instruments", "Stages", "Segment Generator", FUNCTION_GENERATOR_TAG, ENVELOPE_GENERATOR_TAG);
+Model *modelStages = Model::create<Stages, StagesWidget>("Stages");

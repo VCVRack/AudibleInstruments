@@ -316,5 +316,5 @@ struct PlaitsWidget : ModuleWidget {
 };
 
 
-Model *modelPlaits = Model::create<Plaits, PlaitsWidget>("Audible Instruments", "Plaits", "Macro Oscillator 2", OSCILLATOR_TAG, WAVESHAPER_TAG);
+Model *modelPlaits = Model::create<Plaits, PlaitsWidget>("Plaits");
 

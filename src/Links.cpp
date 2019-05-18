@@ -85,4 +85,4 @@ struct LinksWidget : ModuleWidget {
 };
 
 
-Model *modelLinks = Model::create<Links, LinksWidget>("Audible Instruments", "Links", "Multiples", MULTIPLE_TAG, MIXER_TAG);
+Model *modelLinks = Model::create<Links, LinksWidget>("Links");

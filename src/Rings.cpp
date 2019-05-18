@@ -329,4 +329,4 @@ struct RingsWidget : ModuleWidget {
 };
 
 
-Model *modelRings = Model::create<Rings, RingsWidget>("Audible Instruments", "Rings", "Resonator", PHYSICAL_MODELING_TAG);
+Model *modelRings = Model::create<Rings, RingsWidget>("Rings");
