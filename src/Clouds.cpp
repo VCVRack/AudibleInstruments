@@ -356,10 +356,12 @@ struct CloudsWidget : ModuleWidget {
 	void step() override {
 		Clouds *module = dynamic_cast<Clouds*>(this->module);
 
-		blendParam->visible = (module->blendMode == 0);
-		spreadParam->visible = (module->blendMode == 1);
-		feedbackParam->visible = (module->blendMode == 2);
-		reverbParam->visible = (module->blendMode == 3);
+		if (module) {
+			blendParam->visible = (module->blendMode == 0);
+			spreadParam->visible = (module->blendMode == 1);
+			feedbackParam->visible = (module->blendMode == 2);
+			reverbParam->visible = (module->blendMode == 3);
+		}
 
 		ModuleWidget::step();
 	}

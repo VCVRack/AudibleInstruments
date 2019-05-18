@@ -246,10 +246,11 @@ struct TidesWidget : ModuleWidget {
 
 	void step() override {
 		Tides *tides = dynamic_cast<Tides*>(module);
-		assert(tides);
 
-		tidesPanel->visible = !tides->sheep;
-		sheepPanel->visible = tides->sheep;
+		if (tides) {
+			tidesPanel->visible = !tides->sheep;
+			sheepPanel->visible = tides->sheep;
+		}
 
 		ModuleWidget::step();
 	}

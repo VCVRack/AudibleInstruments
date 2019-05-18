@@ -237,7 +237,7 @@ struct BraidsDisplay : TransparentWidget {
 	}
 
 	void draw(NVGcontext *vg) override {
-		int shape = module->settings.shape;
+		int shape = module ? module->settings.shape : 0;
 
 		// Background
 		NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38);
