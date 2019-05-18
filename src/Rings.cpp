@@ -78,10 +78,6 @@ struct Rings : Module {
 		configParam(STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0);
 		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
 
-		memset(&strummer, 0, sizeof(strummer));
-		memset(&part, 0, sizeof(part));
-		memset(&string_synth, 0, sizeof(string_synth));
-
 		strummer.Init(0.01, 44100.0 / 24);
 		part.Init(reverb_buffer);
 		string_synth.Init(reverb_buffer);

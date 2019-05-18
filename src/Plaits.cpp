@@ -43,9 +43,9 @@ struct Plaits : Module {
 	};
 
 	plaits::Voice voice;
-	plaits::Patch patch;
-	plaits::Modulations modulations;
-	char shared_buffer[16384];
+	plaits::Patch patch = {};
+	plaits::Modulations modulations = {};
+	char shared_buffer[16384] = {};
 	float triPhase = 0.f;
 
 	dsp::SampleRateConverter<2> outputSrc;
@@ -68,12 +68,9 @@ struct Plaits : Module {
 		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0);
 		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0);
 
-		memset(shared_buffer, 0, sizeof(shared_buffer));
 		stmlib::BufferAllocator allocator(shared_buffer, sizeof(shared_buffer));
 		voice.Init(&allocator);
 
-		memset(&patch, 0, sizeof(patch));
-		memset(&modulations, 0, sizeof(modulations));
 		onReset();
 	}
 

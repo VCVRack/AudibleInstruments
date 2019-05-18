@@ -89,9 +89,9 @@ struct Tides2 : Module {
 	dsp::BooleanTrigger rampTrigger;
 
 	// Buffers
-	tides2::PolySlopeGenerator::OutputSample out[tides2::kBlockSize];
-	stmlib::GateFlags trig_flags[tides2::kBlockSize];
-	stmlib::GateFlags clock_flags[tides2::kBlockSize];
+	tides2::PolySlopeGenerator::OutputSample out[tides2::kBlockSize] = {};
+	stmlib::GateFlags trig_flags[tides2::kBlockSize] = {};
+	stmlib::GateFlags clock_flags[tides2::kBlockSize] = {};
 	stmlib::GateFlags previous_trig_flag = stmlib::GATE_FLAG_LOW;
 	stmlib::GateFlags previous_clock_flag = stmlib::GATE_FLAG_LOW;
 
@@ -117,9 +117,6 @@ struct Tides2 : Module {
 
 		poly_slope_generator.Init();
 		ratio_index_quantizer.Init();
-		memset(&out, 0, sizeof(out));
-		memset(&trig_flags, 0, sizeof(trig_flags));
-		memset(&clock_flags, 0, sizeof(clock_flags));
 		onReset();
 		onSampleRateChange();
 	}
