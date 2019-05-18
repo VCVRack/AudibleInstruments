@@ -30,29 +30,37 @@ struct Shades : Module {
 		NUM_LIGHTS
 	};
 
-	Shades() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+	Shades() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Shades::GAIN1_PARAM, 0.0, 1.0, 0.5);
+		configParam(Shades::GAIN2_PARAM, 0.0, 1.0, 0.5);
+		configParam(Shades::GAIN3_PARAM, 0.0, 1.0, 0.5);
+		configParam(Shades::MODE1_PARAM, 0.0, 1.0, 1.0);
+		configParam(Shades::MODE2_PARAM, 0.0, 1.0, 1.0);
+		configParam(Shades::MODE3_PARAM, 0.0, 1.0, 1.0);
+	}
+	void process(const ProcessArgs &args) override;
 };
 
 
-void Shades::step() {
+void Shades::process(const ProcessArgs &args) {
 	float out = 0.0;
 
 	for (int i = 0; i < 3; i++) {
 		float in = inputs[IN1_INPUT + i].normalize(5.0);
-		if ((int)params[MODE1_PARAM + i].value == 1) {
+		if ((int)params[MODE1_PARAM + i].getValue() == 1) {
 			// attenuverter
-			in *= 2.0 * params[GAIN1_PARAM + i].value - 1.0;
+			in *= 2.0 * params[GAIN1_PARAM + i].getValue() - 1.0;
 		}
 		else {
 			// attenuator
-			in *= params[GAIN1_PARAM + i].value;
+			in *= params[GAIN1_PARAM + i].getValue();
 		}
 		out += in;
 		lights[OUT1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, out / 5.0));
 		lights[OUT1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -out / 5.0));
-		if (outputs[OUT1_OUTPUT + i].active) {
-			outputs[OUT1_OUTPUT + i].value = out;
+		if (outputs[OUT1_OUTPUT + i].isConnected()) {
+			outputs[OUT1_OUTPUT + i].setVoltage(out);
 			out = 0.0;
 		}
 	}
@@ -60,27 +68,28 @@ void Shades::step() {
 
 
 struct ShadesWidget : ModuleWidget {
-	ShadesWidget(Shades *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Shades.svg")));
+	ShadesWidget(Shades *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Shades.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 
-		addParam(createParam<Rogan1PSRed>(Vec(40, 40), module, Shades::GAIN1_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParam<Rogan1PSWhite>(Vec(40, 106), module, Shades::GAIN2_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParam<Rogan1PSGreen>(Vec(40, 172), module, Shades::GAIN3_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSRed>(Vec(40, 40), module, Shades::GAIN1_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(40, 106), module, Shades::GAIN2_PARAM));
+		addParam(createParam<Rogan1PSGreen>(Vec(40, 172), module, Shades::GAIN3_PARAM));
 
-		addParam(createParam<CKSS>(Vec(10, 51), module, Shades::MODE1_PARAM, 0.0, 1.0, 1.0));
-		addParam(createParam<CKSS>(Vec(10, 117), module, Shades::MODE2_PARAM, 0.0, 1.0, 1.0));
-		addParam(createParam<CKSS>(Vec(10, 183), module, Shades::MODE3_PARAM, 0.0, 1.0, 1.0));
+		addParam(createParam<CKSS>(Vec(10, 51), module, Shades::MODE1_PARAM));
+		addParam(createParam<CKSS>(Vec(10, 117), module, Shades::MODE2_PARAM));
+		addParam(createParam<CKSS>(Vec(10, 183), module, Shades::MODE3_PARAM));
 
-		addInput(createPort<PJ301MPort>(Vec(9, 245), PortWidget::INPUT, module, Shades::IN1_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(9, 281), PortWidget::INPUT, module, Shades::IN2_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(9, 317), PortWidget::INPUT, module, Shades::IN3_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(9, 245), module, Shades::IN1_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(9, 281), module, Shades::IN2_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(9, 317), module, Shades::IN3_INPUT));
 
-		addOutput(createPort<PJ301MPort>(Vec(56, 245), PortWidget::OUTPUT, module, Shades::OUT1_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(56, 281), PortWidget::OUTPUT, module, Shades::OUT2_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(56, 317), PortWidget::OUTPUT, module, Shades::OUT3_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(56, 245), module, Shades::OUT1_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(56, 281), module, Shades::OUT2_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(56, 317), module, Shades::OUT3_OUTPUT));
 
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 254), module, Shades::OUT1_POS_LIGHT));
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(41, 290), module, Shades::OUT2_POS_LIGHT));

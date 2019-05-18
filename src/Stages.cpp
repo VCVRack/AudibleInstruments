@@ -15,14 +15,14 @@ struct LongPressButton {
 	};
 
 	float pressedTime = 0.f;
-	BooleanTrigger trigger;
+	dsp::BooleanTrigger trigger;
 
 	Events step(Param &param) {
 		Events result = NO_PRESS;
 
 		bool pressed = param.value > 0.f;
 		if (pressed && pressedTime >= 0.f) {
-			pressedTime += engineGetSampleTime();
+			pressedTime += APP->engine->getSampleTime();
 			if (pressedTime >= 1.f) {
 				pressedTime = -1.f;
 				result = LONG_PRESS;
@@ -153,7 +153,27 @@ struct Stages : Module {
 	int blockIndex = 0;
 	GroupBuilder groupBuilder;
 
-	Stages() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Stages() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Stages::SHAPE_PARAMS + 0, 0.0, 1.0, 0.5);
+		configParam(Stages::SHAPE_PARAMS + 1, 0.0, 1.0, 0.5);
+		configParam(Stages::SHAPE_PARAMS + 2, 0.0, 1.0, 0.5);
+		configParam(Stages::SHAPE_PARAMS + 3, 0.0, 1.0, 0.5);
+		configParam(Stages::SHAPE_PARAMS + 4, 0.0, 1.0, 0.5);
+		configParam(Stages::SHAPE_PARAMS + 5, 0.0, 1.0, 0.5);
+		configParam(Stages::TYPE_PARAMS + 0, 0.0, 1.0, 0.0);
+		configParam(Stages::TYPE_PARAMS + 1, 0.0, 1.0, 0.0);
+		configParam(Stages::TYPE_PARAMS + 2, 0.0, 1.0, 0.0);
+		configParam(Stages::TYPE_PARAMS + 3, 0.0, 1.0, 0.0);
+		configParam(Stages::TYPE_PARAMS + 4, 0.0, 1.0, 0.0);
+		configParam(Stages::TYPE_PARAMS + 5, 0.0, 1.0, 0.0);
+		configParam(Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 0.5);
+		configParam(Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 0.5);
+		configParam(Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 0.5);
+		configParam(Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 0.5);
+		configParam(Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 0.5);
+		configParam(Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 0.5);
+
 		onReset();
 	}
 
@@ -203,7 +223,7 @@ struct Stages : Module {
 
 	void onSampleRateChange() override {
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			segment_generator[i].SetSampleRate(engineGetSampleRate());
+			segment_generator[i].SetSampleRate(APP->engine->getSampleRate());
 		}
 	}
 
@@ -212,8 +232,8 @@ struct Stages : Module {
 		float primaries[NUM_CHANNELS];
 		float secondaries[NUM_CHANNELS];
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			primaries[i] = clamp(params[LEVEL_PARAMS + i].value + inputs[LEVEL_INPUTS + i].value / 8.f, 0.f, 1.f);
-			secondaries[i] = params[SHAPE_PARAMS + i].value;
+			primaries[i] = clamp(params[LEVEL_PARAMS + i].getValue() + inputs[LEVEL_INPUTS + i].getVoltage() / 8.f, 0.f, 1.f);
+			secondaries[i] = params[SHAPE_PARAMS + i].getValue();
 		}
 
 		// See if the group associations have changed since the last group
@@ -309,9 +329,9 @@ struct Stages : Module {
 		}
 	}
 
-	void step() override {
+	void process(const ProcessArgs &args) override {
 		// Oscillate flashing the type lights
-		lightOscillatorPhase += 0.5f * engineGetSampleTime();
+		lightOscillatorPhase += 0.5f * args.sampleTime;
 		if (lightOscillatorPhase >= 1.0f)
 			lightOscillatorPhase -= 1.0f;
 
@@ -327,7 +347,7 @@ struct Stages : Module {
 
 		// Input
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			bool gate = (inputs[GATE_INPUTS + i].value >= 1.7f);
+			bool gate = (inputs[GATE_INPUTS + i].getVoltage() >= 1.7f);
 			last_gate_flags[i] = stmlib::ExtractGateFlags(last_gate_flags[i], gate);
 			gate_flags[i][blockIndex] = last_gate_flags[i];
 		}
@@ -347,8 +367,8 @@ struct Stages : Module {
 				int segment = group.first_segment + j;
 
 				float envelope = envelopeBuffer[segment][blockIndex];
-				outputs[ENVELOPE_OUTPUTS + segment].value = envelope * 8.f;
-				lights[ENVELOPE_LIGHTS + segment].setBrightnessSmooth(envelope);
+				outputs[ENVELOPE_OUTPUTS + segment].setVoltage(envelope * 8.f);
+				lights[ENVELOPE_LIGHTS + segment].setSmoothBrightness(envelope, args.sampleTime);
 
 				numberOfLoopsInGroup += configurations[segment].loop ? 1 : 0;
 				float flashlevel = 1.f;
@@ -373,52 +393,53 @@ struct Stages : Module {
 
 
 struct StagesWidget : ModuleWidget {
-	StagesWidget(Stages *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Stages.svg")));
+	StagesWidget(Stages *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Stages.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParam<Trimpot>(mm2px(Vec(3.72965, 13.98158)), module, Stages::SHAPE_PARAMS + 0, 0.0, 1.0, 0.5));
-		addParam(createParam<Trimpot>(mm2px(Vec(15.17012, 13.98158)), module, Stages::SHAPE_PARAMS + 1, 0.0, 1.0, 0.5));
-		addParam(createParam<Trimpot>(mm2px(Vec(26.6099, 13.98158)), module, Stages::SHAPE_PARAMS + 2, 0.0, 1.0, 0.5));
-		addParam(createParam<Trimpot>(mm2px(Vec(38.07174, 13.98158)), module, Stages::SHAPE_PARAMS + 3, 0.0, 1.0, 0.5));
-		addParam(createParam<Trimpot>(mm2px(Vec(49.51152, 13.98158)), module, Stages::SHAPE_PARAMS + 4, 0.0, 1.0, 0.5));
-		addParam(createParam<Trimpot>(mm2px(Vec(60.95199, 13.98158)), module, Stages::SHAPE_PARAMS + 5, 0.0, 1.0, 0.5));
-		addParam(createParam<TL1105>(mm2px(Vec(4.17259, 32.37248)), module, Stages::TYPE_PARAMS + 0, 0.0, 1.0, 0.0));
-		addParam(createParam<TL1105>(mm2px(Vec(15.61237, 32.37248)), module, Stages::TYPE_PARAMS + 1, 0.0, 1.0, 0.0));
-		addParam(createParam<TL1105>(mm2px(Vec(27.05284, 32.37248)), module, Stages::TYPE_PARAMS + 2, 0.0, 1.0, 0.0));
-		addParam(createParam<TL1105>(mm2px(Vec(38.51399, 32.37248)), module, Stages::TYPE_PARAMS + 3, 0.0, 1.0, 0.0));
-		addParam(createParam<TL1105>(mm2px(Vec(49.95446, 32.37248)), module, Stages::TYPE_PARAMS + 4, 0.0, 1.0, 0.0));
-		addParam(createParam<TL1105>(mm2px(Vec(61.39424, 32.37248)), module, Stages::TYPE_PARAMS + 5, 0.0, 1.0, 0.0));
-		addParam(createParam<LEDSliderGreen>(mm2px(Vec(3.36193, 43.06508)), module, Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 0.5));
-		addParam(createParam<LEDSliderGreen>(mm2px(Vec(14.81619, 43.06508)), module, Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 0.5));
-		addParam(createParam<LEDSliderGreen>(mm2px(Vec(26.26975, 43.06508)), module, Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 0.5));
-		addParam(createParam<LEDSliderGreen>(mm2px(Vec(37.70265, 43.06508)), module, Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 0.5));
-		addParam(createParam<LEDSliderGreen>(mm2px(Vec(49.15759, 43.06508)), module, Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 0.5));
-		addParam(createParam<LEDSliderGreen>(mm2px(Vec(60.61184, 43.06508)), module, Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(3.72965, 13.98158)), module, Stages::SHAPE_PARAMS + 0));
+		addParam(createParam<Trimpot>(mm2px(Vec(15.17012, 13.98158)), module, Stages::SHAPE_PARAMS + 1));
+		addParam(createParam<Trimpot>(mm2px(Vec(26.6099, 13.98158)), module, Stages::SHAPE_PARAMS + 2));
+		addParam(createParam<Trimpot>(mm2px(Vec(38.07174, 13.98158)), module, Stages::SHAPE_PARAMS + 3));
+		addParam(createParam<Trimpot>(mm2px(Vec(49.51152, 13.98158)), module, Stages::SHAPE_PARAMS + 4));
+		addParam(createParam<Trimpot>(mm2px(Vec(60.95199, 13.98158)), module, Stages::SHAPE_PARAMS + 5));
+		addParam(createParam<TL1105>(mm2px(Vec(4.17259, 32.37248)), module, Stages::TYPE_PARAMS + 0));
+		addParam(createParam<TL1105>(mm2px(Vec(15.61237, 32.37248)), module, Stages::TYPE_PARAMS + 1));
+		addParam(createParam<TL1105>(mm2px(Vec(27.05284, 32.37248)), module, Stages::TYPE_PARAMS + 2));
+		addParam(createParam<TL1105>(mm2px(Vec(38.51399, 32.37248)), module, Stages::TYPE_PARAMS + 3));
+		addParam(createParam<TL1105>(mm2px(Vec(49.95446, 32.37248)), module, Stages::TYPE_PARAMS + 4));
+		addParam(createParam<TL1105>(mm2px(Vec(61.39424, 32.37248)), module, Stages::TYPE_PARAMS + 5));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(3.36193, 43.06508)), module, Stages::LEVEL_PARAMS + 0));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(14.81619, 43.06508)), module, Stages::LEVEL_PARAMS + 1));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(26.26975, 43.06508)), module, Stages::LEVEL_PARAMS + 2));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(37.70265, 43.06508)), module, Stages::LEVEL_PARAMS + 3));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(49.15759, 43.06508)), module, Stages::LEVEL_PARAMS + 4));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(60.61184, 43.06508)), module, Stages::LEVEL_PARAMS + 5));
 
-		addInput(createPort<PJ301MPort>(mm2px(Vec(2.70756, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 0));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(14.14734, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 1));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(25.58781, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 2));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(37.04896, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 3));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(48.48943, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 4));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(59.92921, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 5));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(2.70756, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 0));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(14.14734, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 1));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(25.58781, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 2));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(37.04896, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 3));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(48.48943, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 4));
-		addInput(createPort<PJ301MPort>(mm2px(Vec(59.92921, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 5));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(2.70756, 77.75277)), module, Stages::LEVEL_INPUTS + 0));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(14.14734, 77.75277)), module, Stages::LEVEL_INPUTS + 1));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(25.58781, 77.75277)), module, Stages::LEVEL_INPUTS + 2));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(37.04896, 77.75277)), module, Stages::LEVEL_INPUTS + 3));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(48.48943, 77.75277)), module, Stages::LEVEL_INPUTS + 4));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(59.92921, 77.75277)), module, Stages::LEVEL_INPUTS + 5));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(2.70756, 92.35239)), module, Stages::GATE_INPUTS + 0));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(14.14734, 92.35239)), module, Stages::GATE_INPUTS + 1));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(25.58781, 92.35239)), module, Stages::GATE_INPUTS + 2));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(37.04896, 92.35239)), module, Stages::GATE_INPUTS + 3));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(48.48943, 92.35239)), module, Stages::GATE_INPUTS + 4));
+		addInput(createInput<PJ301MPort>(mm2px(Vec(59.92921, 92.35239)), module, Stages::GATE_INPUTS + 5));
 
-		addOutput(createPort<PJ301MPort>(mm2px(Vec(2.70756, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 0));
-		addOutput(createPort<PJ301MPort>(mm2px(Vec(14.14734, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 1));
-		addOutput(createPort<PJ301MPort>(mm2px(Vec(25.58781, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 2));
-		addOutput(createPort<PJ301MPort>(mm2px(Vec(37.04896, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 3));
-		addOutput(createPort<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 4));
-		addOutput(createPort<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 5));
+		addOutput(createOutput<PJ301MPort>(mm2px(Vec(2.70756, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 0));
+		addOutput(createOutput<PJ301MPort>(mm2px(Vec(14.14734, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 1));
+		addOutput(createOutput<PJ301MPort>(mm2px(Vec(25.58781, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 2));
+		addOutput(createOutput<PJ301MPort>(mm2px(Vec(37.04896, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 3));
+		addOutput(createOutput<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 4));
+		addOutput(createOutput<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 5));
 
 		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
 		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));

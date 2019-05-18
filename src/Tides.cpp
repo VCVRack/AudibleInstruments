@@ -47,11 +47,11 @@ struct Tides : Module {
 	tides::Generator generator;
 	int frame = 0;
 	uint8_t lastGate;
-	SchmittTrigger modeTrigger;
-	SchmittTrigger rangeTrigger;
+	dsp::SchmittTrigger modeTrigger;
+	dsp::SchmittTrigger rangeTrigger;
 
 	Tides();
-	void step() override;
+	void process(const ProcessArgs &args) override;
 
 
 	void onReset() override {
@@ -61,8 +61,8 @@ struct Tides : Module {
 	}
 
 	void onRandomize() override {
-		generator.set_range((tides::GeneratorRange) (randomu32() % 3));
-		generator.set_mode((tides::GeneratorMode) (randomu32() % 3));
+		generator.set_range((tides::GeneratorRange) (random::u32() % 3));
+		generator.set_mode((tides::GeneratorMode) (random::u32() % 3));
 	}
 
 	json_t *dataToJson() override {
@@ -94,16 +94,25 @@ struct Tides : Module {
 };
 
 
-Tides::Tides() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+Tides::Tides() {
+	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	configParam(Tides::MODE_PARAM, 0.0, 1.0, 0.0);
+	configParam(Tides::RANGE_PARAM, 0.0, 1.0, 0.0);
+	configParam(Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0);
+	configParam(Tides::FM_PARAM, -12.0, 12.0, 0.0);
+	configParam(Tides::SHAPE_PARAM, -1.0, 1.0, 0.0);
+	configParam(Tides::SLOPE_PARAM, -1.0, 1.0, 0.0);
+	configParam(Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0);
+
 	memset(&generator, 0, sizeof(generator));
 	generator.Init();
 	generator.set_sync(false);
 	onReset();
 }
 
-void Tides::step() {
+void Tides::process(const ProcessArgs &args) {
 	tides::GeneratorMode mode = generator.mode();
-	if (modeTrigger.process(params[MODE_PARAM].value)) {
+	if (modeTrigger.process(params[MODE_PARAM].getValue())) {
 		mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
 		generator.set_mode(mode);
 	}
@@ -111,7 +120,7 @@ void Tides::step() {
 	lights[MODE_RED_LIGHT].value = (mode == 0) ? 1.0 : 0.0;
 
 	tides::GeneratorRange range = generator.range();
-	if (rangeTrigger.process(params[RANGE_PARAM].value)) {
+	if (rangeTrigger.process(params[RANGE_PARAM].getValue())) {
 		range = (tides::GeneratorRange) (((int)range - 1 + 3) % 3);
 		generator.set_range(range);
 	}
@@ -123,18 +132,18 @@ void Tides::step() {
 		frame = 0;
 
 		// Pitch
-		float pitch = params[FREQUENCY_PARAM].value;
-		pitch += 12.0 * inputs[PITCH_INPUT].value;
-		pitch += params[FM_PARAM].value * inputs[FM_INPUT].normalize(0.1) / 5.0;
+		float pitch = params[FREQUENCY_PARAM].getValue();
+		pitch += 12.0 * inputs[PITCH_INPUT].getVoltage();
+		pitch += params[FM_PARAM].getValue() * inputs[FM_INPUT].getNormalVoltage(0.1) / 5.0;
 		pitch += 60.0;
 		// Scale to the global sample rate
-		pitch += log2f(48000.0 / engineGetSampleRate()) * 12.0;
+		pitch += log2f(48000.0 / args.sampleRate) * 12.0;
 		generator.set_pitch((int) clamp(pitch * 0x80, (float) -0x8000, (float) 0x7fff));
 
 		// Slope, smoothness, pitch
-		int16_t shape = clamp(params[SHAPE_PARAM].value + inputs[SHAPE_INPUT].value / 5.0f, -1.0f, 1.0f) * 0x7fff;
-		int16_t slope = clamp(params[SLOPE_PARAM].value + inputs[SLOPE_INPUT].value / 5.0f, -1.0f, 1.0f) * 0x7fff;
-		int16_t smoothness = clamp(params[SMOOTHNESS_PARAM].value + inputs[SMOOTHNESS_INPUT].value / 5.0f, -1.0f, 1.0f) * 0x7fff;
+		int16_t shape = clamp(params[SHAPE_PARAM].getValue() + inputs[SHAPE_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f) * 0x7fff;
+		int16_t slope = clamp(params[SLOPE_PARAM].getValue() + inputs[SLOPE_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f) * 0x7fff;
+		int16_t smoothness = clamp(params[SMOOTHNESS_PARAM].getValue() + inputs[SMOOTHNESS_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f) * 0x7fff;
 		generator.set_shape(shape);
 		generator.set_slope(slope);
 		generator.set_smoothness(smoothness);
@@ -142,23 +151,23 @@ void Tides::step() {
 		// Sync
 		// Slight deviation from spec here.
 		// Instead of toggling sync by holding the range button, just enable it if the clock port is plugged in.
-		generator.set_sync(inputs[CLOCK_INPUT].active && !sheep);
+		generator.set_sync(inputs[CLOCK_INPUT].isConnected() && !sheep);
 
 		// Generator
 		generator.Process(sheep);
 	}
 
 	// Level
-	uint16_t level = clamp(inputs[LEVEL_INPUT].normalize(8.0) / 8.0f, 0.0f, 1.0f) * 0xffff;
+	uint16_t level = clamp(inputs[LEVEL_INPUT].getNormalVoltage(8.0) / 8.0f, 0.0f, 1.0f) * 0xffff;
 	if (level < 32)
 		level = 0;
 
 	uint8_t gate = 0;
-	if (inputs[FREEZE_INPUT].value >= 0.7)
+	if (inputs[FREEZE_INPUT].getVoltage() >= 0.7)
 		gate |= tides::CONTROL_FREEZE;
-	if (inputs[TRIG_INPUT].value >= 0.7)
+	if (inputs[TRIG_INPUT].getVoltage() >= 0.7)
 		gate |= tides::CONTROL_GATE;
-	if (inputs[CLOCK_INPUT].value >= 0.7)
+	if (inputs[CLOCK_INPUT].getVoltage() >= 0.7)
 		gate |= tides::CONTROL_CLOCK;
 	if (!(lastGate & tides::CONTROL_CLOCK) && (gate & tides::CONTROL_CLOCK))
 		gate |= tides::CONTROL_GATE_RISING;
@@ -177,33 +186,34 @@ void Tides::step() {
 	float unif = (float) uni / 0xffff;
 	float bif = (float) bi / 0x8000;
 
-	outputs[HIGH_OUTPUT].value = sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0;
-	outputs[LOW_OUTPUT].value = sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0;
-	outputs[UNI_OUTPUT].value = unif * 8.0;
-	outputs[BI_OUTPUT].value = bif * 5.0;
+	outputs[HIGH_OUTPUT].setVoltage(sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0);
+	outputs[LOW_OUTPUT].setVoltage(sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0);
+	outputs[UNI_OUTPUT].setVoltage(unif * 8.0);
+	outputs[BI_OUTPUT].setVoltage(bif * 5.0);
 
 	if (sample.flags & tides::FLAG_END_OF_ATTACK)
 		unif *= -1.0;
-	lights[PHASE_GREEN_LIGHT].setBrightnessSmooth(fmaxf(0.0, unif));
-	lights[PHASE_RED_LIGHT].setBrightnessSmooth(fmaxf(0.0, -unif));
+	lights[PHASE_GREEN_LIGHT].setSmoothBrightness(fmaxf(0.0, unif), args.sampleTime);
+	lights[PHASE_RED_LIGHT].setSmoothBrightness(fmaxf(0.0, -unif), args.sampleTime);
 }
 
 
 struct TidesWidget : ModuleWidget {
-	SVGPanel *tidesPanel;
-	SVGPanel *sheepPanel;
+	SvgPanel *tidesPanel;
+	SvgPanel *sheepPanel;
 
-	TidesWidget(Tides *module) : ModuleWidget(module) {
+	TidesWidget(Tides *module) {
+		setModule(module);
 		box.size = Vec(15*14, 380);
 		{
-			tidesPanel = new SVGPanel();
-			tidesPanel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/Tides.svg")));
+			tidesPanel = new SvgPanel();
+			tidesPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Tides.svg")));
 			tidesPanel->box.size = box.size;
 			addChild(tidesPanel);
 		}
 		{
-			sheepPanel = new SVGPanel();
-			sheepPanel->setBackground(SVG::load(assetPlugin(pluginInstance, "res/Sheep.svg")));
+			sheepPanel = new SvgPanel();
+			sheepPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Sheep.svg")));
 			sheepPanel->box.size = box.size;
 			addChild(sheepPanel);
 		}
@@ -213,31 +223,31 @@ struct TidesWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(180, 365)));
 
-		addParam(createParam<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<CKD6>(Vec(19, 52), module, Tides::MODE_PARAM));
+		addParam(createParam<CKD6>(Vec(19, 93), module, Tides::RANGE_PARAM));
 
-		addParam(createParam<Rogan3PSGreen>(Vec(78, 60), module, Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0));
-		addParam(createParam<Rogan1PSGreen>(Vec(156, 66), module, Tides::FM_PARAM, -12.0, 12.0, 0.0));
+		addParam(createParam<Rogan3PSGreen>(Vec(78, 60), module, Tides::FREQUENCY_PARAM));
+		addParam(createParam<Rogan1PSGreen>(Vec(156, 66), module, Tides::FM_PARAM));
 
-		addParam(createParam<Rogan1PSWhite>(Vec(13, 155), module, Tides::SHAPE_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Rogan1PSWhite>(Vec(85, 155), module, Tides::SLOPE_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Rogan1PSWhite>(Vec(156, 155), module, Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(13, 155), module, Tides::SHAPE_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(85, 155), module, Tides::SLOPE_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(156, 155), module, Tides::SMOOTHNESS_PARAM));
 
-		addInput(createPort<PJ301MPort>(Vec(21, 219), PortWidget::INPUT, module, Tides::SHAPE_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(93, 219), PortWidget::INPUT, module, Tides::SLOPE_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(164, 219), PortWidget::INPUT, module, Tides::SMOOTHNESS_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(21, 219), module, Tides::SHAPE_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(93, 219), module, Tides::SLOPE_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(164, 219), module, Tides::SMOOTHNESS_INPUT));
 
-		addInput(createPort<PJ301MPort>(Vec(21, 274), PortWidget::INPUT, module, Tides::TRIG_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(57, 274), PortWidget::INPUT, module, Tides::FREEZE_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(93, 274), PortWidget::INPUT, module, Tides::PITCH_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(128, 274), PortWidget::INPUT, module, Tides::FM_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(164, 274), PortWidget::INPUT, module, Tides::LEVEL_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(21, 274), module, Tides::TRIG_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(57, 274), module, Tides::FREEZE_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(93, 274), module, Tides::PITCH_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(128, 274), module, Tides::FM_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(164, 274), module, Tides::LEVEL_INPUT));
 
-		addInput(createPort<PJ301MPort>(Vec(21, 316), PortWidget::INPUT, module, Tides::CLOCK_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(57, 316), PortWidget::OUTPUT, module, Tides::HIGH_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(93, 316), PortWidget::OUTPUT, module, Tides::LOW_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(128, 316), PortWidget::OUTPUT, module, Tides::UNI_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(164, 316), PortWidget::OUTPUT, module, Tides::BI_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(21, 316), module, Tides::CLOCK_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(57, 316), module, Tides::HIGH_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(93, 316), module, Tides::LOW_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(128, 316), module, Tides::UNI_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(164, 316), module, Tides::BI_OUTPUT));
 
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(56, 61), module, Tides::MODE_GREEN_LIGHT));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(56, 82), module, Tides::PHASE_GREEN_LIGHT));

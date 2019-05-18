@@ -36,10 +36,10 @@ struct Warps : Module {
 	warps::Modulator modulator;
 	warps::ShortFrame inputFrames[60] = {};
 	warps::ShortFrame outputFrames[60] = {};
-	SchmittTrigger stateTrigger;
+	dsp::SchmittTrigger stateTrigger;
 
 	Warps();
-	void step() override;
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -63,20 +63,27 @@ struct Warps : Module {
 
 	void onRandomize() override {
 		warps::Parameters *p = modulator.mutable_parameters();
-		p->carrier_shape = randomu32() % 4;
+		p->carrier_shape = random::u32() % 4;
 	}
 };
 
 
-Warps::Warps() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+Warps::Warps() {
+	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	configParam(Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0);
+	configParam(Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5);
+	configParam(Warps::STATE_PARAM, 0.0, 1.0, 0.0);
+	configParam(Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0);
+	configParam(Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0);
+
 	memset(&modulator, 0, sizeof(modulator));
 	modulator.Init(96000.0f);
 }
 
-void Warps::step() {
+void Warps::process(const ProcessArgs &args) {
 	// State trigger
 	warps::Parameters *p = modulator.mutable_parameters();
-	if (stateTrigger.process(params[STATE_PARAM].value)) {
+	if (stateTrigger.process(params[STATE_PARAM].getValue())) {
 		p->carrier_shape = (p->carrier_shape + 1) % 4;
 	}
 	lights[CARRIER_GREEN_LIGHT].value = (p->carrier_shape == 1 || p->carrier_shape == 2) ? 1.0 : 0.0;
@@ -86,9 +93,9 @@ void Warps::step() {
 	if (++frame >= 60) {
 		frame = 0;
 
-		p->channel_drive[0] = clamp(params[LEVEL1_PARAM].value + inputs[LEVEL1_INPUT].value / 5.0f, 0.0f, 1.0f);
-		p->channel_drive[1] = clamp(params[LEVEL2_PARAM].value + inputs[LEVEL2_INPUT].value / 5.0f, 0.0f, 1.0f);
-		p->modulation_algorithm = clamp(params[ALGORITHM_PARAM].value / 8.0f + inputs[ALGORITHM_INPUT].value / 5.0f, 0.0f, 1.0f);
+		p->channel_drive[0] = clamp(params[LEVEL1_PARAM].getValue() + inputs[LEVEL1_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+		p->channel_drive[1] = clamp(params[LEVEL2_PARAM].getValue() + inputs[LEVEL2_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+		p->modulation_algorithm = clamp(params[ALGORITHM_PARAM].getValue() / 8.0f + inputs[ALGORITHM_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 
 		{
 			// TODO
@@ -99,21 +106,21 @@ void Warps::step() {
 			lights[ALGORITHM_LIGHT + 2].setBrightness(algorithmColor.b);
 		}
 
-		p->modulation_parameter = clamp(params[TIMBRE_PARAM].value + inputs[TIMBRE_INPUT].value / 5.0f, 0.0f, 1.0f);
+		p->modulation_parameter = clamp(params[TIMBRE_PARAM].getValue() + inputs[TIMBRE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 
-		p->frequency_shift_pot = params[ALGORITHM_PARAM].value / 8.0;
-		p->frequency_shift_cv = clamp(inputs[ALGORITHM_INPUT].value / 5.0f, -1.0f, 1.0f);
+		p->frequency_shift_pot = params[ALGORITHM_PARAM].getValue() / 8.0;
+		p->frequency_shift_cv = clamp(inputs[ALGORITHM_INPUT].getVoltage() / 5.0f, -1.0f, 1.0f);
 		p->phase_shift = p->modulation_algorithm;
-		p->note = 60.0 * params[LEVEL1_PARAM].value + 12.0 * inputs[LEVEL1_INPUT].normalize(2.0) + 12.0;
-		p->note += log2f(96000.0f * engineGetSampleTime()) * 12.0f;
+		p->note = 60.0 * params[LEVEL1_PARAM].getValue() + 12.0 * inputs[LEVEL1_INPUT].getNormalVoltage(2.0) + 12.0;
+		p->note += log2f(96000.0f * args.sampleTime) * 12.0f;
 
 		modulator.Process(inputFrames, outputFrames, 60);
 	}
 
-	inputFrames[frame].l = clamp((int) (inputs[CARRIER_INPUT].value / 16.0 * 0x8000), -0x8000, 0x7fff);
-	inputFrames[frame].r = clamp((int) (inputs[MODULATOR_INPUT].value / 16.0 * 0x8000), -0x8000, 0x7fff);
-	outputs[MODULATOR_OUTPUT].value = (float)outputFrames[frame].l / 0x8000 * 5.0;
-	outputs[AUX_OUTPUT].value = (float)outputFrames[frame].r / 0x8000 * 5.0;
+	inputFrames[frame].l = clamp((int) (inputs[CARRIER_INPUT].getVoltage() / 16.0 * 0x8000), -0x8000, 0x7fff);
+	inputFrames[frame].r = clamp((int) (inputs[MODULATOR_INPUT].getVoltage() / 16.0 * 0x8000), -0x8000, 0x7fff);
+	outputs[MODULATOR_OUTPUT].setVoltage((float)outputFrames[frame].l / 0x8000 * 5.0);
+	outputs[AUX_OUTPUT].setVoltage((float)outputFrames[frame].r / 0x8000 * 5.0);
 }
 
 
@@ -125,30 +132,31 @@ struct AlgorithmLight : RedGreenBlueLight {
 
 
 struct WarpsWidget : ModuleWidget {
-	WarpsWidget(Warps *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Warps.svg")));
+	WarpsWidget(Warps *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Warps.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(120, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(120, 365)));
 
-		addParam(createParam<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
+		addParam(createParam<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM));
 
-		addParam(createParam<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
-		addParam(createParam<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM));
+		addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM));
+		addParam(createParam<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM));
+		addParam(createParam<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM));
 
-		addInput(createPort<PJ301MPort>(Vec(8, 273), PortWidget::INPUT, module, Warps::LEVEL1_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(44, 273), PortWidget::INPUT, module, Warps::LEVEL2_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(80, 273), PortWidget::INPUT, module, Warps::ALGORITHM_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(116, 273), PortWidget::INPUT, module, Warps::TIMBRE_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(8, 273), module, Warps::LEVEL1_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(44, 273), module, Warps::LEVEL2_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(80, 273), module, Warps::ALGORITHM_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(116, 273), module, Warps::TIMBRE_INPUT));
 
-		addInput(createPort<PJ301MPort>(Vec(8, 316), PortWidget::INPUT, module, Warps::CARRIER_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(44, 316), PortWidget::INPUT, module, Warps::MODULATOR_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(80, 316), PortWidget::OUTPUT, module, Warps::MODULATOR_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(116, 316), PortWidget::OUTPUT, module, Warps::AUX_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(8, 316), module, Warps::CARRIER_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(44, 316), module, Warps::MODULATOR_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(80, 316), module, Warps::MODULATOR_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
 

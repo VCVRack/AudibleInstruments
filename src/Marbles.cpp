@@ -193,13 +193,13 @@ struct Marbles : Module {
 	marbles::NoteFilter note_filter;
 
 	// State
-	BooleanTrigger tDejaVuTrigger;
-	BooleanTrigger xDejaVuTrigger;
-	BooleanTrigger tModeTrigger;
-	BooleanTrigger xModeTrigger;
-	BooleanTrigger tRangeTrigger;
-	BooleanTrigger xRangeTrigger;
-	BooleanTrigger externalTrigger;
+	dsp::BooleanTrigger tDejaVuTrigger;
+	dsp::BooleanTrigger xDejaVuTrigger;
+	dsp::BooleanTrigger tModeTrigger;
+	dsp::BooleanTrigger xModeTrigger;
+	dsp::BooleanTrigger tRangeTrigger;
+	dsp::BooleanTrigger xRangeTrigger;
+	dsp::BooleanTrigger externalTrigger;
 	bool t_deja_vu;
 	bool x_deja_vu;
 	int t_mode;
@@ -223,7 +223,24 @@ struct Marbles : Module {
 	float voltages[BLOCK_SIZE * 4] = {};
 	int blockIndex = 0;
 
-	Marbles() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Marbles() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Marbles::T_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::X_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::DEJA_VU_PARAM, 0.0, 1.0, 0.5);
+		configParam(Marbles::T_RATE_PARAM, -1.0, 1.0, 0.0);
+		configParam(Marbles::X_SPREAD_PARAM, 0.0, 1.0, 0.5);
+		configParam(Marbles::T_MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::X_MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::T_BIAS_PARAM, 0.0, 1.0, 0.5);
+		configParam(Marbles::X_BIAS_PARAM, 0.0, 1.0, 0.5);
+		configParam(Marbles::T_RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::X_RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::EXTERNAL_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::T_JITTER_PARAM, 0.0, 1.0, 0.0);
+		configParam(Marbles::X_STEPS_PARAM, 0.0, 1.0, 0.5);
+
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);
 		note_filter.Init();
@@ -245,14 +262,14 @@ struct Marbles : Module {
 	}
 
 	void onRandomize() override {
-		t_mode = randomu32() % 3;
-		x_mode = randomu32() % 3;
-		t_range = randomu32() % 3;
-		x_range = randomu32() % 3;
+		t_mode = random::u32() % 3;
+		x_mode = random::u32() % 3;
+		t_range = random::u32() % 3;
+		x_range = random::u32() % 3;
 	}
 
 	void onSampleRateChange() override {
-		float sampleRate = engineGetSampleRate();
+		float sampleRate = APP->engine->getSampleRate();
 		t_generator.Init(&random_stream, sampleRate);
 		xy_generator.Init(&random_stream, sampleRate);
 
@@ -321,36 +338,36 @@ struct Marbles : Module {
 			x_clock_source_internal = json_integer_value(x_clock_source_internalJ);
 	}
 
-	void step() override {
+	void process(const ProcessArgs &args) override {
 		// Buttons
-		if (tDejaVuTrigger.process(params[T_DEJA_VU_PARAM].value <= 0.f)) {
+		if (tDejaVuTrigger.process(params[T_DEJA_VU_PARAM].getValue() <= 0.f)) {
 			t_deja_vu = !t_deja_vu;
 		}
-		if (xDejaVuTrigger.process(params[X_DEJA_VU_PARAM].value <= 0.f)) {
+		if (xDejaVuTrigger.process(params[X_DEJA_VU_PARAM].getValue() <= 0.f)) {
 			x_deja_vu = !x_deja_vu;
 		}
-		if (tModeTrigger.process(params[T_MODE_PARAM].value <= 0.f)) {
+		if (tModeTrigger.process(params[T_MODE_PARAM].getValue() <= 0.f)) {
 			t_mode = (t_mode + 1) % 3;
 		}
-		if (xModeTrigger.process(params[X_MODE_PARAM].value <= 0.f)) {
+		if (xModeTrigger.process(params[X_MODE_PARAM].getValue() <= 0.f)) {
 			x_mode = (x_mode + 1) % 3;
 		}
-		if (tRangeTrigger.process(params[T_RANGE_PARAM].value <= 0.f)) {
+		if (tRangeTrigger.process(params[T_RANGE_PARAM].getValue() <= 0.f)) {
 			t_range = (t_range + 1) % 3;
 		}
-		if (xRangeTrigger.process(params[X_RANGE_PARAM].value <= 0.f)) {
+		if (xRangeTrigger.process(params[X_RANGE_PARAM].getValue() <= 0.f)) {
 			x_range = (x_range + 1) % 3;
 		}
-		if (externalTrigger.process(params[EXTERNAL_PARAM].value <= 0.f)) {
+		if (externalTrigger.process(params[EXTERNAL_PARAM].getValue() <= 0.f)) {
 			external = !external;
 		}
 
 		// Clocks
-		bool t_gate = (inputs[T_CLOCK_INPUT].value >= 1.7f);
+		bool t_gate = (inputs[T_CLOCK_INPUT].getVoltage() >= 1.7f);
 		last_t_clock = stmlib::ExtractGateFlags(last_t_clock, t_gate);
 		t_clocks[blockIndex] = last_t_clock;
 
-		bool x_gate = (inputs[X_CLOCK_INPUT].value >= 1.7f);
+		bool x_gate = (inputs[X_CLOCK_INPUT].getVoltage() >= 1.7f);
 		last_xy_clock = stmlib::ExtractGateFlags(last_xy_clock, x_gate);
 		xy_clocks[blockIndex] = last_xy_clock;
 
@@ -379,21 +396,21 @@ struct Marbles : Module {
 
 		lights[EXTERNAL_LIGHT].setBrightness(external);
 
-		outputs[T1_OUTPUT].value = gates[blockIndex*2 + 0] ? 10.f : 0.f;
-		lights[T1_LIGHT].setBrightnessSmooth(gates[blockIndex*2 + 0]);
-		outputs[T2_OUTPUT].value = (ramp_master[blockIndex] < 0.5f) ? 10.f : 0.f;
-		lights[T2_LIGHT].setBrightnessSmooth(ramp_master[blockIndex] < 0.5f);
-		outputs[T3_OUTPUT].value = gates[blockIndex*2 + 1] ? 10.f : 0.f;
-		lights[T3_LIGHT].setBrightnessSmooth(gates[blockIndex*2 + 1]);
+		outputs[T1_OUTPUT].setVoltage(gates[blockIndex*2 + 0] ? 10.f : 0.f);
+		lights[T1_LIGHT].setSmoothBrightness(gates[blockIndex*2 + 0], args.sampleTime);
+		outputs[T2_OUTPUT].setVoltage((ramp_master[blockIndex] < 0.5f) ? 10.f : 0.f);
+		lights[T2_LIGHT].setSmoothBrightness(ramp_master[blockIndex] < 0.5f, args.sampleTime);
+		outputs[T3_OUTPUT].setVoltage(gates[blockIndex*2 + 1] ? 10.f : 0.f);
+		lights[T3_LIGHT].setSmoothBrightness(gates[blockIndex*2 + 1], args.sampleTime);
 
-		outputs[X1_OUTPUT].value = voltages[blockIndex*4 + 0];
-		lights[X1_LIGHT].setBrightnessSmooth(voltages[blockIndex*4 + 0]);
-		outputs[X2_OUTPUT].value = voltages[blockIndex*4 + 1];
-		lights[X2_LIGHT].setBrightnessSmooth(voltages[blockIndex*4 + 1]);
-		outputs[X3_OUTPUT].value = voltages[blockIndex*4 + 2];
-		lights[X3_LIGHT].setBrightnessSmooth(voltages[blockIndex*4 + 2]);
-		outputs[Y_OUTPUT].value = voltages[blockIndex*4 + 3];
-		lights[Y_LIGHT].setBrightnessSmooth(voltages[blockIndex*4 + 3]);
+		outputs[X1_OUTPUT].setVoltage(voltages[blockIndex*4 + 0]);
+		lights[X1_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 0], args.sampleTime);
+		outputs[X2_OUTPUT].setVoltage(voltages[blockIndex*4 + 1]);
+		lights[X2_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 1], args.sampleTime);
+		outputs[X3_OUTPUT].setVoltage(voltages[blockIndex*4 + 2]);
+		lights[X3_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 2], args.sampleTime);
+		outputs[Y_OUTPUT].setVoltage(voltages[blockIndex*4 + 3]);
+		lights[Y_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 3], args.sampleTime);
 	}
 
 	void stepBlock() {
@@ -405,7 +422,7 @@ struct Marbles : Module {
 		ramps.slave[0] = ramp_slave[0];
 		ramps.slave[1] = ramp_slave[1];
 
-		float deja_vu = clamp(params[DEJA_VU_PARAM].value + inputs[DEJA_VU_INPUT].value / 5.f, 0.f, 1.f);
+		float deja_vu = clamp(params[DEJA_VU_PARAM].getValue() + inputs[DEJA_VU_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		static const int loop_length[] = {
 			1, 1, 1, 2, 2,
 			2, 2, 2, 3, 3,
@@ -416,20 +433,20 @@ struct Marbles : Module {
 			12, 12, 14, 14, 16,
 			16
 		};
-		float deja_vu_length_index = params[DEJA_VU_LENGTH_PARAM].value * (LENGTHOF(loop_length) - 1);
+		float deja_vu_length_index = params[DEJA_VU_LENGTH_PARAM].getValue() * (LENGTHOF(loop_length) - 1);
 		int deja_vu_length = loop_length[(int) roundf(deja_vu_length_index)];
 
 		// Set up TGenerator
 
-		bool t_external_clock = inputs[T_CLOCK_INPUT].active;
+		bool t_external_clock = inputs[T_CLOCK_INPUT].isConnected();
 
 		t_generator.set_model((marbles::TGeneratorModel) t_mode);
 		t_generator.set_range((marbles::TGeneratorRange) t_range);
-		float t_rate = 60.f * (params[T_RATE_PARAM].value + inputs[T_RATE_INPUT].value / 5.f);
+		float t_rate = 60.f * (params[T_RATE_PARAM].getValue() + inputs[T_RATE_INPUT].getVoltage() / 5.f);
 		t_generator.set_rate(t_rate);
-		float t_bias = clamp(params[T_BIAS_PARAM].value + inputs[T_BIAS_INPUT].value / 5.f, 0.f, 1.f);
+		float t_bias = clamp(params[T_BIAS_PARAM].getValue() + inputs[T_BIAS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		t_generator.set_bias(t_bias);
-		float t_jitter = clamp(params[T_JITTER_PARAM].value + inputs[T_JITTER_INPUT].value / 5.f, 0.f, 1.f);
+		float t_jitter = clamp(params[T_JITTER_PARAM].getValue() + inputs[T_JITTER_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		t_generator.set_jitter(t_jitter);
 		t_generator.set_deja_vu(t_deja_vu ? deja_vu : 0.f);
 		t_generator.set_length(deja_vu_length);
@@ -442,23 +459,23 @@ struct Marbles : Module {
 		// Set up XYGenerator
 
 		marbles::ClockSource x_clock_source = (marbles::ClockSource) x_clock_source_internal;
-		if (inputs[X_CLOCK_INPUT].active)
+		if (inputs[X_CLOCK_INPUT].isConnected())
 			x_clock_source = marbles::CLOCK_SOURCE_EXTERNAL;
 
 		marbles::GroupSettings x;
 		x.control_mode = (marbles::ControlMode) x_mode;
 		x.voltage_range = (marbles::VoltageRange) x_range;
 		// TODO Fix the scaling
-		float note_cv = 0.5f * (params[X_SPREAD_PARAM].value + inputs[X_SPREAD_INPUT].value / 5.f);
+		float note_cv = 0.5f * (params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f);
 		float u = note_filter.Process(0.5f * (note_cv + 1.f));
 		x.register_mode = external;
 		x.register_value = u;
 
-		float x_spread = clamp(params[X_SPREAD_PARAM].value + inputs[X_SPREAD_INPUT].value / 5.f, 0.f, 1.f);
+		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		x.spread = x_spread;
-		float x_bias = clamp(params[X_BIAS_PARAM].value + inputs[X_BIAS_INPUT].value / 5.f, 0.f, 1.f);
+		float x_bias = clamp(params[X_BIAS_PARAM].getValue() + inputs[X_BIAS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		x.bias = x_bias;
-		float x_steps = clamp(params[X_STEPS_PARAM].value + inputs[X_STEPS_INPUT].value / 5.f, 0.f, 1.f);
+		float x_steps = clamp(params[X_STEPS_PARAM].getValue() + inputs[X_STEPS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		x.steps = x_steps;
 		x.deja_vu = x_deja_vu ? deja_vu : 0.f;
 		x.length = deja_vu_length;
@@ -509,29 +526,30 @@ struct CKD6Light : BASE {
 
 
 struct MarblesWidget : ModuleWidget {
-	MarblesWidget(Marbles *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Marbles.svg")));
+	MarblesWidget(Marbles *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Marbles.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<CKD6>(mm2px(Vec(16.545, 17.794)), module, Marbles::T_DEJA_VU_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<CKD6>(mm2px(Vec(74.845, 17.794)), module, Marbles::X_DEJA_VU_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(45.695, 22.244)), module, Marbles::DEJA_VU_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(23.467, 35.264)), module, Marbles::T_RATE_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(67.945, 35.243)), module, Marbles::X_SPREAD_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(6.945, 38.794)), module, Marbles::T_MODE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(84.445, 38.793)), module, Marbles::X_MODE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(45.695, 51.144)), module, Marbles::DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(9.545, 58.394)), module, Marbles::T_BIAS_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(81.844, 58.394)), module, Marbles::X_BIAS_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(26.644, 59.694)), module, Marbles::T_RANGE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(64.744, 59.694)), module, Marbles::X_RANGE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(45.694, 67.294)), module, Marbles::EXTERNAL_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(31.544, 73.694)), module, Marbles::T_JITTER_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(59.845, 73.694)), module, Marbles::X_STEPS_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParamCentered<CKD6>(mm2px(Vec(16.545, 17.794)), module, Marbles::T_DEJA_VU_PARAM));
+		addParam(createParamCentered<CKD6>(mm2px(Vec(74.845, 17.794)), module, Marbles::X_DEJA_VU_PARAM));
+		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(45.695, 22.244)), module, Marbles::DEJA_VU_PARAM));
+		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(23.467, 35.264)), module, Marbles::T_RATE_PARAM));
+		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(67.945, 35.243)), module, Marbles::X_SPREAD_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(6.945, 38.794)), module, Marbles::T_MODE_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(84.445, 38.793)), module, Marbles::X_MODE_PARAM));
+		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(45.695, 51.144)), module, Marbles::DEJA_VU_LENGTH_PARAM));
+		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(9.545, 58.394)), module, Marbles::T_BIAS_PARAM));
+		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(81.844, 58.394)), module, Marbles::X_BIAS_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(26.644, 59.694)), module, Marbles::T_RANGE_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(64.744, 59.694)), module, Marbles::X_RANGE_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(45.694, 67.294)), module, Marbles::EXTERNAL_PARAM));
+		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(31.544, 73.694)), module, Marbles::T_JITTER_PARAM));
+		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(59.845, 73.694)), module, Marbles::X_STEPS_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.545, 81.944)), module, Marbles::T_BIAS_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(81.844, 81.944)), module, Marbles::X_BIAS_INPUT));

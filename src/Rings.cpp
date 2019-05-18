@@ -45,10 +45,10 @@ struct Rings : Module {
 		NUM_LIGHTS
 	};
 
-	SampleRateConverter<1> inputSrc;
-	SampleRateConverter<2> outputSrc;
-	DoubleRingBuffer<Frame<1>, 256> inputBuffer;
-	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
+	dsp::SampleRateConverter<1> inputSrc;
+	dsp::SampleRateConverter<2> outputSrc;
+	dsp::DoubleRingBuffer<dsp::Frame<1>, 256> inputBuffer;
+	dsp::DoubleRingBuffer<dsp::Frame<2>, 256> outputBuffer;
 
 	uint16_t reverb_buffer[32768] = {};
 	rings::Part part;
@@ -57,14 +57,14 @@ struct Rings : Module {
 	bool strum = false;
 	bool lastStrum = false;
 
-	SchmittTrigger polyphonyTrigger;
-	SchmittTrigger modelTrigger;
+	dsp::SchmittTrigger polyphonyTrigger;
+	dsp::SchmittTrigger modelTrigger;
 	int polyphonyMode = 0;
 	rings::ResonatorModel resonatorModel = rings::RESONATOR_MODEL_MODAL;
 	bool easterEgg = false;
 
 	Rings();
-	void step() override;
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -99,13 +99,27 @@ struct Rings : Module {
 	}
 
 	void onRandomize() override {
-		polyphonyMode = randomu32() % 3;
-		resonatorModel = (rings::ResonatorModel) (randomu32() % 3);
+		polyphonyMode = random::u32() % 3;
+		resonatorModel = (rings::ResonatorModel) (random::u32() % 3);
 	}
 };
 
 
-Rings::Rings() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+Rings::Rings() {
+	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	configParam(Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0);
+	configParam(Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0);
+	configParam(Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0);
+	configParam(Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5);
+	configParam(Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
+	configParam(Rings::DAMPING_PARAM, 0.0, 1.0, 0.5);
+	configParam(Rings::POSITION_PARAM, 0.0, 1.0, 0.5);
+	configParam(Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
+	configParam(Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0);
+	configParam(Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
+	configParam(Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0);
+	configParam(Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
+
 	memset(&strummer, 0, sizeof(strummer));
 	memset(&part, 0, sizeof(part));
 	memset(&string_synth, 0, sizeof(string_synth));
@@ -115,28 +129,28 @@ Rings::Rings() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 	string_synth.Init(reverb_buffer);
 }
 
-void Rings::step() {
+void Rings::process(const ProcessArgs &args) {
 	// TODO
 	// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
 	// Get input
 	if (!inputBuffer.full()) {
-		Frame<1> f;
-		f.samples[0] = inputs[IN_INPUT].value / 5.0;
+		dsp::Frame<1> f;
+		f.samples[0] = inputs[IN_INPUT].getVoltage() / 5.0;
 		inputBuffer.push(f);
 	}
 
 	if (!strum) {
-		strum = inputs[STRUM_INPUT].value >= 1.0;
+		strum = inputs[STRUM_INPUT].getVoltage() >= 1.0;
 	}
 
 	// Polyphony / model
-	if (polyphonyTrigger.process(params[POLYPHONY_PARAM].value)) {
+	if (polyphonyTrigger.process(params[POLYPHONY_PARAM].getValue())) {
 		polyphonyMode = (polyphonyMode + 1) % 3;
 	}
 	lights[POLYPHONY_GREEN_LIGHT].value = (polyphonyMode == 0 || polyphonyMode == 1) ? 1.0 : 0.0;
 	lights[POLYPHONY_RED_LIGHT].value = (polyphonyMode == 1 || polyphonyMode == 2) ? 1.0 : 0.0;
 
-	if (modelTrigger.process(params[RESONATOR_PARAM].value)) {
+	if (modelTrigger.process(params[RESONATOR_PARAM].getValue())) {
 		resonatorModel = (rings::ResonatorModel) ((resonatorModel + 1) % 3);
 	}
 	int modelColor = resonatorModel % 3;
@@ -148,10 +162,10 @@ void Rings::step() {
 		float in[24] = {};
 		// Convert input buffer
 		{
-			inputSrc.setRates(engineGetSampleRate(), 48000);
+			inputSrc.setRates(args.sampleRate, 48000);
 			int inLen = inputBuffer.size();
 			int outLen = 24;
-			inputSrc.process(inputBuffer.startData(), &inLen, (Frame<1>*) in, &outLen);
+			inputSrc.process(inputBuffer.startData(), &inLen, (dsp::Frame<1>*) in, &outLen);
 			inputBuffer.startIncr(inLen);
 		}
 
@@ -167,26 +181,26 @@ void Rings::step() {
 
 		// Patch
 		rings::Patch patch;
-		float structure = params[STRUCTURE_PARAM].value + 3.3*quadraticBipolar(params[STRUCTURE_MOD_PARAM].value)*inputs[STRUCTURE_MOD_INPUT].value/5.0;
+		float structure = params[STRUCTURE_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[STRUCTURE_MOD_PARAM].getValue())*inputs[STRUCTURE_MOD_INPUT].getVoltage()/5.0;
 		patch.structure = clamp(structure, 0.0f, 0.9995f);
-		patch.brightness = clamp(params[BRIGHTNESS_PARAM].value + 3.3*quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].value)*inputs[BRIGHTNESS_MOD_INPUT].value/5.0, 0.0f, 1.0f);
-		patch.damping = clamp(params[DAMPING_PARAM].value + 3.3*quadraticBipolar(params[DAMPING_MOD_PARAM].value)*inputs[DAMPING_MOD_INPUT].value/5.0, 0.0f, 0.9995f);
-		patch.position = clamp(params[POSITION_PARAM].value + 3.3*quadraticBipolar(params[POSITION_MOD_PARAM].value)*inputs[POSITION_MOD_INPUT].value/5.0, 0.0f, 0.9995f);
+		patch.brightness = clamp(params[BRIGHTNESS_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].getValue())*inputs[BRIGHTNESS_MOD_INPUT].getVoltage()/5.0, 0.0f, 1.0f);
+		patch.damping = clamp(params[DAMPING_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[DAMPING_MOD_PARAM].getValue())*inputs[DAMPING_MOD_INPUT].getVoltage()/5.0, 0.0f, 0.9995f);
+		patch.position = clamp(params[POSITION_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[POSITION_MOD_PARAM].getValue())*inputs[POSITION_MOD_INPUT].getVoltage()/5.0, 0.0f, 0.9995f);
 
 		// Performance
 		rings::PerformanceState performance_state;
-		performance_state.note = 12.0*inputs[PITCH_INPUT].normalize(1/12.0);
-		float transpose = params[FREQUENCY_PARAM].value;
+		performance_state.note = 12.0*inputs[PITCH_INPUT].getNormalVoltage(1/12.0);
+		float transpose = params[FREQUENCY_PARAM].getValue();
 		// Quantize transpose if pitch input is connected
-		if (inputs[PITCH_INPUT].active) {
+		if (inputs[PITCH_INPUT].isConnected()) {
 			transpose = roundf(transpose);
 		}
 		performance_state.tonic = 12.0 + clamp(transpose, 0.0f, 60.0f);
-		performance_state.fm = clamp(48.0 * 3.3*quarticBipolar(params[FREQUENCY_MOD_PARAM].value) * inputs[FREQUENCY_MOD_INPUT].normalize(1.0)/5.0, -48.0f, 48.0f);
+		performance_state.fm = clamp(48.0 * 3.3*dsp::quarticBipolar(params[FREQUENCY_MOD_PARAM].getValue()) * inputs[FREQUENCY_MOD_INPUT].getNormalVoltage(1.0)/5.0, -48.0f, 48.0f);
 
-		performance_state.internal_exciter = !inputs[IN_INPUT].active;
-		performance_state.internal_strum = !inputs[STRUM_INPUT].active;
-		performance_state.internal_note = !inputs[PITCH_INPUT].active;
+		performance_state.internal_exciter = !inputs[IN_INPUT].isConnected();
+		performance_state.internal_strum = !inputs[STRUM_INPUT].isConnected();
+		performance_state.internal_note = !inputs[PITCH_INPUT].isConnected();
 
 		// TODO
 		// "Normalized to a step detector on the V/OCT input and a transient detector on the IN input."
@@ -210,13 +224,13 @@ void Rings::step() {
 
 		// Convert output buffer
 		{
-			Frame<2> outputFrames[24];
+			dsp::Frame<2> outputFrames[24];
 			for (int i = 0; i < 24; i++) {
 				outputFrames[i].samples[0] = out[i];
 				outputFrames[i].samples[1] = aux[i];
 			}
 
-			outputSrc.setRates(48000, engineGetSampleRate());
+			outputSrc.setRates(48000, args.sampleRate);
 			int inLen = 24;
 			int outLen = outputBuffer.capacity();
 			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
@@ -226,57 +240,58 @@ void Rings::step() {
 
 	// Set output
 	if (!outputBuffer.empty()) {
-		Frame<2> outputFrame = outputBuffer.shift();
+		dsp::Frame<2> outputFrame = outputBuffer.shift();
 		// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
-		if (outputs[ODD_OUTPUT].active && outputs[EVEN_OUTPUT].active) {
-			outputs[ODD_OUTPUT].value = clamp(outputFrame.samples[0], -1.0, 1.0)*5.0;
-			outputs[EVEN_OUTPUT].value = clamp(outputFrame.samples[1], -1.0, 1.0)*5.0;
+		if (outputs[ODD_OUTPUT].isConnected() && outputs[EVEN_OUTPUT].isConnected()) {
+			outputs[ODD_OUTPUT].setVoltage(clamp(outputFrame.samples[0], -1.0, 1.0)*5.0);
+			outputs[EVEN_OUTPUT].setVoltage(clamp(outputFrame.samples[1], -1.0, 1.0)*5.0);
 		}
 		else {
 			float v = clamp(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0)*5.0;
-			outputs[ODD_OUTPUT].value = v;
-			outputs[EVEN_OUTPUT].value = v;
+			outputs[ODD_OUTPUT].setVoltage(v);
+			outputs[EVEN_OUTPUT].setVoltage(v);
 		}
 	}
 }
 
 
 struct RingsWidget : ModuleWidget {
-	RingsWidget(Rings *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Rings.svg")));
+	RingsWidget(Rings *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Rings.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(180, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(180, 365)));
 
-		addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM));
+		addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM));
 
-		addParam(createParam<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
-		addParam(createParam<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM));
+		addParam(createParam<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM));
 
-		addParam(createParam<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParam<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParam<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM));
 
-		addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM));
+		addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM));
+		addParam(createParam<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM));
+		addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM));
+		addParam(createParam<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM));
 
-		addInput(createPort<PJ301MPort>(Vec(15, 273), PortWidget::INPUT, module, Rings::BRIGHTNESS_MOD_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(54, 273), PortWidget::INPUT, module, Rings::FREQUENCY_MOD_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(92, 273), PortWidget::INPUT, module, Rings::DAMPING_MOD_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(131, 273), PortWidget::INPUT, module, Rings::STRUCTURE_MOD_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(169, 273), PortWidget::INPUT, module, Rings::POSITION_MOD_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(15, 273), module, Rings::BRIGHTNESS_MOD_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(54, 273), module, Rings::FREQUENCY_MOD_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(92, 273), module, Rings::DAMPING_MOD_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(131, 273), module, Rings::STRUCTURE_MOD_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(169, 273), module, Rings::POSITION_MOD_INPUT));
 
-		addInput(createPort<PJ301MPort>(Vec(15, 316), PortWidget::INPUT, module, Rings::STRUM_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(54, 316), PortWidget::INPUT, module, Rings::PITCH_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(92, 316), PortWidget::INPUT, module, Rings::IN_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(131, 316), PortWidget::OUTPUT, module, Rings::ODD_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(169, 316), PortWidget::OUTPUT, module, Rings::EVEN_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(15, 316), module, Rings::STRUM_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(54, 316), module, Rings::PITCH_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(92, 316), module, Rings::IN_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(131, 316), module, Rings::ODD_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(169, 316), module, Rings::EVEN_OUTPUT));
 
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));

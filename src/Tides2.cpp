@@ -84,9 +84,9 @@ struct Tides2 : Module {
 	int range;
 	tides2::OutputMode output_mode;
 	tides2::RampMode ramp_mode;
-	BooleanTrigger rangeTrigger;
-	BooleanTrigger modeTrigger;
-	BooleanTrigger rampTrigger;
+	dsp::BooleanTrigger rangeTrigger;
+	dsp::BooleanTrigger modeTrigger;
+	dsp::BooleanTrigger rampTrigger;
 
 	// Buffers
 	tides2::PolySlopeGenerator::OutputSample out[tides2::kBlockSize];
@@ -99,7 +99,22 @@ struct Tides2 : Module {
 	tides2::OutputMode previous_output_mode = tides2::OUTPUT_MODE_GATES;
 	uint8_t frame = 0;
 
-	Tides2() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Tides2() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Tides2::RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Tides2::MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Tides2::FREQUENCY_PARAM, -48, 48, 0.0);
+		configParam(Tides2::SHAPE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Tides2::RAMP_PARAM, 0.0, 1.0, 0.0);
+		configParam(Tides2::SMOOTHNESS_PARAM, 0.0, 1.0, 0.5);
+		configParam(Tides2::SLOPE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Tides2::SHIFT_PARAM, 0.0, 1.0, 0.5);
+		configParam(Tides2::SLOPE_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(Tides2::FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(Tides2::SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(Tides2::SHAPE_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(Tides2::SHIFT_CV_PARAM, -1.0, 1.0, 0.0);
+
 		poly_slope_generator.Init();
 		ratio_index_quantizer.Init();
 		memset(&out, 0, sizeof(out));
@@ -116,13 +131,13 @@ struct Tides2 : Module {
 	}
 
 	void onRandomize() override {
-		range = randomu32() % 3;
-		output_mode = (tides2::OutputMode) (randomu32() % 4);
-		ramp_mode = (tides2::RampMode) (randomu32() % 3);
+		range = random::u32() % 3;
+		output_mode = (tides2::OutputMode) (random::u32() % 4);
+		ramp_mode = (tides2::RampMode) (random::u32() % 3);
 	}
 
 	void onSampleRateChange() override {
-		ramp_extractor.Init(engineGetSampleRate(), 40.f / engineGetSampleRate());
+		ramp_extractor.Init(APP->engine->getSampleRate(), 40.f / APP->engine->getSampleRate());
 	}
 
 	json_t *dataToJson() override {
@@ -149,23 +164,23 @@ struct Tides2 : Module {
 			ramp_mode = (tides2::RampMode) json_integer_value(rampJ);
 	}
 
-	void step() override {
+	void process(const ProcessArgs &args) override {
 		// Switches
-		if (rangeTrigger.process(params[RANGE_PARAM].value > 0.f)) {
+		if (rangeTrigger.process(params[RANGE_PARAM].getValue() > 0.f)) {
 			range = (range + 1) % 3;
 		}
-		if (modeTrigger.process(params[MODE_PARAM].value > 0.f)) {
+		if (modeTrigger.process(params[MODE_PARAM].getValue() > 0.f)) {
 			output_mode = (tides2::OutputMode) ((output_mode + 1) % 4);
 		}
-		if (rampTrigger.process(params[RAMP_PARAM].value > 0.f)) {
+		if (rampTrigger.process(params[RAMP_PARAM].getValue() > 0.f)) {
 			ramp_mode = (tides2::RampMode) ((ramp_mode + 1) % 3);
 		}
 
 		// Input gates
-		trig_flags[frame] = stmlib::ExtractGateFlags(previous_trig_flag, inputs[TRIG_INPUT].value >= 1.7f);
+		trig_flags[frame] = stmlib::ExtractGateFlags(previous_trig_flag, inputs[TRIG_INPUT].getVoltage() >= 1.7f);
 		previous_trig_flag = trig_flags[frame];
 
-		clock_flags[frame] = stmlib::ExtractGateFlags(previous_clock_flag, inputs[CLOCK_INPUT].value >= 1.7f);
+		clock_flags[frame] = stmlib::ExtractGateFlags(previous_clock_flag, inputs[CLOCK_INPUT].getVoltage() >= 1.7f);
 		previous_clock_flag = clock_flags[frame];
 
 		// Process block
@@ -173,14 +188,14 @@ struct Tides2 : Module {
 			frame = 0;
 
 			tides2::Range range_mode = (range < 2) ? tides2::RANGE_CONTROL : tides2::RANGE_AUDIO;
-			float note = clamp(params[FREQUENCY_PARAM].value + 12.f * inputs[V_OCT_INPUT].value, -96.f, 96.f);
-			float fm = clamp(params[FREQUENCY_CV_PARAM].value * inputs[FREQUENCY_INPUT].value * 12.f, -96.f, 96.f);
+			float note = clamp(params[FREQUENCY_PARAM].getValue() + 12.f * inputs[V_OCT_INPUT].getVoltage(), -96.f, 96.f);
+			float fm = clamp(params[FREQUENCY_CV_PARAM].getValue() * inputs[FREQUENCY_INPUT].getVoltage() * 12.f, -96.f, 96.f);
 			float transposition = note + fm;
 
 			float ramp[tides2::kBlockSize];
 			float frequency;
 
-			if (inputs[CLOCK_INPUT].active) {
+			if (inputs[CLOCK_INPUT].isConnected()) {
 				if (must_reset_ramp_extractor) {
 					ramp_extractor.Reset();
 				}
@@ -196,15 +211,15 @@ struct Tides2 : Module {
 				must_reset_ramp_extractor = false;
 			}
 			else {
-				frequency = kRootScaled[range] / engineGetSampleRate() * stmlib::SemitonesToRatio(transposition);
+				frequency = kRootScaled[range] / args.sampleRate * stmlib::SemitonesToRatio(transposition);
 				must_reset_ramp_extractor = true;
 			}
 
 			// Get parameters
-			float slope = clamp(params[SLOPE_PARAM].value + cubic(params[SLOPE_CV_PARAM].value) * inputs[SLOPE_INPUT].value / 10.f, 0.f, 1.f);
-			float shape = clamp(params[SHAPE_PARAM].value + cubic(params[SHAPE_CV_PARAM].value) * inputs[SHAPE_INPUT].value / 10.f, 0.f, 1.f);
-			float smoothness = clamp(params[SMOOTHNESS_PARAM].value + cubic(params[SMOOTHNESS_CV_PARAM].value) * inputs[SMOOTHNESS_INPUT].value / 10.f, 0.f, 1.f);
-			float shift = clamp(params[SHIFT_PARAM].value + cubic(params[SHIFT_CV_PARAM].value) * inputs[SHIFT_INPUT].value / 10.f, 0.f, 1.f);
+			float slope = clamp(params[SLOPE_PARAM].getValue() + dsp::cubic(params[SLOPE_CV_PARAM].getValue()) * inputs[SLOPE_INPUT].getVoltage() / 10.f, 0.f, 1.f);
+			float shape = clamp(params[SHAPE_PARAM].getValue() + dsp::cubic(params[SHAPE_CV_PARAM].getValue()) * inputs[SHAPE_INPUT].getVoltage() / 10.f, 0.f, 1.f);
+			float smoothness = clamp(params[SMOOTHNESS_PARAM].getValue() + dsp::cubic(params[SMOOTHNESS_CV_PARAM].getValue()) * inputs[SMOOTHNESS_INPUT].getVoltage() / 10.f, 0.f, 1.f);
+			float shift = clamp(params[SHIFT_PARAM].getValue() + dsp::cubic(params[SHIFT_CV_PARAM].getValue()) * inputs[SHIFT_INPUT].getVoltage() / 10.f, 0.f, 1.f);
 
 			if (output_mode != previous_output_mode) {
 				poly_slope_generator.Reset();
@@ -222,7 +237,7 @@ struct Tides2 : Module {
 				smoothness,
 				shift,
 				trig_flags,
-				!inputs[TRIG_INPUT].active && inputs[CLOCK_INPUT].active ? ramp : NULL,
+				!inputs[TRIG_INPUT].isConnected() && inputs[CLOCK_INPUT].isConnected() ? ramp : NULL,
 				out,
 				tides2::kBlockSize);
 
@@ -238,35 +253,36 @@ struct Tides2 : Module {
 		// Outputs
 		for (int i = 0; i < 4; i++) {
 			float value = out[frame].channel[i];
-			outputs[OUT_OUTPUTS + i].value = value;
-			lights[OUTPUT_LIGHTS + i].setBrightnessSmooth(value);
+			outputs[OUT_OUTPUTS + i].setVoltage(value);
+			lights[OUTPUT_LIGHTS + i].setSmoothBrightness(value, args.sampleTime);
 		}
 	}
 };
 
 
 struct Tides2Widget : ModuleWidget {
-	Tides2Widget(Tides2 *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Tides2.svg")));
+	Tides2Widget(Tides2 *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Tides2.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParamCentered<TL1105>(mm2px(Vec(7.425, 16.15)), module, Tides2::RANGE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(63.325, 16.15)), module, Tides2::MODE_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(16.325, 33.449)), module, Tides2::FREQUENCY_PARAM, -48, 48, 0.0));
-		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(54.425, 33.449)), module, Tides2::SHAPE_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<TL1105>(mm2px(Vec(35.375, 38.699)), module, Tides2::RAMP_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(35.375, 55.549)), module, Tides2::SMOOTHNESS_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(11.575, 60.599)), module, Tides2::SLOPE_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(59.175, 60.599)), module, Tides2::SHIFT_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(9.276, 80.599)), module, Tides2::SLOPE_CV_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(22.324, 80.599)), module, Tides2::FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(35.375, 80.599)), module, Tides2::SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(48.425, 80.599)), module, Tides2::SHAPE_CV_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(61.475, 80.599)), module, Tides2::SHIFT_CV_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(7.425, 16.15)), module, Tides2::RANGE_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(63.325, 16.15)), module, Tides2::MODE_PARAM));
+		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(16.325, 33.449)), module, Tides2::FREQUENCY_PARAM));
+		addParam(createParamCentered<Rogan3PSWhite>(mm2px(Vec(54.425, 33.449)), module, Tides2::SHAPE_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(35.375, 38.699)), module, Tides2::RAMP_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(35.375, 55.549)), module, Tides2::SMOOTHNESS_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(11.575, 60.599)), module, Tides2::SLOPE_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(59.175, 60.599)), module, Tides2::SHIFT_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(9.276, 80.599)), module, Tides2::SLOPE_CV_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(22.324, 80.599)), module, Tides2::FREQUENCY_CV_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(35.375, 80.599)), module, Tides2::SMOOTHNESS_CV_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(48.425, 80.599)), module, Tides2::SHAPE_CV_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(61.475, 80.599)), module, Tides2::SHIFT_CV_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.775, 96.499)), module, Tides2::SLOPE_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(18.225, 96.499)), module, Tides2::FREQUENCY_INPUT));

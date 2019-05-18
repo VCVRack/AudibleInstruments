@@ -33,13 +33,35 @@ struct Braids : Module {
 	braids::VcoJitterSource jitter_source;
 	braids::SignatureWaveshaper ws;
 
-	SampleRateConverter<1> src;
-	DoubleRingBuffer<Frame<1>, 256> outputBuffer;
+	dsp::SampleRateConverter<1> src;
+	dsp::DoubleRingBuffer<dsp::Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
 	bool lowCpu = false;
 
-	Braids();
-	void step() override;
+	Braids() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
+		configParam(Braids::SHAPE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Braids::FINE_PARAM, -1.0, 1.0, 0.0);
+		configParam(Braids::COARSE_PARAM, -2.0, 2.0, 0.0);
+		configParam(Braids::FM_PARAM, -1.0, 1.0, 0.0);
+		configParam(Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Braids::MODULATION_PARAM, -1.0, 1.0, 0.0);
+		configParam(Braids::COLOR_PARAM, 0.0, 1.0, 0.5);
+
+		memset(&osc, 0, sizeof(osc));
+		osc.Init();
+		memset(&jitter_source, 0, sizeof(jitter_source));
+		jitter_source.Init();
+		memset(&ws, 0, sizeof(ws));
+		ws.Init(0x0000);
+		memset(&settings, 0, sizeof(settings));
+
+		// List of supported settings
+		settings.meta_modulation = 0;
+		settings.vco_drift = 0;
+		settings.signature = 0;
+	}
+	void process(const ProcessArgs &args) override;
 	void setShape(int shape);
 
 	json_t *dataToJson() override {
@@ -77,24 +99,9 @@ struct Braids : Module {
 };
 
 
-Braids::Braids() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS) {
-	memset(&osc, 0, sizeof(osc));
-	osc.Init();
-	memset(&jitter_source, 0, sizeof(jitter_source));
-	jitter_source.Init();
-	memset(&ws, 0, sizeof(ws));
-	ws.Init(0x0000);
-	memset(&settings, 0, sizeof(settings));
-
-	// List of supported settings
-	settings.meta_modulation = 0;
-	settings.vco_drift = 0;
-	settings.signature = 0;
-}
-
-void Braids::step() {
+void Braids::process(const ProcessArgs &args) {
 	// Trigger
-	bool trig = inputs[TRIG_INPUT].value >= 1.0;
+	bool trig = inputs[TRIG_INPUT].getVoltage() >= 1.0;
 	if (!lastTrig && trig) {
 		osc.Strike();
 	}
@@ -102,10 +109,10 @@ void Braids::step() {
 
 	// Render frames
 	if (outputBuffer.empty()) {
-		float fm = params[FM_PARAM].value * inputs[FM_INPUT].value;
+		float fm = params[FM_PARAM].getValue() * inputs[FM_INPUT].getVoltage();
 
 		// Set shape
-		int shape = roundf(params[SHAPE_PARAM].value * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
+		int shape = roundf(params[SHAPE_PARAM].getValue() * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 		if (settings.meta_modulation) {
 			shape += roundf(fm / 10.0 * braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 		}
@@ -115,18 +122,18 @@ void Braids::step() {
 		osc.set_shape((braids::MacroOscillatorShape) settings.shape);
 
 		// Set timbre/modulation
-		float timbre = params[TIMBRE_PARAM].value + params[MODULATION_PARAM].value * inputs[TIMBRE_INPUT].value / 5.0;
-		float modulation = params[COLOR_PARAM].value + inputs[COLOR_INPUT].value / 5.0;
+		float timbre = params[TIMBRE_PARAM].getValue() + params[MODULATION_PARAM].getValue() * inputs[TIMBRE_INPUT].getVoltage() / 5.0;
+		float modulation = params[COLOR_PARAM].getValue() + inputs[COLOR_INPUT].getVoltage() / 5.0;
 		int16_t param1 = rescale(clamp(timbre, 0.0f, 1.0f), 0.0f, 1.0f, 0, INT16_MAX);
 		int16_t param2 = rescale(clamp(modulation, 0.0f, 1.0f), 0.0f, 1.0f, 0, INT16_MAX);
 		osc.set_parameters(param1, param2);
 
 		// Set pitch
-		float pitchV = inputs[PITCH_INPUT].value + params[COARSE_PARAM].value + params[FINE_PARAM].value / 12.0;
+		float pitchV = inputs[PITCH_INPUT].getVoltage() + params[COARSE_PARAM].getValue() + params[FINE_PARAM].getValue() / 12.0;
 		if (!settings.meta_modulation)
 			pitchV += fm;
 		if (lowCpu)
-			pitchV += log2f(96000.f * engineGetSampleTime());
+			pitchV += log2f(96000.f * args.sampleTime);
 		int32_t pitch = (pitchV * 12.0 + 60) * 128;
 		pitch += jitter_source.Render(settings.vco_drift);
 		pitch = clamp(pitch, 0, 16383);
@@ -149,18 +156,18 @@ void Braids::step() {
 
 		if (lowCpu) {
 			for (int i = 0; i < 24; i++) {
-				Frame<1> f;
+				dsp::Frame<1> f;
 				f.samples[0] = render_buffer[i] / 32768.0;
 				outputBuffer.push(f);
 			}
 		}
 		else {
 			// Sample rate convert
-			Frame<1> in[24];
+			dsp::Frame<1> in[24];
 			for (int i = 0; i < 24; i++) {
 				in[i].samples[0] = render_buffer[i] / 32768.0;
 			}
-			src.setRates(96000, engineGetSampleRate());
+			src.setRates(96000, args.sampleRate);
 
 			int inLen = 24;
 			int outLen = outputBuffer.capacity();
@@ -171,8 +178,8 @@ void Braids::step() {
 
 	// Output
 	if (!outputBuffer.empty()) {
-		Frame<1> f = outputBuffer.shift();
-		outputs[OUT_OUTPUT].value = 5.0 * f.samples[0];
+		dsp::Frame<1> f = outputBuffer.shift();
+		outputs[OUT_OUTPUT].setVoltage(5.0 * f.samples[0]);
 	}
 }
 
@@ -233,33 +240,33 @@ struct BraidsDisplay : TransparentWidget {
 	std::shared_ptr<Font> font;
 
 	BraidsDisplay() {
-		font = Font::load(assetPlugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
 	}
 
-	void draw(NVGcontext *vg) override {
+	void draw(const DrawArgs &args) override {
 		int shape = module ? module->settings.shape : 0;
 
 		// Background
 		NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38);
 		NVGcolor borderColor = nvgRGB(0x10, 0x10, 0x10);
-		nvgBeginPath(vg);
-		nvgRoundedRect(vg, 0.0, 0.0, box.size.x, box.size.y, 5.0);
-		nvgFillColor(vg, backgroundColor);
-		nvgFill(vg);
-		nvgStrokeWidth(vg, 1.0);
-		nvgStrokeColor(vg, borderColor);
-		nvgStroke(vg);
+		nvgBeginPath(args.vg);
+		nvgRoundedRect(args.vg, 0.0, 0.0, box.size.x, box.size.y, 5.0);
+		nvgFillColor(args.vg, backgroundColor);
+		nvgFill(args.vg);
+		nvgStrokeWidth(args.vg, 1.0);
+		nvgStrokeColor(args.vg, borderColor);
+		nvgStroke(args.vg);
 
-		nvgFontSize(vg, 36);
-		nvgFontFaceId(vg, font->handle);
-		nvgTextLetterSpacing(vg, 2.5);
+		nvgFontSize(args.vg, 36);
+		nvgFontFaceId(args.vg, font->handle);
+		nvgTextLetterSpacing(args.vg, 2.5);
 
 		Vec textPos = Vec(10, 48);
 		NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
-		nvgFillColor(vg, nvgTransRGBA(textColor, 16));
-		nvgText(vg, textPos.x, textPos.y, "~~~~", NULL);
-		nvgFillColor(vg, textColor);
-		nvgText(vg, textPos.x, textPos.y, algo_values[shape], NULL);
+		nvgFillColor(args.vg, nvgTransRGBA(textColor, 16));
+		nvgText(args.vg, textPos.x, textPos.y, "~~~~", NULL);
+		nvgFillColor(args.vg, textColor);
+		nvgText(args.vg, textPos.x, textPos.y, algo_values[shape], NULL);
 	}
 };
 
@@ -291,8 +298,9 @@ struct BraidsLowCpuItem : MenuItem {
 
 
 struct BraidsWidget : ModuleWidget {
-	BraidsWidget(Braids *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Braids.svg")));
+	BraidsWidget(Braids *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Braids.svg")));
 
 		{
 			BraidsDisplay *display = new BraidsDisplay();
@@ -307,22 +315,22 @@ struct BraidsWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(210, 365)));
 
-		addParam(createParam<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM));
 
-		addParam(createParam<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
-		addParam(createParam<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM));
+		addParam(createParam<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM));
+		addParam(createParam<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM));
 
-		addParam(createParam<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-		addParam(createParam<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM));
+		addParam(createParam<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM));
+		addParam(createParam<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM));
 
-		addInput(createPort<PJ301MPort>(Vec(10, 316), PortWidget::INPUT, module, Braids::TRIG_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(47, 316), PortWidget::INPUT, module, Braids::PITCH_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(84, 316), PortWidget::INPUT, module, Braids::FM_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(122, 316), PortWidget::INPUT, module, Braids::TIMBRE_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(160, 316), PortWidget::INPUT, module, Braids::COLOR_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(205, 316), PortWidget::OUTPUT, module, Braids::OUT_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(10, 316), module, Braids::TRIG_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(47, 316), module, Braids::PITCH_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(84, 316), module, Braids::FM_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(122, 316), module, Braids::TIMBRE_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(160, 316), module, Braids::COLOR_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(205, 316), module, Braids::OUT_OUTPUT));
 	}
 
 	void appendContextMenu(Menu *menu) override {

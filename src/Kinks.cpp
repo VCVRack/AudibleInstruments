@@ -30,64 +30,66 @@ struct Kinks : Module {
 		NUM_LIGHTS
 	};
 
-	SchmittTrigger trigger;
+	dsp::SchmittTrigger trigger;
 	float sample = 0.0;
 
-	Kinks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
-	void step() override;
+	Kinks() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);}
+	void process(const ProcessArgs &args) override;
 };
 
 
-void Kinks::step() {
+void Kinks::process(const ProcessArgs &args) {
 	// Gaussian noise generator
-	float noise = 2.0 * randomNormal();
+	float noise = 2.0 * random::normal();
 
 	// S&H
-	if (trigger.process(inputs[TRIG_INPUT].value / 0.7)) {
-		sample = inputs[SH_INPUT].normalize(noise);
+	if (trigger.process(inputs[TRIG_INPUT].getVoltage() / 0.7)) {
+		sample = inputs[SH_INPUT].getNormalVoltage(noise);
 	}
 
 	// lights
-	lights[SIGN_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, inputs[SIGN_INPUT].value / 5.0));
-	lights[SIGN_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -inputs[SIGN_INPUT].value / 5.0));
-	float logicSum = inputs[LOGIC_A_INPUT].value + inputs[LOGIC_B_INPUT].value;
-	lights[LOGIC_POS_LIGHT].setBrightnessSmooth(fmaxf(0.0, logicSum / 5.0));
-	lights[LOGIC_NEG_LIGHT].setBrightnessSmooth(fmaxf(0.0, -logicSum / 5.0));
+	lights[SIGN_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inputs[SIGN_INPUT].getVoltage() / 5.0), args.sampleTime);
+	lights[SIGN_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inputs[SIGN_INPUT].getVoltage() / 5.0), args.sampleTime);
+	float logicSum = inputs[LOGIC_A_INPUT].getVoltage() + inputs[LOGIC_B_INPUT].getVoltage();
+	lights[LOGIC_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, logicSum / 5.0), args.sampleTime);
+	lights[LOGIC_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -logicSum / 5.0), args.sampleTime);
 	lights[SH_POS_LIGHT].setBrightness(fmaxf(0.0, sample / 5.0));
 	lights[SH_NEG_LIGHT].setBrightness(fmaxf(0.0, -sample / 5.0));
 
 	// outputs
-	outputs[INVERT_OUTPUT].value = -inputs[SIGN_INPUT].value;
-	outputs[HALF_RECTIFY_OUTPUT].value = fmaxf(0.0, inputs[SIGN_INPUT].value);
-	outputs[FULL_RECTIFY_OUTPUT].value = fabsf(inputs[SIGN_INPUT].value);
-	outputs[MAX_OUTPUT].value = fmaxf(inputs[LOGIC_A_INPUT].value, inputs[LOGIC_B_INPUT].value);
-	outputs[MIN_OUTPUT].value = fminf(inputs[LOGIC_A_INPUT].value, inputs[LOGIC_B_INPUT].value);
-	outputs[NOISE_OUTPUT].value = noise;
-	outputs[SH_OUTPUT].value = sample;
+	outputs[INVERT_OUTPUT].setVoltage(-inputs[SIGN_INPUT].getVoltage());
+	outputs[HALF_RECTIFY_OUTPUT].setVoltage(fmaxf(0.0, inputs[SIGN_INPUT].getVoltage()));
+	outputs[FULL_RECTIFY_OUTPUT].setVoltage(fabsf(inputs[SIGN_INPUT].getVoltage()));
+	outputs[MAX_OUTPUT].setVoltage(fmaxf(inputs[LOGIC_A_INPUT].getVoltage(), inputs[LOGIC_B_INPUT].getVoltage()));
+	outputs[MIN_OUTPUT].setVoltage(fminf(inputs[LOGIC_A_INPUT].getVoltage(), inputs[LOGIC_B_INPUT].getVoltage()));
+	outputs[NOISE_OUTPUT].setVoltage(noise);
+	outputs[SH_OUTPUT].setVoltage(sample);
 }
 
 
 struct KinksWidget : ModuleWidget {
-	KinksWidget(Kinks *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Kinks.svg")));
+	KinksWidget(Kinks *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Kinks.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 
-		addInput(createPort<PJ301MPort>(Vec(4, 75), PortWidget::INPUT, module, Kinks::SIGN_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(31, 75), PortWidget::OUTPUT, module, Kinks::INVERT_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(4, 113), PortWidget::OUTPUT, module, Kinks::HALF_RECTIFY_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(31, 113), PortWidget::OUTPUT, module, Kinks::FULL_RECTIFY_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(4, 75), module, Kinks::SIGN_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(31, 75), module, Kinks::INVERT_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(4, 113), module, Kinks::HALF_RECTIFY_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(31, 113), module, Kinks::FULL_RECTIFY_OUTPUT));
 
-		addInput(createPort<PJ301MPort>(Vec(4, 177), PortWidget::INPUT, module, Kinks::LOGIC_A_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(31, 177), PortWidget::INPUT, module, Kinks::LOGIC_B_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(4, 214), PortWidget::OUTPUT, module, Kinks::MAX_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(31, 214), PortWidget::OUTPUT, module, Kinks::MIN_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(4, 177), module, Kinks::LOGIC_A_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(31, 177), module, Kinks::LOGIC_B_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(4, 214), module, Kinks::MAX_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(31, 214), module, Kinks::MIN_OUTPUT));
 
-		addInput(createPort<PJ301MPort>(Vec(4, 278), PortWidget::INPUT, module, Kinks::SH_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(31, 278), PortWidget::INPUT, module, Kinks::TRIG_INPUT));
-		addOutput(createPort<PJ301MPort>(Vec(4, 316), PortWidget::OUTPUT, module, Kinks::NOISE_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(31, 316), PortWidget::OUTPUT, module, Kinks::SH_OUTPUT));
+		addInput(createInput<PJ301MPort>(Vec(4, 278), module, Kinks::SH_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(31, 278), module, Kinks::TRIG_INPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(4, 316), module, Kinks::NOISE_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(31, 316), module, Kinks::SH_OUTPUT));
 
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 59), module, Kinks::SIGN_POS_LIGHT));
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(11, 161), module, Kinks::LOGIC_POS_LIGHT));

@@ -46,11 +46,11 @@ struct Frames : Module {
 	bool poly_lfo_mode = false;
 	uint16_t lastControls[4] = {};
 
-	SchmittTrigger addTrigger;
-	SchmittTrigger delTrigger;
+	dsp::SchmittTrigger addTrigger;
+	dsp::SchmittTrigger delTrigger;
 
 	Frames();
-	void step() override;
+	void process(const ProcessArgs &args) override;
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -130,7 +130,18 @@ struct Frames : Module {
 };
 
 
-Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+Frames::Frames() {
+	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	configParam(Frames::GAIN1_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::GAIN2_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::GAIN3_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::GAIN4_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::FRAME_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::MODULATION_PARAM, -1.0, 1.0, 0.0);
+	configParam(Frames::ADD_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::DEL_PARAM, 0.0, 1.0, 0.0);
+	configParam(Frames::OFFSET_PARAM, 0.0, 1.0, 0.0);
+
 	memset(&keyframer, 0, sizeof(keyframer));
 	keyframer.Init();
 	memset(&poly_lfo, 0, sizeof(poly_lfo));
@@ -140,15 +151,15 @@ Frames::Frames() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
 }
 
 
-void Frames::step() {
+void Frames::process(const ProcessArgs &args) {
 	// Set gain and timestamp knobs
 	uint16_t controls[4];
 	for (int i = 0; i < 4; i++) {
-		controls[i] = params[GAIN1_PARAM + i].value * 65535.0;
+		controls[i] = params[GAIN1_PARAM + i].getValue() * 65535.0;
 	}
 
-	int32_t timestamp = params[FRAME_PARAM].value * 65535.0;
-	int32_t timestampMod = timestamp + params[MODULATION_PARAM].value * inputs[FRAME_INPUT].value / 10.0 * 65535.0;
+	int32_t timestamp = params[FRAME_PARAM].getValue() * 65535.0;
+	int32_t timestampMod = timestamp + params[MODULATION_PARAM].getValue() * inputs[FRAME_INPUT].getVoltage() / 10.0 * 65535.0;
 	timestamp = clamp(timestamp, 0, 65535);
 	timestampMod = clamp(timestampMod, 0, 65535);
 	int16_t nearestIndex = -1;
@@ -182,12 +193,12 @@ void Frames::step() {
 			}
 		}
 
-		if (addTrigger.process(params[ADD_PARAM].value)) {
+		if (addTrigger.process(params[ADD_PARAM].getValue())) {
 			if (nearestIndex < 0) {
 				keyframer.AddKeyframe(timestamp, controls);
 			}
 		}
-		if (delTrigger.process(params[DEL_PARAM].value)) {
+		if (delTrigger.process(params[DEL_PARAM].getValue())) {
 			if (nearestIndex >= 0) {
 				int32_t nearestTimestamp = keyframer.keyframe(nearestIndex).timestamp;
 				keyframer.RemoveKeyframe(nearestTimestamp);
@@ -221,29 +232,29 @@ void Frames::step() {
 	}
 
 	// Get inputs
-	float all = ((int)params[OFFSET_PARAM].value == 1) ? 10.0 : 0.0;
-	if (inputs[ALL_INPUT].active) {
-		all = inputs[ALL_INPUT].value;
+	float all = ((int)params[OFFSET_PARAM].getValue() == 1) ? 10.0 : 0.0;
+	if (inputs[ALL_INPUT].isConnected()) {
+		all = inputs[ALL_INPUT].getVoltage();
 	}
 
 	float ins[4];
 	for (int i = 0; i < 4; i++) {
-		ins[i] = inputs[IN1_INPUT + i].normalize(all) * gains[i];
+		ins[i] = inputs[IN1_INPUT + i].getNormalVoltage(all) * gains[i];
 	}
 
 	// Set outputs
 	float mix = 0.0;
 
 	for (int i = 0; i < 4; i++) {
-		if (outputs[OUT1_OUTPUT + i].active) {
-			outputs[OUT1_OUTPUT + i].value = ins[i];
+		if (outputs[OUT1_OUTPUT + i].isConnected()) {
+			outputs[OUT1_OUTPUT + i].setVoltage(ins[i]);
 		}
 		else {
 			mix += ins[i];
 		}
 	}
 
-	outputs[MIX_OUTPUT].value = clamp(mix / 2.0, -10.0f, 10.0f);
+	outputs[MIX_OUTPUT].setVoltage(clamp(mix / 2.0, -10.0f, 10.0f));
 
 	// Set lights
 	for (int i = 0; i < 4; i++) {
@@ -275,44 +286,45 @@ void Frames::step() {
 
 struct CKSSRot : SVGSwitch {
 	CKSSRot() {
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/CKSS_rot_0.svg")));
-		addFrame(SVG::load(assetPlugin(pluginInstance, "res/CKSS_rot_1.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/CKSS_rot_0.svg")));
+		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/CKSS_rot_1.svg")));
 	}
 };
 
 
 struct FramesWidget : ModuleWidget {
-	FramesWidget(Frames *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Frames.svg")));
+	FramesWidget(Frames *module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Frames.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-		addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
-		addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
-		addParam(createParam<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM));
+		addParam(createParam<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM));
+		addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM));
+		addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM));
+		addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM));
+		addParam(createParam<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM));
 
-		addInput(createPort<PJ301MPort>(Vec(16, 273), PortWidget::INPUT, module, Frames::ALL_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(59, 273), PortWidget::INPUT, module, Frames::IN1_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(102, 273), PortWidget::INPUT, module, Frames::IN2_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(145, 273), PortWidget::INPUT, module, Frames::IN3_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(188, 273), PortWidget::INPUT, module, Frames::IN4_INPUT));
-		addInput(createPort<PJ301MPort>(Vec(231, 273), PortWidget::INPUT, module, Frames::FRAME_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(16, 273), module, Frames::ALL_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(59, 273), module, Frames::IN1_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(102, 273), module, Frames::IN2_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(145, 273), module, Frames::IN3_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(188, 273), module, Frames::IN4_INPUT));
+		addInput(createInput<PJ301MPort>(Vec(231, 273), module, Frames::FRAME_INPUT));
 
-		addOutput(createPort<PJ301MPort>(Vec(16, 315), PortWidget::OUTPUT, module, Frames::MIX_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(59, 315), PortWidget::OUTPUT, module, Frames::OUT1_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(102, 315), PortWidget::OUTPUT, module, Frames::OUT2_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(145, 315), PortWidget::OUTPUT, module, Frames::OUT3_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(188, 315), PortWidget::OUTPUT, module, Frames::OUT4_OUTPUT));
-		addOutput(createPort<PJ301MPort>(Vec(231, 315), PortWidget::OUTPUT, module, Frames::FRAME_STEP_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(16, 315), module, Frames::MIX_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(59, 315), module, Frames::OUT1_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(102, 315), module, Frames::OUT2_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(145, 315), module, Frames::OUT3_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(188, 315), module, Frames::OUT4_OUTPUT));
+		addOutput(createOutput<PJ301MPort>(Vec(231, 315), module, Frames::FRAME_STEP_OUTPUT));
 
 		addChild(createLight<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
 		addChild(createLight<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
@@ -327,9 +339,6 @@ struct FramesWidget : ModuleWidget {
 		};
 		addChild(createLight<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
 	}
-
-
-
 
 	void appendContextMenu(Menu *menu) override {
 		Frames *frames = dynamic_cast<Frames*>(module);
