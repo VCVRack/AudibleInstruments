@@ -12,6 +12,7 @@ void init(rack::Plugin *p) {
 	p->addModel(modelPlaits);
 	p->addModel(modelElements);
 	p->addModel(modelTides);
+	p->addModel(modelTides2);
 	p->addModel(modelClouds);
 	p->addModel(modelWarps);
 	p->addModel(modelRings);

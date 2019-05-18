@@ -52,6 +52,10 @@ SOURCES += eurorack/rings/resources.cc
 SOURCES += eurorack/tides/generator.cc
 SOURCES += eurorack/tides/resources.cc
 
+SOURCES += eurorack/tides2/poly_slope_generator.cc
+SOURCES += eurorack/tides2/ramp_extractor.cc
+SOURCES += eurorack/tides2/resources.cc
+
 SOURCES += eurorack/warps/dsp/modulator.cc
 SOURCES += eurorack/warps/dsp/oscillator.cc
 SOURCES += eurorack/warps/dsp/vocoder.cc
