@@ -34,38 +34,37 @@ struct Kinks : Module {
 	float sample = 0.0;
 
 	Kinks() {
-		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);}
-	void process(const ProcessArgs &args) override;
-};
-
-
-void Kinks::process(const ProcessArgs &args) {
-	// Gaussian noise generator
-	float noise = 2.0 * random::normal();
-
-	// S&H
-	if (trigger.process(inputs[TRIG_INPUT].getVoltage() / 0.7)) {
-		sample = inputs[SH_INPUT].getNormalVoltage(noise);
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 	}
 
-	// lights
-	lights[SIGN_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inputs[SIGN_INPUT].getVoltage() / 5.0), args.sampleTime);
-	lights[SIGN_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inputs[SIGN_INPUT].getVoltage() / 5.0), args.sampleTime);
-	float logicSum = inputs[LOGIC_A_INPUT].getVoltage() + inputs[LOGIC_B_INPUT].getVoltage();
-	lights[LOGIC_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, logicSum / 5.0), args.sampleTime);
-	lights[LOGIC_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -logicSum / 5.0), args.sampleTime);
-	lights[SH_POS_LIGHT].setBrightness(fmaxf(0.0, sample / 5.0));
-	lights[SH_NEG_LIGHT].setBrightness(fmaxf(0.0, -sample / 5.0));
+	void process(const ProcessArgs &args) {
+		// Gaussian noise generator
+		float noise = 2.0 * random::normal();
 
-	// outputs
-	outputs[INVERT_OUTPUT].setVoltage(-inputs[SIGN_INPUT].getVoltage());
-	outputs[HALF_RECTIFY_OUTPUT].setVoltage(fmaxf(0.0, inputs[SIGN_INPUT].getVoltage()));
-	outputs[FULL_RECTIFY_OUTPUT].setVoltage(fabsf(inputs[SIGN_INPUT].getVoltage()));
-	outputs[MAX_OUTPUT].setVoltage(fmaxf(inputs[LOGIC_A_INPUT].getVoltage(), inputs[LOGIC_B_INPUT].getVoltage()));
-	outputs[MIN_OUTPUT].setVoltage(fminf(inputs[LOGIC_A_INPUT].getVoltage(), inputs[LOGIC_B_INPUT].getVoltage()));
-	outputs[NOISE_OUTPUT].setVoltage(noise);
-	outputs[SH_OUTPUT].setVoltage(sample);
-}
+		// S&H
+		if (trigger.process(inputs[TRIG_INPUT].getVoltage() / 0.7)) {
+			sample = inputs[SH_INPUT].getNormalVoltage(noise);
+		}
+
+		// lights
+		lights[SIGN_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inputs[SIGN_INPUT].getVoltage() / 5.0), args.sampleTime);
+		lights[SIGN_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inputs[SIGN_INPUT].getVoltage() / 5.0), args.sampleTime);
+		float logicSum = inputs[LOGIC_A_INPUT].getVoltage() + inputs[LOGIC_B_INPUT].getVoltage();
+		lights[LOGIC_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, logicSum / 5.0), args.sampleTime);
+		lights[LOGIC_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -logicSum / 5.0), args.sampleTime);
+		lights[SH_POS_LIGHT].setBrightness(fmaxf(0.0, sample / 5.0));
+		lights[SH_NEG_LIGHT].setBrightness(fmaxf(0.0, -sample / 5.0));
+
+		// outputs
+		outputs[INVERT_OUTPUT].setVoltage(-inputs[SIGN_INPUT].getVoltage());
+		outputs[HALF_RECTIFY_OUTPUT].setVoltage(fmaxf(0.0, inputs[SIGN_INPUT].getVoltage()));
+		outputs[FULL_RECTIFY_OUTPUT].setVoltage(fabsf(inputs[SIGN_INPUT].getVoltage()));
+		outputs[MAX_OUTPUT].setVoltage(fmaxf(inputs[LOGIC_A_INPUT].getVoltage(), inputs[LOGIC_B_INPUT].getVoltage()));
+		outputs[MIN_OUTPUT].setVoltage(fminf(inputs[LOGIC_A_INPUT].getVoltage(), inputs[LOGIC_B_INPUT].getVoltage()));
+		outputs[NOISE_OUTPUT].setVoltage(noise);
+		outputs[SH_OUTPUT].setVoltage(sample);
+	}
+};
 
 
 struct KinksWidget : ModuleWidget {

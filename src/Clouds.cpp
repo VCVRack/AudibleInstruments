@@ -65,9 +65,164 @@ struct Clouds : Module {
 	clouds::PlaybackMode playback;
 	int quality = 0;
 
-	Clouds();
-	~Clouds();
-	void process(const ProcessArgs &args) override;
+	Clouds() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Clouds::POSITION_PARAM, 0.0, 1.0, 0.5);
+		configParam(Clouds::SIZE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Clouds::PITCH_PARAM, -2.0, 2.0, 0.0);
+		configParam(Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5);
+		configParam(Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5);
+		configParam(Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
+		configParam(Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
+		configParam(Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
+		configParam(Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
+		configParam(Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Clouds::MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(Clouds::LOAD_PARAM, 0.0, 1.0, 0.0);
+
+		const int memLen = 118784;
+		const int ccmLen = 65536 - 128;
+		block_mem = new uint8_t[memLen]();
+		block_ccm = new uint8_t[ccmLen]();
+		processor = new clouds::GranularProcessor();
+		memset(processor, 0, sizeof(*processor));
+
+		processor->Init(block_mem, memLen, block_ccm, ccmLen);
+		onReset();
+	}
+
+	~Clouds() {
+		delete processor;
+		delete[] block_mem;
+		delete[] block_ccm;
+	}
+
+	void process(const ProcessArgs &args) {
+		// Get input
+		dsp::Frame<2> inputFrame = {};
+		if (!inputBuffer.full()) {
+			inputFrame.samples[0] = inputs[IN_L_INPUT].getVoltage() * params[IN_GAIN_PARAM].getValue() / 5.0;
+			inputFrame.samples[1] = inputs[IN_R_INPUT].isConnected() ? inputs[IN_R_INPUT].getVoltage() * params[IN_GAIN_PARAM].getValue() / 5.0 : inputFrame.samples[0];
+			inputBuffer.push(inputFrame);
+		}
+
+		if (freezeTrigger.process(params[FREEZE_PARAM].getValue())) {
+			freeze ^= true;
+		}
+		if (blendTrigger.process(params[MODE_PARAM].getValue())) {
+			blendMode = (blendMode + 1) % 4;
+		}
+
+		// Trigger
+		if (inputs[TRIG_INPUT].getVoltage() >= 1.0) {
+			triggered = true;
+		}
+
+		// Render frames
+		if (outputBuffer.empty()) {
+			clouds::ShortFrame input[32] = {};
+			// Convert input buffer
+			{
+				inputSrc.setRates(args.sampleRate, 32000);
+				dsp::Frame<2> inputFrames[32];
+				int inLen = inputBuffer.size();
+				int outLen = 32;
+				inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
+				inputBuffer.startIncr(inLen);
+
+				// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
+				for (int i = 0; i < outLen; i++) {
+					input[i].l = clamp(inputFrames[i].samples[0] * 32767.0f, -32768.0f, 32767.0f);
+					input[i].r = clamp(inputFrames[i].samples[1] * 32767.0f, -32768.0f, 32767.0f);
+				}
+			}
+
+			// Set up processor
+			processor->set_playback_mode(playback);
+			processor->set_quality(quality);
+			processor->Prepare();
+
+			clouds::Parameters *p = processor->mutable_parameters();
+			p->trigger = triggered;
+			p->gate = triggered;
+			p->freeze = freeze || (inputs[FREEZE_INPUT].getVoltage() >= 1.0);
+			p->position = clamp(params[POSITION_PARAM].getValue() + inputs[POSITION_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+			p->size = clamp(params[SIZE_PARAM].getValue() + inputs[SIZE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+			p->pitch = clamp((params[PITCH_PARAM].getValue() + inputs[PITCH_INPUT].getVoltage()) * 12.0f, -48.0f, 48.0f);
+			p->density = clamp(params[DENSITY_PARAM].getValue() + inputs[DENSITY_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+			p->texture = clamp(params[TEXTURE_PARAM].getValue() + inputs[TEXTURE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+			p->dry_wet = params[BLEND_PARAM].getValue();
+			p->stereo_spread = params[SPREAD_PARAM].getValue();
+			p->feedback = params[FEEDBACK_PARAM].getValue();
+			// TODO
+			// Why doesn't dry audio get reverbed?
+			p->reverb = params[REVERB_PARAM].getValue();
+			float blend = inputs[BLEND_INPUT].getVoltage() / 5.0f;
+			switch (blendMode) {
+				case 0:
+					p->dry_wet += blend;
+					p->dry_wet = clamp(p->dry_wet, 0.0f, 1.0f);
+					break;
+				case 1:
+					p->stereo_spread += blend;
+					p->stereo_spread = clamp(p->stereo_spread, 0.0f, 1.0f);
+					break;
+				case 2:
+					p->feedback += blend;
+					p->feedback = clamp(p->feedback, 0.0f, 1.0f);
+					break;
+				case 3:
+					p->reverb += blend;
+					p->reverb = clamp(p->reverb, 0.0f, 1.0f);
+					break;
+			}
+
+			clouds::ShortFrame output[32];
+			processor->Process(input, output, 32);
+
+			// Convert output buffer
+			{
+				dsp::Frame<2> outputFrames[32];
+				for (int i = 0; i < 32; i++) {
+					outputFrames[i].samples[0] = output[i].l / 32768.0;
+					outputFrames[i].samples[1] = output[i].r / 32768.0;
+				}
+
+				outputSrc.setRates(32000, args.sampleRate);
+				int inLen = 32;
+				int outLen = outputBuffer.capacity();
+				outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
+				outputBuffer.endIncr(outLen);
+			}
+
+			triggered = false;
+		}
+
+		// Set output
+		dsp::Frame<2> outputFrame = {};
+		if (!outputBuffer.empty()) {
+			outputFrame = outputBuffer.shift();
+			outputs[OUT_L_OUTPUT].setVoltage(5.0 * outputFrame.samples[0]);
+			outputs[OUT_R_OUTPUT].setVoltage(5.0 * outputFrame.samples[1]);
+		}
+
+		// Lights
+		clouds::Parameters *p = processor->mutable_parameters();
+		dsp::VuMeter vuMeter;
+		vuMeter.dBInterval = 6.0;
+		dsp::Frame<2> lightFrame = p->freeze ? outputFrame : inputFrame;
+		vuMeter.setValue(fmaxf(fabsf(lightFrame.samples[0]), fabsf(lightFrame.samples[1])));
+		lights[FREEZE_LIGHT].setBrightness(p->freeze ? 0.75 : 0.0);
+		lights[MIX_GREEN_LIGHT].setSmoothBrightness(vuMeter.getBrightness(3), args.sampleTime);
+		lights[PAN_GREEN_LIGHT].setSmoothBrightness(vuMeter.getBrightness(2), args.sampleTime);
+		lights[FEEDBACK_GREEN_LIGHT].setSmoothBrightness(vuMeter.getBrightness(1), args.sampleTime);
+		lights[REVERB_GREEN_LIGHT].setBrightness(0.0);
+		lights[MIX_RED_LIGHT].setBrightness(0.0);
+		lights[PAN_RED_LIGHT].setBrightness(0.0);
+		lights[FEEDBACK_RED_LIGHT].setSmoothBrightness(vuMeter.getBrightness(1), args.sampleTime);
+		lights[REVERB_RED_LIGHT].setSmoothBrightness(vuMeter.getBrightness(0), args.sampleTime);
+	}
 
 	void onReset() override {
 		freeze = false;
@@ -103,167 +258,6 @@ struct Clouds : Module {
 		}
 	}
 };
-
-
-Clouds::Clouds() {
-	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-	configParam(Clouds::POSITION_PARAM, 0.0, 1.0, 0.5);
-	configParam(Clouds::SIZE_PARAM, 0.0, 1.0, 0.5);
-	configParam(Clouds::PITCH_PARAM, -2.0, 2.0, 0.0);
-	configParam(Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5);
-	configParam(Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5);
-	configParam(Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5);
-	configParam(Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
-	configParam(Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
-	configParam(Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
-	configParam(Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
-	configParam(Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0);
-	configParam(Clouds::MODE_PARAM, 0.0, 1.0, 0.0);
-	configParam(Clouds::LOAD_PARAM, 0.0, 1.0, 0.0);
-
-	const int memLen = 118784;
-	const int ccmLen = 65536 - 128;
-	block_mem = new uint8_t[memLen]();
-	block_ccm = new uint8_t[ccmLen]();
-	processor = new clouds::GranularProcessor();
-	memset(processor, 0, sizeof(*processor));
-
-	processor->Init(block_mem, memLen, block_ccm, ccmLen);
-	onReset();
-}
-
-Clouds::~Clouds() {
-	delete processor;
-	delete[] block_mem;
-	delete[] block_ccm;
-}
-
-void Clouds::process(const ProcessArgs &args) {
-	// Get input
-	dsp::Frame<2> inputFrame = {};
-	if (!inputBuffer.full()) {
-		inputFrame.samples[0] = inputs[IN_L_INPUT].getVoltage() * params[IN_GAIN_PARAM].getValue() / 5.0;
-		inputFrame.samples[1] = inputs[IN_R_INPUT].isConnected() ? inputs[IN_R_INPUT].getVoltage() * params[IN_GAIN_PARAM].getValue() / 5.0 : inputFrame.samples[0];
-		inputBuffer.push(inputFrame);
-	}
-
-	if (freezeTrigger.process(params[FREEZE_PARAM].getValue())) {
-		freeze ^= true;
-	}
-	if (blendTrigger.process(params[MODE_PARAM].getValue())) {
-		blendMode = (blendMode + 1) % 4;
-	}
-
-	// Trigger
-	if (inputs[TRIG_INPUT].getVoltage() >= 1.0) {
-		triggered = true;
-	}
-
-	// Render frames
-	if (outputBuffer.empty()) {
-		clouds::ShortFrame input[32] = {};
-		// Convert input buffer
-		{
-			inputSrc.setRates(args.sampleRate, 32000);
-			dsp::Frame<2> inputFrames[32];
-			int inLen = inputBuffer.size();
-			int outLen = 32;
-			inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
-			inputBuffer.startIncr(inLen);
-
-			// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
-			for (int i = 0; i < outLen; i++) {
-				input[i].l = clamp(inputFrames[i].samples[0] * 32767.0f, -32768.0f, 32767.0f);
-				input[i].r = clamp(inputFrames[i].samples[1] * 32767.0f, -32768.0f, 32767.0f);
-			}
-		}
-
-		// Set up processor
-		processor->set_playback_mode(playback);
-		processor->set_quality(quality);
-		processor->Prepare();
-
-		clouds::Parameters *p = processor->mutable_parameters();
-		p->trigger = triggered;
-		p->gate = triggered;
-		p->freeze = freeze || (inputs[FREEZE_INPUT].getVoltage() >= 1.0);
-		p->position = clamp(params[POSITION_PARAM].getValue() + inputs[POSITION_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
-		p->size = clamp(params[SIZE_PARAM].getValue() + inputs[SIZE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
-		p->pitch = clamp((params[PITCH_PARAM].getValue() + inputs[PITCH_INPUT].getVoltage()) * 12.0f, -48.0f, 48.0f);
-		p->density = clamp(params[DENSITY_PARAM].getValue() + inputs[DENSITY_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
-		p->texture = clamp(params[TEXTURE_PARAM].getValue() + inputs[TEXTURE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
-		p->dry_wet = params[BLEND_PARAM].getValue();
-		p->stereo_spread = params[SPREAD_PARAM].getValue();
-		p->feedback = params[FEEDBACK_PARAM].getValue();
-		// TODO
-		// Why doesn't dry audio get reverbed?
-		p->reverb = params[REVERB_PARAM].getValue();
-		float blend = inputs[BLEND_INPUT].getVoltage() / 5.0f;
-		switch (blendMode) {
-			case 0:
-				p->dry_wet += blend;
-				p->dry_wet = clamp(p->dry_wet, 0.0f, 1.0f);
-				break;
-			case 1:
-				p->stereo_spread += blend;
-				p->stereo_spread = clamp(p->stereo_spread, 0.0f, 1.0f);
-				break;
-			case 2:
-				p->feedback += blend;
-				p->feedback = clamp(p->feedback, 0.0f, 1.0f);
-				break;
-			case 3:
-				p->reverb += blend;
-				p->reverb = clamp(p->reverb, 0.0f, 1.0f);
-				break;
-		}
-
-		clouds::ShortFrame output[32];
-		processor->Process(input, output, 32);
-
-		// Convert output buffer
-		{
-			dsp::Frame<2> outputFrames[32];
-			for (int i = 0; i < 32; i++) {
-				outputFrames[i].samples[0] = output[i].l / 32768.0;
-				outputFrames[i].samples[1] = output[i].r / 32768.0;
-			}
-
-			outputSrc.setRates(32000, args.sampleRate);
-			int inLen = 32;
-			int outLen = outputBuffer.capacity();
-			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
-			outputBuffer.endIncr(outLen);
-		}
-
-		triggered = false;
-	}
-
-	// Set output
-	dsp::Frame<2> outputFrame = {};
-	if (!outputBuffer.empty()) {
-		outputFrame = outputBuffer.shift();
-		outputs[OUT_L_OUTPUT].setVoltage(5.0 * outputFrame.samples[0]);
-		outputs[OUT_R_OUTPUT].setVoltage(5.0 * outputFrame.samples[1]);
-	}
-
-	// Lights
-	clouds::Parameters *p = processor->mutable_parameters();
-	dsp::VuMeter vuMeter;
-	vuMeter.dBInterval = 6.0;
-	dsp::Frame<2> lightFrame = p->freeze ? outputFrame : inputFrame;
-	vuMeter.setValue(fmaxf(fabsf(lightFrame.samples[0]), fabsf(lightFrame.samples[1])));
-	lights[FREEZE_LIGHT].setBrightness(p->freeze ? 0.75 : 0.0);
-	lights[MIX_GREEN_LIGHT].setSmoothBrightness(vuMeter.getBrightness(3), args.sampleTime);
-	lights[PAN_GREEN_LIGHT].setSmoothBrightness(vuMeter.getBrightness(2), args.sampleTime);
-	lights[FEEDBACK_GREEN_LIGHT].setSmoothBrightness(vuMeter.getBrightness(1), args.sampleTime);
-	lights[REVERB_GREEN_LIGHT].setBrightness(0.0);
-	lights[MIX_RED_LIGHT].setBrightness(0.0);
-	lights[PAN_RED_LIGHT].setBrightness(0.0);
-	lights[FEEDBACK_RED_LIGHT].setSmoothBrightness(vuMeter.getBrightness(1), args.sampleTime);
-	lights[REVERB_RED_LIGHT].setSmoothBrightness(vuMeter.getBrightness(0), args.sampleTime);
-}
-
 
 
 struct FreezeLight : YellowLight {

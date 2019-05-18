@@ -31,30 +31,29 @@ struct Links : Module {
 	};
 
 	Links() {
-		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);}
-	void process(const ProcessArgs &args) override;
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	}
+
+	void process(const ProcessArgs &args) {
+		float inA = inputs[A1_INPUT].getVoltage();
+		float inB = inputs[B1_INPUT].getVoltage() + inputs[B2_INPUT].getVoltage();
+		float inC = inputs[C1_INPUT].getVoltage() + inputs[C2_INPUT].getVoltage() + inputs[C3_INPUT].getVoltage();
+
+		outputs[A1_OUTPUT].setVoltage(inA);
+		outputs[A2_OUTPUT].setVoltage(inA);
+		outputs[A3_OUTPUT].setVoltage(inA);
+		outputs[B1_OUTPUT].setVoltage(inB);
+		outputs[B2_OUTPUT].setVoltage(inB);
+		outputs[C1_OUTPUT].setVoltage(inC);
+
+		lights[A_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inA / 5.0), args.sampleTime);
+		lights[A_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inA / 5.0), args.sampleTime);
+		lights[B_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inB / 5.0), args.sampleTime);
+		lights[B_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inB / 5.0), args.sampleTime);
+		lights[C_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inC / 5.0), args.sampleTime);
+		lights[C_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inC / 5.0), args.sampleTime);
+	}
 };
-
-
-void Links::process(const ProcessArgs &args) {
-	float inA = inputs[A1_INPUT].getVoltage();
-	float inB = inputs[B1_INPUT].getVoltage() + inputs[B2_INPUT].getVoltage();
-	float inC = inputs[C1_INPUT].getVoltage() + inputs[C2_INPUT].getVoltage() + inputs[C3_INPUT].getVoltage();
-
-	outputs[A1_OUTPUT].setVoltage(inA);
-	outputs[A2_OUTPUT].setVoltage(inA);
-	outputs[A3_OUTPUT].setVoltage(inA);
-	outputs[B1_OUTPUT].setVoltage(inB);
-	outputs[B2_OUTPUT].setVoltage(inB);
-	outputs[C1_OUTPUT].setVoltage(inC);
-
-	lights[A_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inA / 5.0), args.sampleTime);
-	lights[A_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inA / 5.0), args.sampleTime);
-	lights[B_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inB / 5.0), args.sampleTime);
-	lights[B_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inB / 5.0), args.sampleTime);
-	lights[C_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inC / 5.0), args.sampleTime);
-	lights[C_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inC / 5.0), args.sampleTime);
-}
 
 
 struct LinksWidget : ModuleWidget {

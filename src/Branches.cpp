@@ -65,7 +65,44 @@ struct Branches : Module {
 		}
 	}
 
-	void process(const ProcessArgs &args) override;
+	void process(const ProcessArgs &args) {
+		float gate = 0.0;
+		for (int i = 0; i < 2; i++) {
+			// mode button
+			if (modeTriggers[i].process(params[MODE1_PARAM + i].getValue()))
+				modes[i] = !modes[i];
+
+			if (inputs[IN1_INPUT + i].isConnected())
+				gate = inputs[IN1_INPUT + i].getVoltage();
+
+			if (gateTriggers[i].process(gate)) {
+				// trigger
+				float r = random::uniform();
+				float threshold = clamp(params[THRESHOLD1_PARAM + i].getValue() + inputs[P1_INPUT + i].getVoltage() / 10.f, 0.f, 1.f);
+				bool toss = (r < threshold);
+				if (!modes[i]) {
+					// direct modes
+					outcomes[i] = toss;
+				}
+				else {
+					// toggle modes
+					outcomes[i] = (outcomes[i] != toss);
+				}
+
+				if (!outcomes[i])
+					lights[STATE1_POS_LIGHT + 2*i].value = 1.0;
+				else
+					lights[STATE1_NEG_LIGHT + 2*i].value = 1.0;
+			}
+
+			lights[STATE1_POS_LIGHT + 2*i].value *= 1.0 - args.sampleTime * 15.0;
+			lights[STATE1_NEG_LIGHT + 2*i].value *= 1.0 - args.sampleTime * 15.0;
+			lights[MODE1_LIGHT + i].value = modes[i] ? 1.0 : 0.0;
+
+			outputs[OUT1A_OUTPUT + i].setVoltage(outcomes[i] ? 0.0 : gate);
+			outputs[OUT1B_OUTPUT + i].setVoltage(outcomes[i] ? gate : 0.0);
+		}
+	}
 
 	void onReset() override {
 		for (int i = 0; i < 2; i++) {
@@ -74,46 +111,6 @@ struct Branches : Module {
 		}
 	}
 };
-
-
-void Branches::process(const ProcessArgs &args) {
-	float gate = 0.0;
-	for (int i = 0; i < 2; i++) {
-		// mode button
-		if (modeTriggers[i].process(params[MODE1_PARAM + i].getValue()))
-			modes[i] = !modes[i];
-
-		if (inputs[IN1_INPUT + i].isConnected())
-			gate = inputs[IN1_INPUT + i].getVoltage();
-
-		if (gateTriggers[i].process(gate)) {
-			// trigger
-			float r = random::uniform();
-			float threshold = clamp(params[THRESHOLD1_PARAM + i].getValue() + inputs[P1_INPUT + i].getVoltage() / 10.f, 0.f, 1.f);
-			bool toss = (r < threshold);
-			if (!modes[i]) {
-				// direct modes
-				outcomes[i] = toss;
-			}
-			else {
-				// toggle modes
-				outcomes[i] = (outcomes[i] != toss);
-			}
-
-			if (!outcomes[i])
-				lights[STATE1_POS_LIGHT + 2*i].value = 1.0;
-			else
-				lights[STATE1_NEG_LIGHT + 2*i].value = 1.0;
-		}
-
-		lights[STATE1_POS_LIGHT + 2*i].value *= 1.0 - args.sampleTime * 15.0;
-		lights[STATE1_NEG_LIGHT + 2*i].value *= 1.0 - args.sampleTime * 15.0;
-		lights[MODE1_LIGHT + i].value = modes[i] ? 1.0 : 0.0;
-
-		outputs[OUT1A_OUTPUT + i].setVoltage(outcomes[i] ? 0.0 : gate);
-		outputs[OUT1B_OUTPUT + i].setVoltage(outcomes[i] ? gate : 0.0);
-	}
-}
 
 
 struct BranchesWidget : ModuleWidget {

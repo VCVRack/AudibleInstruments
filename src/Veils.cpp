@@ -50,31 +50,29 @@ struct Veils : Module {
 		configParam(Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0);
 		configParam(Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0);
 	}
-	void process(const ProcessArgs &args) override;
-};
 
+	void process(const ProcessArgs &args) {
+		float out = 0.0;
 
-void Veils::process(const ProcessArgs &args) {
-	float out = 0.0;
-
-	for (int i = 0; i < 4; i++) {
-		float in = inputs[IN1_INPUT + i].getVoltage() * params[GAIN1_PARAM + i].getValue();
-		if (inputs[CV1_INPUT + i].isConnected()) {
-			float linear = fmaxf(inputs[CV1_INPUT + i].getVoltage() / 5.0, 0.0);
-			linear = clamp(linear, 0.0f, 2.0f);
-			const float base = 200.0;
-			float exponential = rescale(powf(base, linear / 2.0f), 1.0f, base, 0.0f, 10.0f);
-			in *= crossfade(exponential, linear, params[RESPONSE1_PARAM + i].getValue());
-		}
-		out += in;
-		lights[OUT1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
-		lights[OUT1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
-		if (outputs[OUT1_OUTPUT + i].isConnected()) {
-			outputs[OUT1_OUTPUT + i].setVoltage(out);
-			out = 0.0;
+		for (int i = 0; i < 4; i++) {
+			float in = inputs[IN1_INPUT + i].getVoltage() * params[GAIN1_PARAM + i].getValue();
+			if (inputs[CV1_INPUT + i].isConnected()) {
+				float linear = fmaxf(inputs[CV1_INPUT + i].getVoltage() / 5.0, 0.0);
+				linear = clamp(linear, 0.0f, 2.0f);
+				const float base = 200.0;
+				float exponential = rescale(powf(base, linear / 2.0f), 1.0f, base, 0.0f, 10.0f);
+				in *= crossfade(exponential, linear, params[RESPONSE1_PARAM + i].getValue());
+			}
+			out += in;
+			lights[OUT1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
+			lights[OUT1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
+			if (outputs[OUT1_OUTPUT + i].isConnected()) {
+				outputs[OUT1_OUTPUT + i].setVoltage(out);
+				out = 0.0;
+			}
 		}
 	}
-}
+};
 
 
 struct VeilsWidget : ModuleWidget {

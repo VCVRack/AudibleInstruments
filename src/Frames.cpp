@@ -49,8 +49,157 @@ struct Frames : Module {
 	dsp::SchmittTrigger addTrigger;
 	dsp::SchmittTrigger delTrigger;
 
-	Frames();
-	void process(const ProcessArgs &args) override;
+	Frames() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Frames::GAIN1_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::GAIN2_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::GAIN3_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::GAIN4_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::FRAME_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::MODULATION_PARAM, -1.0, 1.0, 0.0);
+		configParam(Frames::ADD_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::DEL_PARAM, 0.0, 1.0, 0.0);
+		configParam(Frames::OFFSET_PARAM, 0.0, 1.0, 0.0);
+
+		memset(&keyframer, 0, sizeof(keyframer));
+		keyframer.Init();
+		memset(&poly_lfo, 0, sizeof(poly_lfo));
+		poly_lfo.Init();
+
+		onReset();
+	}
+
+	void process(const ProcessArgs &args) {
+		// Set gain and timestamp knobs
+		uint16_t controls[4];
+		for (int i = 0; i < 4; i++) {
+			controls[i] = params[GAIN1_PARAM + i].getValue() * 65535.0;
+		}
+
+		int32_t timestamp = params[FRAME_PARAM].getValue() * 65535.0;
+		int32_t timestampMod = timestamp + params[MODULATION_PARAM].getValue() * inputs[FRAME_INPUT].getVoltage() / 10.0 * 65535.0;
+		timestamp = clamp(timestamp, 0, 65535);
+		timestampMod = clamp(timestampMod, 0, 65535);
+		int16_t nearestIndex = -1;
+		if (!poly_lfo_mode) {
+			nearestIndex = keyframer.FindNearestKeyframe(timestamp, 2048);
+		}
+
+		// Render, handle buttons
+		if (poly_lfo_mode) {
+			if (controls[0] != lastControls[0])
+				poly_lfo.set_shape(controls[0]);
+			if (controls[1] != lastControls[1])
+				poly_lfo.set_shape_spread(controls[1]);
+			if (controls[2] != lastControls[2])
+				poly_lfo.set_spread(controls[2]);
+			if (controls[3] != lastControls[3])
+				poly_lfo.set_coupling(controls[3]);
+			poly_lfo.Render(timestampMod);
+		}
+		else {
+			for (int i = 0; i < 4; i++) {
+				if (controls[i] != lastControls[i]) {
+					// Update recently moved control
+					if (keyframer.num_keyframes() == 0) {
+						keyframer.set_immediate(i, controls[i]);
+					}
+					if (nearestIndex >= 0) {
+						frames::Keyframe *nearestKeyframe = keyframer.mutable_keyframe(nearestIndex);
+						nearestKeyframe->values[i] = controls[i];
+					}
+				}
+			}
+
+			if (addTrigger.process(params[ADD_PARAM].getValue())) {
+				if (nearestIndex < 0) {
+					keyframer.AddKeyframe(timestamp, controls);
+				}
+			}
+			if (delTrigger.process(params[DEL_PARAM].getValue())) {
+				if (nearestIndex >= 0) {
+					int32_t nearestTimestamp = keyframer.keyframe(nearestIndex).timestamp;
+					keyframer.RemoveKeyframe(nearestTimestamp);
+				}
+			}
+			keyframer.Evaluate(timestampMod);
+		}
+
+		// Get gains
+		float gains[4];
+		for (int i = 0; i < 4; i++) {
+			if (poly_lfo_mode) {
+				// gains[i] = poly_lfo.level(i) / 255.0;
+				gains[i] = poly_lfo.level16(i) / 65535.0;
+			}
+			else {
+				float lin = keyframer.level(i) / 65535.0;
+				gains[i] = lin;
+			}
+			// Simulate SSM2164
+			if (keyframer.mutable_settings(i)->response > 0) {
+				const float expBase = 200.0;
+				float expGain = rescale(powf(expBase, gains[i]), 1.0f, expBase, 0.0f, 1.0f);
+				gains[i] = crossfade(gains[i], expGain, keyframer.mutable_settings(i)->response / 255.0f);
+			}
+		}
+
+		// Update last controls
+		for (int i = 0; i < 4; i++) {
+			lastControls[i] = controls[i];
+		}
+
+		// Get inputs
+		float all = ((int)params[OFFSET_PARAM].getValue() == 1) ? 10.0 : 0.0;
+		if (inputs[ALL_INPUT].isConnected()) {
+			all = inputs[ALL_INPUT].getVoltage();
+		}
+
+		float ins[4];
+		for (int i = 0; i < 4; i++) {
+			ins[i] = inputs[IN1_INPUT + i].getNormalVoltage(all) * gains[i];
+		}
+
+		// Set outputs
+		float mix = 0.0;
+
+		for (int i = 0; i < 4; i++) {
+			if (outputs[OUT1_OUTPUT + i].isConnected()) {
+				outputs[OUT1_OUTPUT + i].setVoltage(ins[i]);
+			}
+			else {
+				mix += ins[i];
+			}
+		}
+
+		outputs[MIX_OUTPUT].setVoltage(clamp(mix / 2.0, -10.0f, 10.0f));
+
+		// Set lights
+		for (int i = 0; i < 4; i++) {
+			lights[GAIN1_LIGHT + i].setBrightness(gains[i]);
+		}
+
+		if (poly_lfo_mode) {
+			lights[EDIT_LIGHT].value = (poly_lfo.level(0) > 128 ? 1.0 : 0.0);
+		}
+		else {
+			lights[EDIT_LIGHT].value = (nearestIndex >= 0 ? 1.0 : 0.0);
+		}
+
+		// Set frame light colors
+		const uint8_t *colors;
+		if (poly_lfo_mode) {
+			colors = poly_lfo.color();
+		}
+		else {
+			colors = keyframer.color();
+		}
+		for (int i = 0; i < 3; i++) {
+			float c = colors[i] / 255.0;
+			c = 1.0 - (1.0 - c) * 1.25;
+			lights[FRAME_LIGHT + i].setBrightness(c);
+		}
+	}
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -128,160 +277,6 @@ struct Frames : Module {
 		// Maybe something useful should go in here?
 	}
 };
-
-
-Frames::Frames() {
-	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-	configParam(Frames::GAIN1_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::GAIN2_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::GAIN3_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::GAIN4_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::FRAME_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::MODULATION_PARAM, -1.0, 1.0, 0.0);
-	configParam(Frames::ADD_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::DEL_PARAM, 0.0, 1.0, 0.0);
-	configParam(Frames::OFFSET_PARAM, 0.0, 1.0, 0.0);
-
-	memset(&keyframer, 0, sizeof(keyframer));
-	keyframer.Init();
-	memset(&poly_lfo, 0, sizeof(poly_lfo));
-	poly_lfo.Init();
-
-	onReset();
-}
-
-
-void Frames::process(const ProcessArgs &args) {
-	// Set gain and timestamp knobs
-	uint16_t controls[4];
-	for (int i = 0; i < 4; i++) {
-		controls[i] = params[GAIN1_PARAM + i].getValue() * 65535.0;
-	}
-
-	int32_t timestamp = params[FRAME_PARAM].getValue() * 65535.0;
-	int32_t timestampMod = timestamp + params[MODULATION_PARAM].getValue() * inputs[FRAME_INPUT].getVoltage() / 10.0 * 65535.0;
-	timestamp = clamp(timestamp, 0, 65535);
-	timestampMod = clamp(timestampMod, 0, 65535);
-	int16_t nearestIndex = -1;
-	if (!poly_lfo_mode) {
-		nearestIndex = keyframer.FindNearestKeyframe(timestamp, 2048);
-	}
-
-	// Render, handle buttons
-	if (poly_lfo_mode) {
-		if (controls[0] != lastControls[0])
-			poly_lfo.set_shape(controls[0]);
-		if (controls[1] != lastControls[1])
-			poly_lfo.set_shape_spread(controls[1]);
-		if (controls[2] != lastControls[2])
-			poly_lfo.set_spread(controls[2]);
-		if (controls[3] != lastControls[3])
-			poly_lfo.set_coupling(controls[3]);
-		poly_lfo.Render(timestampMod);
-	}
-	else {
-		for (int i = 0; i < 4; i++) {
-			if (controls[i] != lastControls[i]) {
-				// Update recently moved control
-				if (keyframer.num_keyframes() == 0) {
-					keyframer.set_immediate(i, controls[i]);
-				}
-				if (nearestIndex >= 0) {
-					frames::Keyframe *nearestKeyframe = keyframer.mutable_keyframe(nearestIndex);
-					nearestKeyframe->values[i] = controls[i];
-				}
-			}
-		}
-
-		if (addTrigger.process(params[ADD_PARAM].getValue())) {
-			if (nearestIndex < 0) {
-				keyframer.AddKeyframe(timestamp, controls);
-			}
-		}
-		if (delTrigger.process(params[DEL_PARAM].getValue())) {
-			if (nearestIndex >= 0) {
-				int32_t nearestTimestamp = keyframer.keyframe(nearestIndex).timestamp;
-				keyframer.RemoveKeyframe(nearestTimestamp);
-			}
-		}
-		keyframer.Evaluate(timestampMod);
-	}
-
-	// Get gains
-	float gains[4];
-	for (int i = 0; i < 4; i++) {
-		if (poly_lfo_mode) {
-			// gains[i] = poly_lfo.level(i) / 255.0;
-			gains[i] = poly_lfo.level16(i) / 65535.0;
-		}
-		else {
-			float lin = keyframer.level(i) / 65535.0;
-			gains[i] = lin;
-		}
-		// Simulate SSM2164
-		if (keyframer.mutable_settings(i)->response > 0) {
-			const float expBase = 200.0;
-			float expGain = rescale(powf(expBase, gains[i]), 1.0f, expBase, 0.0f, 1.0f);
-			gains[i] = crossfade(gains[i], expGain, keyframer.mutable_settings(i)->response / 255.0f);
-		}
-	}
-
-	// Update last controls
-	for (int i = 0; i < 4; i++) {
-		lastControls[i] = controls[i];
-	}
-
-	// Get inputs
-	float all = ((int)params[OFFSET_PARAM].getValue() == 1) ? 10.0 : 0.0;
-	if (inputs[ALL_INPUT].isConnected()) {
-		all = inputs[ALL_INPUT].getVoltage();
-	}
-
-	float ins[4];
-	for (int i = 0; i < 4; i++) {
-		ins[i] = inputs[IN1_INPUT + i].getNormalVoltage(all) * gains[i];
-	}
-
-	// Set outputs
-	float mix = 0.0;
-
-	for (int i = 0; i < 4; i++) {
-		if (outputs[OUT1_OUTPUT + i].isConnected()) {
-			outputs[OUT1_OUTPUT + i].setVoltage(ins[i]);
-		}
-		else {
-			mix += ins[i];
-		}
-	}
-
-	outputs[MIX_OUTPUT].setVoltage(clamp(mix / 2.0, -10.0f, 10.0f));
-
-	// Set lights
-	for (int i = 0; i < 4; i++) {
-		lights[GAIN1_LIGHT + i].setBrightness(gains[i]);
-	}
-
-	if (poly_lfo_mode) {
-		lights[EDIT_LIGHT].value = (poly_lfo.level(0) > 128 ? 1.0 : 0.0);
-	}
-	else {
-		lights[EDIT_LIGHT].value = (nearestIndex >= 0 ? 1.0 : 0.0);
-	}
-
-	// Set frame light colors
-	const uint8_t *colors;
-	if (poly_lfo_mode) {
-		colors = poly_lfo.color();
-	}
-	else {
-		colors = keyframer.color();
-	}
-	for (int i = 0; i < 3; i++) {
-		float c = colors[i] / 255.0;
-		c = 1.0 - (1.0 - c) * 1.25;
-		lights[FRAME_LIGHT + i].setBrightness(c);
-	}
-}
 
 
 struct CKSSRot : SVGSwitch {

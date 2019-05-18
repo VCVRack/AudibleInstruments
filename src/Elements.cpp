@@ -78,9 +78,139 @@ struct Elements : Module {
 	uint16_t reverb_buffer[32768] = {};
 	elements::Part *part;
 
-	Elements();
-	~Elements();
-	void process(const ProcessArgs &args) override;
+	Elements() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configParam(Elements::CONTOUR_PARAM, 0.0, 1.0, 1.0);
+		configParam(Elements::BOW_PARAM, 0.0, 1.0, 0.0);
+		configParam(Elements::BLOW_PARAM, 0.0, 1.0, 0.0);
+		configParam(Elements::STRIKE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::COARSE_PARAM, -30.0, 30.0, 0.0);
+		configParam(Elements::FINE_PARAM, -2.0, 2.0, 0.0);
+		configParam(Elements::FM_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::FLOW_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::MALLET_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::GEOMETRY_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::BOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::BLOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::STRIKE_TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::DAMPING_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::POSITION_PARAM, 0.0, 1.0, 0.5);
+		configParam(Elements::SPACE_PARAM, 0.0, 2.0, 0.0);
+		configParam(Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::FLOW_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::MALLET_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(Elements::SPACE_MOD_PARAM, -2.0, 2.0, 0.0);
+		configParam(Elements::PLAY_PARAM, 0.0, 1.0, 0.0);
+
+		part = new elements::Part();
+		// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.
+		memset(part, 0, sizeof(*part));
+		part->Init(reverb_buffer);
+		// Just some random numbers
+		uint32_t seed[3] = {1, 2, 3};
+		part->Seed(seed, 3);
+	}
+
+	~Elements() {
+		delete part;
+	}
+
+	void process(const ProcessArgs &args) {
+		// Get input
+		if (!inputBuffer.full()) {
+			dsp::Frame<2> inputFrame;
+			inputFrame.samples[0] = inputs[BLOW_INPUT].getVoltage() / 5.0;
+			inputFrame.samples[1] = inputs[STRIKE_INPUT].getVoltage() / 5.0;
+			inputBuffer.push(inputFrame);
+		}
+
+		// Render frames
+		if (outputBuffer.empty()) {
+			float blow[16] = {};
+			float strike[16] = {};
+			float main[16];
+			float aux[16];
+
+			// Convert input buffer
+			{
+				inputSrc.setRates(args.sampleRate, 32000);
+				dsp::Frame<2> inputFrames[16];
+				int inLen = inputBuffer.size();
+				int outLen = 16;
+				inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
+				inputBuffer.startIncr(inLen);
+
+				for (int i = 0; i < outLen; i++) {
+					blow[i] = inputFrames[i].samples[0];
+					strike[i] = inputFrames[i].samples[1];
+				}
+			}
+
+			// Set patch from parameters
+			elements::Patch* p = part->mutable_patch();
+			p->exciter_envelope_shape = params[CONTOUR_PARAM].getValue();
+			p->exciter_bow_level = params[BOW_PARAM].getValue();
+			p->exciter_blow_level = params[BLOW_PARAM].getValue();
+			p->exciter_strike_level = params[STRIKE_PARAM].getValue();
+
+#define BIND(_p, _m, _i) clamp(params[_p].getValue() + 3.3f*dsp::quadraticBipolar(params[_m].getValue())*inputs[_i].getVoltage()/5.0f, 0.0f, 0.9995f)
+
+			p->exciter_bow_timbre = BIND(BOW_TIMBRE_PARAM, BOW_TIMBRE_MOD_PARAM, BOW_TIMBRE_MOD_INPUT);
+			p->exciter_blow_meta = BIND(FLOW_PARAM, FLOW_MOD_PARAM, FLOW_MOD_INPUT);
+			p->exciter_blow_timbre = BIND(BLOW_TIMBRE_PARAM, BLOW_TIMBRE_MOD_PARAM, BLOW_TIMBRE_MOD_INPUT);
+			p->exciter_strike_meta = BIND(MALLET_PARAM, MALLET_MOD_PARAM, MALLET_MOD_INPUT);
+			p->exciter_strike_timbre = BIND(STRIKE_TIMBRE_PARAM, STRIKE_TIMBRE_MOD_PARAM, STRIKE_TIMBRE_MOD_INPUT);
+			p->resonator_geometry = BIND(GEOMETRY_PARAM, GEOMETRY_MOD_PARAM, GEOMETRY_MOD_INPUT);
+			p->resonator_brightness = BIND(BRIGHTNESS_PARAM, BRIGHTNESS_MOD_PARAM, BRIGHTNESS_MOD_INPUT);
+			p->resonator_damping = BIND(DAMPING_PARAM, DAMPING_MOD_PARAM, DAMPING_MOD_INPUT);
+			p->resonator_position = BIND(POSITION_PARAM, POSITION_MOD_PARAM, POSITION_MOD_INPUT);
+			p->space = clamp(params[SPACE_PARAM].getValue() + params[SPACE_MOD_PARAM].getValue()*inputs[SPACE_MOD_INPUT].getVoltage()/5.0f, 0.0f, 2.0f);
+
+			// Get performance inputs
+			elements::PerformanceState performance;
+			performance.note = 12.0*inputs[NOTE_INPUT].getVoltage() + roundf(params[COARSE_PARAM].getValue()) + params[FINE_PARAM].getValue() + 69.0;
+			performance.modulation = 3.3*dsp::quarticBipolar(params[FM_PARAM].getValue()) * 49.5 * inputs[FM_INPUT].getVoltage()/5.0;
+			performance.gate = params[PLAY_PARAM].getValue() >= 1.0 || inputs[GATE_INPUT].getVoltage() >= 1.0;
+			performance.strength = clamp(1.0 - inputs[STRENGTH_INPUT].getVoltage()/5.0f, 0.0f, 1.0f);
+
+			// Generate audio
+			part->Process(performance, blow, strike, main, aux, 16);
+
+			// Convert output buffer
+			{
+				dsp::Frame<2> outputFrames[16];
+				for (int i = 0; i < 16; i++) {
+					outputFrames[i].samples[0] = main[i];
+					outputFrames[i].samples[1] = aux[i];
+				}
+
+				outputSrc.setRates(32000, args.sampleRate);
+				int inLen = 16;
+				int outLen = outputBuffer.capacity();
+				outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
+				outputBuffer.endIncr(outLen);
+			}
+
+			// Set lights
+			lights[GATE_LIGHT].setBrightness(performance.gate ? 0.75 : 0.0);
+			lights[EXCITER_LIGHT].setBrightness(part->exciter_level());
+			lights[RESONATOR_LIGHT].setBrightness(part->resonator_level());
+		}
+
+		// Set output
+		if (!outputBuffer.empty()) {
+			dsp::Frame<2> outputFrame = outputBuffer.shift();
+			outputs[AUX_OUTPUT].setVoltage(5.0 * outputFrame.samples[0]);
+			outputs[MAIN_OUTPUT].setVoltage(5.0 * outputFrame.samples[1]);
+		}
+	}
 
 	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
@@ -103,141 +233,6 @@ struct Elements : Module {
 		part->set_resonator_model((elements::ResonatorModel)model);
 	}
 };
-
-
-Elements::Elements() {
-	config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-	configParam(Elements::CONTOUR_PARAM, 0.0, 1.0, 1.0);
-	configParam(Elements::BOW_PARAM, 0.0, 1.0, 0.0);
-	configParam(Elements::BLOW_PARAM, 0.0, 1.0, 0.0);
-	configParam(Elements::STRIKE_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::COARSE_PARAM, -30.0, 30.0, 0.0);
-	configParam(Elements::FINE_PARAM, -2.0, 2.0, 0.0);
-	configParam(Elements::FM_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::FLOW_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::MALLET_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::GEOMETRY_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::BOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::BLOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::STRIKE_TIMBRE_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::DAMPING_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::POSITION_PARAM, 0.0, 1.0, 0.5);
-	configParam(Elements::SPACE_PARAM, 0.0, 2.0, 0.0);
-	configParam(Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::FLOW_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::MALLET_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
-	configParam(Elements::SPACE_MOD_PARAM, -2.0, 2.0, 0.0);
-	configParam(Elements::PLAY_PARAM, 0.0, 1.0, 0.0);
-
-	part = new elements::Part();
-	// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.
-	memset(part, 0, sizeof(*part));
-	part->Init(reverb_buffer);
-	// Just some random numbers
-	uint32_t seed[3] = {1, 2, 3};
-	part->Seed(seed, 3);
-}
-
-Elements::~Elements() {
-	delete part;
-}
-
-void Elements::process(const ProcessArgs &args) {
-	// Get input
-	if (!inputBuffer.full()) {
-		dsp::Frame<2> inputFrame;
-		inputFrame.samples[0] = inputs[BLOW_INPUT].getVoltage() / 5.0;
-		inputFrame.samples[1] = inputs[STRIKE_INPUT].getVoltage() / 5.0;
-		inputBuffer.push(inputFrame);
-	}
-
-	// Render frames
-	if (outputBuffer.empty()) {
-		float blow[16] = {};
-		float strike[16] = {};
-		float main[16];
-		float aux[16];
-
-		// Convert input buffer
-		{
-			inputSrc.setRates(args.sampleRate, 32000);
-			dsp::Frame<2> inputFrames[16];
-			int inLen = inputBuffer.size();
-			int outLen = 16;
-			inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
-			inputBuffer.startIncr(inLen);
-
-			for (int i = 0; i < outLen; i++) {
-				blow[i] = inputFrames[i].samples[0];
-				strike[i] = inputFrames[i].samples[1];
-			}
-		}
-
-		// Set patch from parameters
-		elements::Patch* p = part->mutable_patch();
-		p->exciter_envelope_shape = params[CONTOUR_PARAM].getValue();
-		p->exciter_bow_level = params[BOW_PARAM].getValue();
-		p->exciter_blow_level = params[BLOW_PARAM].getValue();
-		p->exciter_strike_level = params[STRIKE_PARAM].getValue();
-
-#define BIND(_p, _m, _i) clamp(params[_p].getValue() + 3.3f*dsp::quadraticBipolar(params[_m].getValue())*inputs[_i].getVoltage()/5.0f, 0.0f, 0.9995f)
-
-		p->exciter_bow_timbre = BIND(BOW_TIMBRE_PARAM, BOW_TIMBRE_MOD_PARAM, BOW_TIMBRE_MOD_INPUT);
-		p->exciter_blow_meta = BIND(FLOW_PARAM, FLOW_MOD_PARAM, FLOW_MOD_INPUT);
-		p->exciter_blow_timbre = BIND(BLOW_TIMBRE_PARAM, BLOW_TIMBRE_MOD_PARAM, BLOW_TIMBRE_MOD_INPUT);
-		p->exciter_strike_meta = BIND(MALLET_PARAM, MALLET_MOD_PARAM, MALLET_MOD_INPUT);
-		p->exciter_strike_timbre = BIND(STRIKE_TIMBRE_PARAM, STRIKE_TIMBRE_MOD_PARAM, STRIKE_TIMBRE_MOD_INPUT);
-		p->resonator_geometry = BIND(GEOMETRY_PARAM, GEOMETRY_MOD_PARAM, GEOMETRY_MOD_INPUT);
-		p->resonator_brightness = BIND(BRIGHTNESS_PARAM, BRIGHTNESS_MOD_PARAM, BRIGHTNESS_MOD_INPUT);
-		p->resonator_damping = BIND(DAMPING_PARAM, DAMPING_MOD_PARAM, DAMPING_MOD_INPUT);
-		p->resonator_position = BIND(POSITION_PARAM, POSITION_MOD_PARAM, POSITION_MOD_INPUT);
-		p->space = clamp(params[SPACE_PARAM].getValue() + params[SPACE_MOD_PARAM].getValue()*inputs[SPACE_MOD_INPUT].getVoltage()/5.0f, 0.0f, 2.0f);
-
-		// Get performance inputs
-		elements::PerformanceState performance;
-		performance.note = 12.0*inputs[NOTE_INPUT].getVoltage() + roundf(params[COARSE_PARAM].getValue()) + params[FINE_PARAM].getValue() + 69.0;
-		performance.modulation = 3.3*dsp::quarticBipolar(params[FM_PARAM].getValue()) * 49.5 * inputs[FM_INPUT].getVoltage()/5.0;
-		performance.gate = params[PLAY_PARAM].getValue() >= 1.0 || inputs[GATE_INPUT].getVoltage() >= 1.0;
-		performance.strength = clamp(1.0 - inputs[STRENGTH_INPUT].getVoltage()/5.0f, 0.0f, 1.0f);
-
-		// Generate audio
-		part->Process(performance, blow, strike, main, aux, 16);
-
-		// Convert output buffer
-		{
-			dsp::Frame<2> outputFrames[16];
-			for (int i = 0; i < 16; i++) {
-				outputFrames[i].samples[0] = main[i];
-				outputFrames[i].samples[1] = aux[i];
-			}
-
-			outputSrc.setRates(32000, args.sampleRate);
-			int inLen = 16;
-			int outLen = outputBuffer.capacity();
-			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
-			outputBuffer.endIncr(outLen);
-		}
-
-		// Set lights
-		lights[GATE_LIGHT].setBrightness(performance.gate ? 0.75 : 0.0);
-		lights[EXCITER_LIGHT].setBrightness(part->exciter_level());
-		lights[RESONATOR_LIGHT].setBrightness(part->resonator_level());
-	}
-
-	// Set output
-	if (!outputBuffer.empty()) {
-		dsp::Frame<2> outputFrame = outputBuffer.shift();
-		outputs[AUX_OUTPUT].setVoltage(5.0 * outputFrame.samples[0]);
-		outputs[MAIN_OUTPUT].setVoltage(5.0 * outputFrame.samples[1]);
-	}
-}
 
 
 struct ElementsModalItem : MenuItem {

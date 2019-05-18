@@ -39,32 +39,30 @@ struct Shades : Module {
 		configParam(Shades::MODE2_PARAM, 0.0, 1.0, 1.0);
 		configParam(Shades::MODE3_PARAM, 0.0, 1.0, 1.0);
 	}
-	void process(const ProcessArgs &args) override;
-};
 
+	void process(const ProcessArgs &args) {
+		float out = 0.0;
 
-void Shades::process(const ProcessArgs &args) {
-	float out = 0.0;
-
-	for (int i = 0; i < 3; i++) {
-		float in = inputs[IN1_INPUT + i].normalize(5.0);
-		if ((int)params[MODE1_PARAM + i].getValue() == 1) {
-			// attenuverter
-			in *= 2.0 * params[GAIN1_PARAM + i].getValue() - 1.0;
-		}
-		else {
-			// attenuator
-			in *= params[GAIN1_PARAM + i].getValue();
-		}
-		out += in;
-		lights[OUT1_POS_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, out / 5.0));
-		lights[OUT1_NEG_LIGHT + 2*i].setBrightnessSmooth(fmaxf(0.0, -out / 5.0));
-		if (outputs[OUT1_OUTPUT + i].isConnected()) {
-			outputs[OUT1_OUTPUT + i].setVoltage(out);
-			out = 0.0;
+		for (int i = 0; i < 3; i++) {
+			float in = inputs[IN1_INPUT + i].normalize(5.0);
+			if ((int)params[MODE1_PARAM + i].getValue() == 1) {
+				// attenuverter
+				in *= 2.0 * params[GAIN1_PARAM + i].getValue() - 1.0;
+			}
+			else {
+				// attenuator
+				in *= params[GAIN1_PARAM + i].getValue();
+			}
+			out += in;
+			lights[OUT1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
+			lights[OUT1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
+			if (outputs[OUT1_OUTPUT + i].isConnected()) {
+				outputs[OUT1_OUTPUT + i].setVoltage(out);
+				out = 0.0;
+			}
 		}
 	}
-}
+};
 
 
 struct ShadesWidget : ModuleWidget {
