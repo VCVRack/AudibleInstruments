@@ -1,5 +1,4 @@
 #include "AudibleInstruments.hpp"
-#include "dsp/digital.hpp"
 #include "stages/segment_generator.h"
 #include "stages/oscillator.h"
 
@@ -171,7 +170,7 @@ struct Stages : Module {
 		onSampleRateChange();
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		json_t *configurationsJ = json_array();
@@ -186,7 +185,7 @@ struct Stages : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *configurationsJ = json_object_get(rootJ, "configurations");
 		for (int i = 0; i < NUM_CHANNELS; i++) {
 			json_t *configurationJ = json_array_get(configurationsJ, i);
@@ -375,66 +374,66 @@ struct Stages : Module {
 
 struct StagesWidget : ModuleWidget {
 	StagesWidget(Stages *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Stages.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Stages.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(3.72965, 13.98158)), module, Stages::SHAPE_PARAMS + 0, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(15.17012, 13.98158)), module, Stages::SHAPE_PARAMS + 1, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(26.6099, 13.98158)), module, Stages::SHAPE_PARAMS + 2, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(38.07174, 13.98158)), module, Stages::SHAPE_PARAMS + 3, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(49.51152, 13.98158)), module, Stages::SHAPE_PARAMS + 4, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(60.95199, 13.98158)), module, Stages::SHAPE_PARAMS + 5, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(4.17259, 32.37248)), module, Stages::TYPE_PARAMS + 0, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(15.61237, 32.37248)), module, Stages::TYPE_PARAMS + 1, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(27.05284, 32.37248)), module, Stages::TYPE_PARAMS + 2, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(38.51399, 32.37248)), module, Stages::TYPE_PARAMS + 3, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(49.95446, 32.37248)), module, Stages::TYPE_PARAMS + 4, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(61.39424, 32.37248)), module, Stages::TYPE_PARAMS + 5, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(3.36193, 43.06508)), module, Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(14.81619, 43.06508)), module, Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(26.26975, 43.06508)), module, Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(37.70265, 43.06508)), module, Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(49.15759, 43.06508)), module, Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<LEDSliderGreen>(mm2px(Vec(60.61184, 43.06508)), module, Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(3.72965, 13.98158)), module, Stages::SHAPE_PARAMS + 0, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(15.17012, 13.98158)), module, Stages::SHAPE_PARAMS + 1, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(26.6099, 13.98158)), module, Stages::SHAPE_PARAMS + 2, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(38.07174, 13.98158)), module, Stages::SHAPE_PARAMS + 3, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(49.51152, 13.98158)), module, Stages::SHAPE_PARAMS + 4, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(60.95199, 13.98158)), module, Stages::SHAPE_PARAMS + 5, 0.0, 1.0, 0.5));
+		addParam(createParam<TL1105>(mm2px(Vec(4.17259, 32.37248)), module, Stages::TYPE_PARAMS + 0, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(15.61237, 32.37248)), module, Stages::TYPE_PARAMS + 1, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(27.05284, 32.37248)), module, Stages::TYPE_PARAMS + 2, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(38.51399, 32.37248)), module, Stages::TYPE_PARAMS + 3, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(49.95446, 32.37248)), module, Stages::TYPE_PARAMS + 4, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(61.39424, 32.37248)), module, Stages::TYPE_PARAMS + 5, 0.0, 1.0, 0.0));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(3.36193, 43.06508)), module, Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 0.5));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(14.81619, 43.06508)), module, Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 0.5));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(26.26975, 43.06508)), module, Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 0.5));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(37.70265, 43.06508)), module, Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 0.5));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(49.15759, 43.06508)), module, Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 0.5));
+		addParam(createParam<LEDSliderGreen>(mm2px(Vec(60.61184, 43.06508)), module, Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 0.5));
 
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(2.70756, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 0));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(14.14734, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 1));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(25.58781, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 2));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(37.04896, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 3));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(48.48943, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 4));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(59.92921, 77.75277)), Port::INPUT, module, Stages::LEVEL_INPUTS + 5));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(2.70756, 92.35239)), Port::INPUT, module, Stages::GATE_INPUTS + 0));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(14.14734, 92.35239)), Port::INPUT, module, Stages::GATE_INPUTS + 1));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(25.58781, 92.35239)), Port::INPUT, module, Stages::GATE_INPUTS + 2));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(37.04896, 92.35239)), Port::INPUT, module, Stages::GATE_INPUTS + 3));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(48.48943, 92.35239)), Port::INPUT, module, Stages::GATE_INPUTS + 4));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(59.92921, 92.35239)), Port::INPUT, module, Stages::GATE_INPUTS + 5));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(2.70756, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 0));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(14.14734, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 1));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(25.58781, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 2));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(37.04896, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 3));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(48.48943, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 4));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(59.92921, 77.75277)), PortWidget::INPUT, module, Stages::LEVEL_INPUTS + 5));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(2.70756, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 0));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(14.14734, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 1));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(25.58781, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 2));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(37.04896, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 3));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(48.48943, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 4));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(59.92921, 92.35239)), PortWidget::INPUT, module, Stages::GATE_INPUTS + 5));
 
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(2.70756, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 0));
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(14.14734, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 1));
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(25.58781, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 2));
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(37.04896, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 3));
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 4));
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), Port::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 5));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(2.70756, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 0));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(14.14734, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 1));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(25.58781, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 2));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(37.04896, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 3));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 4));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), PortWidget::OUTPUT, module, Stages::ENVELOPE_OUTPUTS + 5));
 
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(2.29462, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 0));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(13.73509, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 1));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(25.17556, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(36.63671, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 3));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(48.07649, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 4));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(mm2px(Vec(59.51696, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 5));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
+		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(2.29462, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 0));
+		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(13.73509, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 1));
+		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(25.17556, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 2));
+		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(36.63671, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 3));
+		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(48.07649, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 4));
+		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(59.51696, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 5));
 	}
 };
 
 
-Model *modelStages = Model::create<Stages, StagesWidget>("Stages");
+Model *modelStages = createModel<Stages, StagesWidget>("Stages");

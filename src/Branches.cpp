@@ -1,5 +1,4 @@
 #include "AudibleInstruments.hpp"
-#include "dsp/digital.hpp"
 
 
 struct Branches : Module {
@@ -39,7 +38,7 @@ struct Branches : Module {
 
 	Branches() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_t *modesJ = json_array();
 		for (int i = 0; i < 2; i++) {
@@ -49,7 +48,7 @@ struct Branches : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *modesJ = json_object_get(rootJ, "modes");
 		if (modesJ) {
 			for (int i = 0; i < 2; i++) {
@@ -113,27 +112,27 @@ void Branches::step() {
 
 struct BranchesWidget : ModuleWidget {
 	BranchesWidget(Branches *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Branches.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Branches.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 
-		addParam(ParamWidget::create<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
-		addInput(Port::create<PJ301MPort>(Vec(9, 122), Port::INPUT, module, Branches::IN1_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(55, 122), Port::INPUT, module, Branches::P1_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(9, 160), Port::OUTPUT, module, Branches::OUT1A_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(55, 160), Port::OUTPUT, module, Branches::OUT1B_OUTPUT));
+		addParam(createParam<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM, 0.0, 1.0, 0.0));
+		addInput(createPort<PJ301MPort>(Vec(9, 122), PortWidget::INPUT, module, Branches::IN1_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(55, 122), PortWidget::INPUT, module, Branches::P1_INPUT));
+		addOutput(createPort<PJ301MPort>(Vec(9, 160), PortWidget::OUTPUT, module, Branches::OUT1A_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(55, 160), PortWidget::OUTPUT, module, Branches::OUT1B_OUTPUT));
 
-		addParam(ParamWidget::create<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
-		addInput(Port::create<PJ301MPort>(Vec(9, 278), Port::INPUT, module, Branches::IN2_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(55, 278), Port::INPUT, module, Branches::P2_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(9, 316), Port::OUTPUT, module, Branches::OUT2A_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(55, 316), Port::OUTPUT, module, Branches::OUT2B_OUTPUT));
+		addParam(createParam<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM, 0.0, 1.0, 0.0));
+		addInput(createPort<PJ301MPort>(Vec(9, 278), PortWidget::INPUT, module, Branches::IN2_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(55, 278), PortWidget::INPUT, module, Branches::P2_INPUT));
+		addOutput(createPort<PJ301MPort>(Vec(9, 316), PortWidget::OUTPUT, module, Branches::OUT2A_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(55, 316), PortWidget::OUTPUT, module, Branches::OUT2B_OUTPUT));
 
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
 	}
 
 	void appendContextMenu(Menu *menu) override {
@@ -143,7 +142,7 @@ struct BranchesWidget : ModuleWidget {
 		struct BranchesModeItem : MenuItem {
 			Branches *branches;
 			int channel;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				branches->modes[channel] ^= 1;
 			}
 			void step() override {
@@ -161,4 +160,4 @@ struct BranchesWidget : ModuleWidget {
 };
 
 
-Model *modelBranches = Model::create<Branches, BranchesWidget>("Branches");
+Model *modelBranches = createModel<Branches, BranchesWidget>("Branches");

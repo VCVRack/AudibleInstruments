@@ -1,7 +1,4 @@
-#include <string.h>
 #include "AudibleInstruments.hpp"
-#include "dsp/samplerate.hpp"
-#include "dsp/ringbuffer.hpp"
 #include "braids/macro_oscillator.h"
 #include "braids/vco_jitter_source.h"
 #include "braids/signature_waveshaper.h"
@@ -45,7 +42,7 @@ struct Braids : Module {
 	void step() override;
 	void setShape(int shape);
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_t *settingsJ = json_array();
 		uint8_t *settingsArray = &settings.shape;
@@ -61,7 +58,7 @@ struct Braids : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *settingsJ = json_object_get(rootJ, "settings");
 		if (settingsJ) {
 			uint8_t *settingsArray = &settings.shape;
@@ -236,7 +233,7 @@ struct BraidsDisplay : TransparentWidget {
 	std::shared_ptr<Font> font;
 
 	BraidsDisplay() {
-		font = Font::load(assetPlugin(plugin, "res/hdad-segment14-1.002/Segment14.ttf"));
+		font = Font::load(assetPlugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
 	}
 
 	void draw(NVGcontext *vg) override {
@@ -271,7 +268,7 @@ struct BraidsSettingItem : MenuItem {
 	uint8_t *setting = NULL;
 	uint8_t offValue = 0;
 	uint8_t onValue = 1;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		// Toggle setting
 		*setting = (*setting == onValue) ? offValue : onValue;
 	}
@@ -283,7 +280,7 @@ struct BraidsSettingItem : MenuItem {
 
 struct BraidsLowCpuItem : MenuItem {
 	Braids *braids;
-	void onAction(EventAction &e) override {
+	void onAction(const event::Action &e) override {
 		braids->lowCpu = !braids->lowCpu;
 	}
 	void step() override {
@@ -295,7 +292,7 @@ struct BraidsLowCpuItem : MenuItem {
 
 struct BraidsWidget : ModuleWidget {
 	BraidsWidget(Braids *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Braids.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Braids.svg")));
 
 		{
 			BraidsDisplay *display = new BraidsDisplay();
@@ -305,27 +302,27 @@ struct BraidsWidget : ModuleWidget {
 			addChild(display);
 		}
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(210, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(210, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(210, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(210, 365)));
 
-		addParam(ParamWidget::create<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan2SGray>(Vec(176, 59), module, Braids::SHAPE_PARAM, 0.0, 1.0, 0.0));
 
-		addParam(ParamWidget::create<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
-		addParam(ParamWidget::create<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Rogan2PSWhite>(Vec(19, 138), module, Braids::FINE_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Rogan2PSWhite>(Vec(97, 138), module, Braids::COARSE_PARAM, -2.0, 2.0, 0.0));
+		addParam(createParam<Rogan2PSWhite>(Vec(176, 138), module, Braids::FM_PARAM, -1.0, 1.0, 0.0));
 
-		addParam(ParamWidget::create<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan2PSGreen>(Vec(19, 217), module, Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan2PSGreen>(Vec(97, 217), module, Braids::MODULATION_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Rogan2PSRed>(Vec(176, 217), module, Braids::COLOR_PARAM, 0.0, 1.0, 0.5));
 
-		addInput(Port::create<PJ301MPort>(Vec(10, 316), Port::INPUT, module, Braids::TRIG_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(47, 316), Port::INPUT, module, Braids::PITCH_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(84, 316), Port::INPUT, module, Braids::FM_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(122, 316), Port::INPUT, module, Braids::TIMBRE_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(160, 316), Port::INPUT, module, Braids::COLOR_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(205, 316), Port::OUTPUT, module, Braids::OUT_OUTPUT));
+		addInput(createPort<PJ301MPort>(Vec(10, 316), PortWidget::INPUT, module, Braids::TRIG_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(47, 316), PortWidget::INPUT, module, Braids::PITCH_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(84, 316), PortWidget::INPUT, module, Braids::FM_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(122, 316), PortWidget::INPUT, module, Braids::TIMBRE_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(160, 316), PortWidget::INPUT, module, Braids::COLOR_INPUT));
+		addOutput(createPort<PJ301MPort>(Vec(205, 316), PortWidget::OUTPUT, module, Braids::OUT_OUTPUT));
 	}
 
 	void appendContextMenu(Menu *menu) override {
@@ -342,4 +339,4 @@ struct BraidsWidget : ModuleWidget {
 };
 
 
-Model *modelBraids = Model::create<Braids, BraidsWidget>("Braids");
+Model *modelBraids = createModel<Braids, BraidsWidget>("Braids");

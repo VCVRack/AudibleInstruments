@@ -1,6 +1,4 @@
 #include "AudibleInstruments.hpp"
-#include "dsp/functions.hpp"
-#include "dsp/digital.hpp"
 #include "stmlib/dsp/hysteresis_quantizer.h"
 #include "stmlib/dsp/units.h"
 #include "tides2/poly_slope_generator.h"
@@ -127,7 +125,7 @@ struct Tides2 : Module {
 		ramp_extractor.Init(engineGetSampleRate(), 40.f / engineGetSampleRate());
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "range", json_integer(range));
@@ -137,7 +135,7 @@ struct Tides2 : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *rangeJ = json_object_get(rootJ, "range");
 		if (rangeJ)
 			range = json_integer_value(rangeJ);
@@ -249,7 +247,7 @@ struct Tides2 : Module {
 
 struct Tides2Widget : ModuleWidget {
 	Tides2Widget(Tides2 *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Tides2.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Tides2.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

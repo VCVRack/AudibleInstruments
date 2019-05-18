@@ -1,8 +1,4 @@
 #include "AudibleInstruments.hpp"
-#include "dsp/samplerate.hpp"
-#include "dsp/ringbuffer.hpp"
-#include "dsp/functions.hpp"
-#include "dsp/digital.hpp"
 #include "plaits/dsp/voice.h"
 
 
@@ -74,7 +70,7 @@ struct Plaits : Module {
 		patch.engine = randomu32() % 16;
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "lowCpu", json_boolean(lowCpu));
@@ -85,7 +81,7 @@ struct Plaits : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *lowCpuJ = json_object_get(rootJ, "lowCpu");
 		if (lowCpuJ)
 			lowCpu = json_boolean_value(lowCpuJ);
@@ -232,43 +228,43 @@ static const std::string modelLabels[16] = {
 
 struct PlaitsWidget : ModuleWidget {
 	PlaitsWidget(Plaits *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Plaits.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Plaits.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(23.32685, 14.6539)), module, Plaits::MODEL1_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(mm2px(Vec(32.22764, 14.6539)), module, Plaits::MODEL2_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan3PSWhite>(mm2px(Vec(3.1577, 20.21088)), module, Plaits::FREQ_PARAM, -4.0, 4.0, 0.0));
-		addParam(ParamWidget::create<Rogan3PSWhite>(mm2px(Vec(39.3327, 20.21088)), module, Plaits::HARMONICS_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Rogan1PSWhite>(mm2px(Vec(4.04171, 49.6562)), module, Plaits::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Rogan1PSWhite>(mm2px(Vec(42.71716, 49.6562)), module, Plaits::MORPH_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(7.88712, 77.60705)), module, Plaits::TIMBRE_CV_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(27.2245, 77.60705)), module, Plaits::FREQ_CV_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(mm2px(Vec(46.56189, 77.60705)), module, Plaits::MORPH_CV_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(23.32685, 14.6539)), module, Plaits::MODEL1_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(mm2px(Vec(32.22764, 14.6539)), module, Plaits::MODEL2_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan3PSWhite>(mm2px(Vec(3.1577, 20.21088)), module, Plaits::FREQ_PARAM, -4.0, 4.0, 0.0));
+		addParam(createParam<Rogan3PSWhite>(mm2px(Vec(39.3327, 20.21088)), module, Plaits::HARMONICS_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSWhite>(mm2px(Vec(4.04171, 49.6562)), module, Plaits::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSWhite>(mm2px(Vec(42.71716, 49.6562)), module, Plaits::MORPH_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Trimpot>(mm2px(Vec(7.88712, 77.60705)), module, Plaits::TIMBRE_CV_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(mm2px(Vec(27.2245, 77.60705)), module, Plaits::FREQ_CV_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(mm2px(Vec(46.56189, 77.60705)), module, Plaits::MORPH_CV_PARAM, -1.0, 1.0, 0.0));
 
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(3.31381, 92.48067)), Port::INPUT, module, Plaits::ENGINE_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(14.75983, 92.48067)), Port::INPUT, module, Plaits::TIMBRE_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(26.20655, 92.48067)), Port::INPUT, module, Plaits::FREQ_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(37.65257, 92.48067)), Port::INPUT, module, Plaits::MORPH_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(49.0986, 92.48067)), Port::INPUT, module, Plaits::HARMONICS_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(3.31381, 107.08103)), Port::INPUT, module, Plaits::TRIGGER_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(14.75983, 107.08103)), Port::INPUT, module, Plaits::LEVEL_INPUT));
-		addInput(Port::create<PJ301MPort>(mm2px(Vec(26.20655, 107.08103)), Port::INPUT, module, Plaits::NOTE_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(3.31381, 92.48067)), PortWidget::INPUT, module, Plaits::ENGINE_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(14.75983, 92.48067)), PortWidget::INPUT, module, Plaits::TIMBRE_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(26.20655, 92.48067)), PortWidget::INPUT, module, Plaits::FREQ_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(37.65257, 92.48067)), PortWidget::INPUT, module, Plaits::MORPH_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(49.0986, 92.48067)), PortWidget::INPUT, module, Plaits::HARMONICS_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(3.31381, 107.08103)), PortWidget::INPUT, module, Plaits::TRIGGER_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(14.75983, 107.08103)), PortWidget::INPUT, module, Plaits::LEVEL_INPUT));
+		addInput(createPort<PJ301MPort>(mm2px(Vec(26.20655, 107.08103)), PortWidget::INPUT, module, Plaits::NOTE_INPUT));
 
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(37.65257, 107.08103)), Port::OUTPUT, module, Plaits::OUT_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(mm2px(Vec(49.0986, 107.08103)), Port::OUTPUT, module, Plaits::AUX_OUTPUT));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(37.65257, 107.08103)), PortWidget::OUTPUT, module, Plaits::OUT_OUTPUT));
+		addOutput(createPort<PJ301MPort>(mm2px(Vec(49.0986, 107.08103)), PortWidget::OUTPUT, module, Plaits::AUX_OUTPUT));
 
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 23.31649)), module, Plaits::MODEL_LIGHT + 0 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 28.71704)), module, Plaits::MODEL_LIGHT + 1 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 34.1162)), module, Plaits::MODEL_LIGHT + 2 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 39.51675)), module, Plaits::MODEL_LIGHT + 3 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 44.91731)), module, Plaits::MODEL_LIGHT + 4 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 50.31785)), module, Plaits::MODEL_LIGHT + 5 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 55.71771)), module, Plaits::MODEL_LIGHT + 6 * 2));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 61.11827)), module, Plaits::MODEL_LIGHT + 7 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 23.31649)), module, Plaits::MODEL_LIGHT + 0 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 28.71704)), module, Plaits::MODEL_LIGHT + 1 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 34.1162)), module, Plaits::MODEL_LIGHT + 2 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 39.51675)), module, Plaits::MODEL_LIGHT + 3 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 44.91731)), module, Plaits::MODEL_LIGHT + 4 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 50.31785)), module, Plaits::MODEL_LIGHT + 5 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 55.71771)), module, Plaits::MODEL_LIGHT + 6 * 2));
+		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 61.11827)), module, Plaits::MODEL_LIGHT + 7 * 2));
 	}
 
 	void appendContextMenu(Menu *menu) override {
@@ -276,14 +272,14 @@ struct PlaitsWidget : ModuleWidget {
 
 		struct PlaitsLowCpuItem : MenuItem {
 			Plaits *module;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				module->lowCpu ^= true;
 			}
 		};
 
 		struct PlaitsLPGItem : MenuItem {
 			Plaits *module;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				module->lpg ^= true;
 			}
 		};
@@ -291,23 +287,23 @@ struct PlaitsWidget : ModuleWidget {
 		struct PlaitsModelItem : MenuItem {
 			Plaits *module;
 			int model;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				module->patch.engine = model;
 			}
 		};
 
-		menu->addChild(MenuEntry::create());
-		PlaitsLowCpuItem *lowCpuItem = MenuItem::create<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
+		menu->addChild(new MenuEntry);
+		PlaitsLowCpuItem *lowCpuItem = createMenuItem<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
 		lowCpuItem->module = module;
 		menu->addChild(lowCpuItem);
-		PlaitsLPGItem *lpgItem = MenuItem::create<PlaitsLPGItem>("Edit LPG response/decay", CHECKMARK(module->lpg));
+		PlaitsLPGItem *lpgItem = createMenuItem<PlaitsLPGItem>("Edit LPG response/decay", CHECKMARK(module->lpg));
 		lpgItem->module = module;
 		menu->addChild(lpgItem);
 
 		menu->addChild(new MenuEntry());
-		menu->addChild(MenuLabel::create("Models"));
+		menu->addChild(createMenuLabel("Models"));
 		for (int i = 0; i < 16; i++) {
-			PlaitsModelItem *modelItem = MenuItem::create<PlaitsModelItem>(modelLabels[i], CHECKMARK(module->patch.engine == i));
+			PlaitsModelItem *modelItem = createMenuItem<PlaitsModelItem>(modelLabels[i], CHECKMARK(module->patch.engine == i));
 			modelItem->module = module;
 			modelItem->model = i;
 			menu->addChild(modelItem);
@@ -316,5 +312,5 @@ struct PlaitsWidget : ModuleWidget {
 };
 
 
-Model *modelPlaits = Model::create<Plaits, PlaitsWidget>("Plaits");
+Model *modelPlaits = createModel<Plaits, PlaitsWidget>("Plaits");
 

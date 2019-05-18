@@ -1,6 +1,4 @@
-#include <string.h>
 #include "AudibleInstruments.hpp"
-#include "dsp/digital.hpp"
 #include "warps/dsp/modulator.h"
 
 
@@ -43,14 +41,14 @@ struct Warps : Module {
 	Warps();
 	void step() override;
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		warps::Parameters *p = modulator.mutable_parameters();
 		json_object_set_new(rootJ, "shape", json_integer(p->carrier_shape));
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *shapeJ = json_object_get(rootJ, "shape");
 		warps::Parameters *p = modulator.mutable_parameters();
 		if (shapeJ) {
@@ -128,35 +126,35 @@ struct AlgorithmLight : RedGreenBlueLight {
 
 struct WarpsWidget : ModuleWidget {
 	WarpsWidget(Warps *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Warps.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Warps.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(120, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(120, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(120, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(120, 365)));
 
-		addParam(ParamWidget::create<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
+		addParam(createParam<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0));
 
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
-		addParam(ParamWidget::create<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0));
+		addParam(createParam<Trimpot>(Vec(53, 213), module, Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0));
 
-		addInput(Port::create<PJ301MPort>(Vec(8, 273), Port::INPUT, module, Warps::LEVEL1_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(44, 273), Port::INPUT, module, Warps::LEVEL2_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(80, 273), Port::INPUT, module, Warps::ALGORITHM_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(116, 273), Port::INPUT, module, Warps::TIMBRE_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(8, 273), PortWidget::INPUT, module, Warps::LEVEL1_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(44, 273), PortWidget::INPUT, module, Warps::LEVEL2_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(80, 273), PortWidget::INPUT, module, Warps::ALGORITHM_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(116, 273), PortWidget::INPUT, module, Warps::TIMBRE_INPUT));
 
-		addInput(Port::create<PJ301MPort>(Vec(8, 316), Port::INPUT, module, Warps::CARRIER_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(44, 316), Port::INPUT, module, Warps::MODULATOR_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(80, 316), Port::OUTPUT, module, Warps::MODULATOR_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(116, 316), Port::OUTPUT, module, Warps::AUX_OUTPUT));
+		addInput(createPort<PJ301MPort>(Vec(8, 316), PortWidget::INPUT, module, Warps::CARRIER_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(44, 316), PortWidget::INPUT, module, Warps::MODULATOR_INPUT));
+		addOutput(createPort<PJ301MPort>(Vec(80, 316), PortWidget::OUTPUT, module, Warps::MODULATOR_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(116, 316), PortWidget::OUTPUT, module, Warps::AUX_OUTPUT));
 
-		addChild(ModuleLightWidget::create<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
 
-		addChild(ModuleLightWidget::create<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
+		addChild(createLight<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
 	}
 };
 
 
-Model *modelWarps = Model::create<Warps, WarpsWidget>("Warps");
+Model *modelWarps = createModel<Warps, WarpsWidget>("Warps");

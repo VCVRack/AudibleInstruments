@@ -1,8 +1,6 @@
 #include "AudibleInstruments.hpp"
-#include <string.h>
 #include "frames/keyframer.h"
 #include "frames/poly_lfo.h"
-#include "dsp/digital.hpp"
 
 
 struct Frames : Module {
@@ -54,7 +52,7 @@ struct Frames : Module {
 	Frames();
 	void step() override;
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
 
@@ -82,7 +80,7 @@ struct Frames : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *polyLfoJ = json_object_get(rootJ, "polyLfo");
 		if (polyLfoJ)
 			poly_lfo_mode = json_boolean_value(polyLfoJ);
@@ -275,61 +273,59 @@ void Frames::step() {
 }
 
 
-struct CKSSRot : SVGSwitch, ToggleSwitch {
+struct CKSSRot : SVGSwitch {
 	CKSSRot() {
-		addFrame(SVG::load(assetPlugin(plugin, "res/CKSS_rot_0.svg")));
-		addFrame(SVG::load(assetPlugin(plugin, "res/CKSS_rot_1.svg")));
-		sw->wrap();
-		box.size = sw->box.size;
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/CKSS_rot_0.svg")));
+		addFrame(SVG::load(assetPlugin(pluginInstance, "res/CKSS_rot_1.svg")));
 	}
 };
 
 
 struct FramesWidget : ModuleWidget {
 	FramesWidget(Frames *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Frames.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Frames.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(box.size.x-30, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
 
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<CKSSRot>(Vec(18, 239), module, Frames::OFFSET_PARAM, 0.0, 1.0, 0.0));
 
-		addInput(Port::create<PJ301MPort>(Vec(16, 273), Port::INPUT, module, Frames::ALL_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(59, 273), Port::INPUT, module, Frames::IN1_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(102, 273), Port::INPUT, module, Frames::IN2_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(145, 273), Port::INPUT, module, Frames::IN3_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(188, 273), Port::INPUT, module, Frames::IN4_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(231, 273), Port::INPUT, module, Frames::FRAME_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(16, 273), PortWidget::INPUT, module, Frames::ALL_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(59, 273), PortWidget::INPUT, module, Frames::IN1_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(102, 273), PortWidget::INPUT, module, Frames::IN2_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(145, 273), PortWidget::INPUT, module, Frames::IN3_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(188, 273), PortWidget::INPUT, module, Frames::IN4_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(231, 273), PortWidget::INPUT, module, Frames::FRAME_INPUT));
 
-		addOutput(Port::create<PJ301MPort>(Vec(16, 315), Port::OUTPUT, module, Frames::MIX_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(59, 315), Port::OUTPUT, module, Frames::OUT1_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(102, 315), Port::OUTPUT, module, Frames::OUT2_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(145, 315), Port::OUTPUT, module, Frames::OUT3_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(188, 315), Port::OUTPUT, module, Frames::OUT4_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(231, 315), Port::OUTPUT, module, Frames::FRAME_STEP_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(16, 315), PortWidget::OUTPUT, module, Frames::MIX_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(59, 315), PortWidget::OUTPUT, module, Frames::OUT1_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(102, 315), PortWidget::OUTPUT, module, Frames::OUT2_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(145, 315), PortWidget::OUTPUT, module, Frames::OUT3_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(188, 315), PortWidget::OUTPUT, module, Frames::OUT4_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(231, 315), PortWidget::OUTPUT, module, Frames::FRAME_STEP_OUTPUT));
 
-		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
-		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
-		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
-		addChild(ModuleLightWidget::create<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
+		addChild(createLight<SmallLight<GreenLight>>(Vec(30, 101), module, Frames::GAIN1_LIGHT + 0));
+		addChild(createLight<SmallLight<GreenLight>>(Vec(97, 101), module, Frames::GAIN1_LIGHT + 1));
+		addChild(createLight<SmallLight<GreenLight>>(Vec(165, 101), module, Frames::GAIN1_LIGHT + 2));
+		addChild(createLight<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
 
 		struct FrameLight : RedGreenBlueLight {
 			FrameLight() {
 				box.size = Vec(71, 71);
 			}
 		};
-		addChild(ModuleLightWidget::create<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
+		addChild(createLight<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
 	}
 
 
@@ -343,7 +339,7 @@ struct FramesWidget : ModuleWidget {
 			Frames *frames;
 			uint8_t channel;
 			frames::EasingCurve curve;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				frames->keyframer.mutable_settings(channel)->easing_curve = curve;
 			}
 			void step() override {
@@ -356,7 +352,7 @@ struct FramesWidget : ModuleWidget {
 			Frames *frames;
 			uint8_t channel;
 			uint8_t response;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				frames->keyframer.mutable_settings(channel)->response = response;
 			}
 			void step() override {
@@ -371,7 +367,7 @@ struct FramesWidget : ModuleWidget {
 			Menu *createChildMenu() override {
 				Menu *menu = new Menu();
 
-				menu->addChild(construct<MenuLabel>(&MenuLabel::text, stringf("Channel %d", channel + 1)));
+				menu->addChild(construct<MenuLabel>(&MenuLabel::text, string::f("Channel %d", channel + 1)));
 				menu->addChild(construct<MenuLabel>());
 
 				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interpolation Curve"));
@@ -392,7 +388,7 @@ struct FramesWidget : ModuleWidget {
 
 		struct FramesClearItem : MenuItem {
 			Frames *frames;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				frames->keyframer.Clear();
 			}
 		};
@@ -400,7 +396,7 @@ struct FramesWidget : ModuleWidget {
 		struct FramesModeItem : MenuItem {
 			Frames *frames;
 			bool poly_lfo_mode;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				frames->poly_lfo_mode = poly_lfo_mode;
 			}
 			void step() override {
@@ -412,7 +408,7 @@ struct FramesWidget : ModuleWidget {
 		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channel Settings"));
 		for (int i = 0; i < 4; i++) {
-			menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, stringf("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
+			menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, string::f("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
 		}
 		menu->addChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
 
@@ -424,4 +420,4 @@ struct FramesWidget : ModuleWidget {
 };
 
 
-Model *modelFrames = Model::create<Frames, FramesWidget>("Frames");
+Model *modelFrames = createModel<Frames, FramesWidget>("Frames");

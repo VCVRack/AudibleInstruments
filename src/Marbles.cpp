@@ -1,5 +1,4 @@
 #include "AudibleInstruments.hpp"
-#include "dsp/digital.hpp"
 #include "marbles/random/random_generator.h"
 #include "marbles/random/random_stream.h"
 #include "marbles/random/t_generator.h"
@@ -263,7 +262,7 @@ struct Marbles : Module {
 		}
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "t_deja_vu", json_boolean(t_deja_vu));
@@ -280,7 +279,7 @@ struct Marbles : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
 		if (t_deja_vuJ)
 			t_deja_vu = json_boolean_value(t_deja_vuJ);
@@ -511,7 +510,7 @@ struct CKD6Light : BASE {
 
 struct MarblesWidget : ModuleWidget {
 	MarblesWidget(Marbles *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Marbles.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Marbles.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
@@ -574,13 +573,13 @@ struct MarblesWidget : ModuleWidget {
 		struct ScaleItem : MenuItem {
 			Marbles *module;
 			int scale;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				module->x_scale = scale;
 			}
 		};
 
-		menu->addChild(MenuEntry::create());
-		menu->addChild(MenuLabel::create("Scales"));
+		menu->addChild(new MenuEntry);
+		menu->addChild(createMenuLabel("Scales"));
 		const std::string scaleLabels[] = {
 			"Major",
 			"Minor",
@@ -590,7 +589,7 @@ struct MarblesWidget : ModuleWidget {
 			"Raag Shri",
 		};
 		for (int i = 0; i < (int) LENGTHOF(scaleLabels); i++) {
-			ScaleItem *item = MenuItem::create<ScaleItem>(scaleLabels[i], CHECKMARK(module->x_scale == i));
+			ScaleItem *item = createMenuItem<ScaleItem>(scaleLabels[i], CHECKMARK(module->x_scale == i));
 			item->module = module;
 			item->scale = i;
 			menu->addChild(item);
@@ -599,13 +598,13 @@ struct MarblesWidget : ModuleWidget {
 		struct XClockSourceInternal : MenuItem {
 			Marbles *module;
 			int source;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				module->x_clock_source_internal = source;
 			}
 		};
 
-		menu->addChild(MenuEntry::create());
-		menu->addChild(MenuLabel::create("Internal X clock source"));
+		menu->addChild(new MenuEntry);
+		menu->addChild(createMenuLabel("Internal X clock source"));
 		const std::string sourceLabels[] = {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
 			"T₁ → X₁, X₂, X₃",
@@ -613,7 +612,7 @@ struct MarblesWidget : ModuleWidget {
 			"T₃ → X₁, X₂, X₃",
 		};
 		for (int i = 0; i < (int) LENGTHOF(sourceLabels); i++) {
-			XClockSourceInternal *item = MenuItem::create<XClockSourceInternal>(sourceLabels[i], CHECKMARK(module->x_clock_source_internal == i));
+			XClockSourceInternal *item = createMenuItem<XClockSourceInternal>(sourceLabels[i], CHECKMARK(module->x_clock_source_internal == i));
 			item->module = module;
 			item->source = i;
 			menu->addChild(item);
@@ -622,7 +621,7 @@ struct MarblesWidget : ModuleWidget {
 		struct YDividerIndexItem : MenuItem {
 			Marbles *module;
 			int index;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				module->y_divider_index = index;
 			}
 		};
@@ -646,7 +645,7 @@ struct MarblesWidget : ModuleWidget {
 					"1",
 				};
 				for (int i = 0; i < (int) LENGTHOF(yDividerRatioLabels); i++) {
-					YDividerIndexItem *item = MenuItem::create<YDividerIndexItem>(yDividerRatioLabels[i], CHECKMARK(module->y_divider_index == i));
+					YDividerIndexItem *item = createMenuItem<YDividerIndexItem>(yDividerRatioLabels[i], CHECKMARK(module->y_divider_index == i));
 					item->module = module;
 					item->index = i;
 					menu->addChild(item);
@@ -655,8 +654,8 @@ struct MarblesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(MenuEntry::create());
-		YDividerItem *yDividerItem = MenuItem::create<YDividerItem>("Y divider ratio");
+		menu->addChild(new MenuEntry);
+		YDividerItem *yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
 		yDividerItem->module = module;
 		menu->addChild(yDividerItem);
 	}

@@ -1,10 +1,10 @@
 #include "AudibleInstruments.hpp"
 
 
-Plugin *plugin;
+Plugin *pluginInstance;
 
 void init(rack::Plugin *p) {
-	plugin = p;
+	pluginInstance = p;
 
 	p->addModel(modelBraids);
 	p->addModel(modelPlaits);

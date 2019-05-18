@@ -1,13 +1,6 @@
-#include <string>
 #include <chrono>
-
-#include "dsp/digital.hpp"
-#include "dsp/samplerate.hpp"
-#include "dsp/ringbuffer.hpp"
-
 #include "peaks/io_buffer.h"
 #include "peaks/processors.h"
-
 #include "AudibleInstruments.hpp"
 
 
@@ -193,7 +186,7 @@ struct Peaks : Module {
 		setFunction(1, function_[1]);
 	}
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 
 		saveState();
 
@@ -215,7 +208,7 @@ struct Peaks : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *editModeJ = json_object_get(rootJ, "edit_mode");
 		if (editModeJ) {
 			settings_.edit_mode = static_cast<EditMode>(json_integer_value(editModeJ));
@@ -261,7 +254,7 @@ struct Peaks : Module {
 		}
 
 		if (outputBuffer.empty()) {
-			ioBuffer.Process(process);
+			ioBuffer.Process(::process);
 
 			uint32_t external_gate_inputs = 0;
 			external_gate_inputs |= (inputs[GATE_1_INPUT].value ? 1 : 0);
@@ -601,43 +594,42 @@ void Peaks::refreshLeds() {
 
 struct PeaksWidget : ModuleWidget {
 	PeaksWidget(Peaks *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Peaks.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Peaks.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 
-		addParam(ParamWidget::create<TL1105>(Vec(8.5, 52), module, Peaks::BUTTON_1_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 74), module, Peaks::TWIN_MODE_LIGHT));
-		addParam(ParamWidget::create<TL1105>(Vec(8.5, 89), module, Peaks::BUTTON_2_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 111), module, Peaks::FUNC_1_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 126.75), module, Peaks::FUNC_2_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 142.5), module, Peaks::FUNC_3_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 158), module, Peaks::FUNC_4_LIGHT));
+		addParam(createParam<TL1105>(Vec(8.5, 52), module, Peaks::BUTTON_1_PARAM, 0.0f, 1.0f, 0.0f));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 74), module, Peaks::TWIN_MODE_LIGHT));
+		addParam(createParam<TL1105>(Vec(8.5, 89), module, Peaks::BUTTON_2_PARAM, 0.0f, 1.0f, 0.0f));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 111), module, Peaks::FUNC_1_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 126.75), module, Peaks::FUNC_2_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 142.5), module, Peaks::FUNC_3_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 158), module, Peaks::FUNC_4_LIGHT));
 
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 51), module, Peaks::KNOB_1_PARAM, 0.0f, 65535.0f, 16384.0f));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 115), module, Peaks::KNOB_2_PARAM, 0.0f, 65535.0f, 16384.0f));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 179), module, Peaks::KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 244), module, Peaks::KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 51), module, Peaks::KNOB_1_PARAM, 0.0f, 65535.0f, 16384.0f));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 115), module, Peaks::KNOB_2_PARAM, 0.0f, 65535.0f, 16384.0f));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 179), module, Peaks::KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 244), module, Peaks::KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f));
 
-		addParam(ParamWidget::create<LEDBezel>(Vec(11, 188), module, Peaks::TRIG_1_PARAM, 0.0f, 1.0f, 0.0f));
-		addParam(ParamWidget::create<LEDBezel>(Vec(11, 273), module, Peaks::TRIG_2_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<LEDBezelLight<GreenLight>>(Vec(11, 188).plus(mm2px(Vec(0.75, 0.75))), module, Peaks::TRIG_1_LIGHT));
-		addChild(ModuleLightWidget::create<LEDBezelLight<GreenLight>>(Vec(11, 273).plus(mm2px(Vec(0.75, 0.75))), module, Peaks::TRIG_2_LIGHT));
+		addParam(createParam<LEDBezel>(Vec(11, 188), module, Peaks::TRIG_1_PARAM, 0.0f, 1.0f, 0.0f));
+		addParam(createParam<LEDBezel>(Vec(11, 273), module, Peaks::TRIG_2_PARAM, 0.0f, 1.0f, 0.0f));
+		addChild(createLight<LEDBezelLight<GreenLight>>(Vec(11, 188).plus(mm2px(Vec(0.75, 0.75))), module, Peaks::TRIG_1_LIGHT));
+		addChild(createLight<LEDBezelLight<GreenLight>>(Vec(11, 273).plus(mm2px(Vec(0.75, 0.75))), module, Peaks::TRIG_2_LIGHT));
 
-		addInput(Port::create<PJ301MPort>(Vec(10, 230), Port::INPUT, module, Peaks::GATE_1_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(10, 315), Port::INPUT, module, Peaks::GATE_2_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(10, 230), PortWidget::INPUT, module, Peaks::GATE_1_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(10, 315), PortWidget::INPUT, module, Peaks::GATE_2_INPUT));
 
-		addOutput(Port::create<PJ301MPort>(Vec(53, 315), Port::OUTPUT, module, Peaks::OUT_1_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(86, 315), Port::OUTPUT, module, Peaks::OUT_2_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(53, 315), PortWidget::OUTPUT, module, Peaks::OUT_1_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(86, 315), PortWidget::OUTPUT, module, Peaks::OUT_2_OUTPUT));
 	}
 
-	Menu *createContextMenu() override {
-		Menu *menu = ModuleWidget::createContextMenu();
+	void appendContextMenu(Menu *menu) override {
 		Peaks *peaks = dynamic_cast<Peaks*>(this->module);
 
 		struct SnapModeItem : MenuItem {
 			Peaks *peaks;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				peaks->snap_mode_ = !peaks->snap_mode_;
 			}
 			void step() override {
@@ -648,7 +640,7 @@ struct PeaksWidget : ModuleWidget {
 
 		struct NumberStationItem : MenuItem {
 			Peaks *peaks;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				peaks->initNumberStation = true;
 			}
 		};
@@ -659,11 +651,9 @@ struct PeaksWidget : ModuleWidget {
 		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Secret Modes"));
 		menu->addChild(construct<NumberStationItem>(&NumberStationItem::text, "Number Station", &NumberStationItem::peaks, peaks));
-
-		return menu;
 	}
 };
 
 
 
-Model *modelPeaks = Model::create<Peaks, PeaksWidget>("Peaks");
+Model *modelPeaks = createModel<Peaks, PeaksWidget>("Peaks");

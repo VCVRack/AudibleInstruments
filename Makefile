@@ -1,6 +1,3 @@
-SLUG = AudibleInstruments
-VERSION = 0.6.3
-
 FLAGS += \
 	-DTEST \
 	-I./eurorack \

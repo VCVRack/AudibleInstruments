@@ -141,7 +141,7 @@
       "name": "Keyframer/Mixer",
       "description": "",
       "tags": [
-        "Oscillator"
+        "Oscillator",
         "Mixer",
         "Attenuator",
         "LFO"
@@ -163,6 +163,6 @@
       "tags": [
         "Random"
       ]
-    },
+    }
   ]
 }

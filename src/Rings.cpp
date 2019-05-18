@@ -1,9 +1,4 @@
-#include <string.h>
 #include "AudibleInstruments.hpp"
-#include "dsp/functions.hpp"
-#include "dsp/samplerate.hpp"
-#include "dsp/ringbuffer.hpp"
-#include "dsp/digital.hpp"
 #include "rings/dsp/part.h"
 #include "rings/dsp/strummer.h"
 #include "rings/dsp/string_synth_part.h"
@@ -65,23 +60,23 @@ struct Rings : Module {
 	SchmittTrigger polyphonyTrigger;
 	SchmittTrigger modelTrigger;
 	int polyphonyMode = 0;
-	rings::ResonatorModel model = rings::RESONATOR_MODEL_MODAL;
+	rings::ResonatorModel resonatorModel = rings::RESONATOR_MODEL_MODAL;
 	bool easterEgg = false;
 
 	Rings();
 	void step() override;
 
-	json_t *toJson() override {
+	json_t *dataToJson() override {
 		json_t *rootJ = json_object();
 
 		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
-		json_object_set_new(rootJ, "model", json_integer((int) model));
+		json_object_set_new(rootJ, "model", json_integer((int) resonatorModel));
 		json_object_set_new(rootJ, "easterEgg", json_boolean(easterEgg));
 
 		return rootJ;
 	}
 
-	void fromJson(json_t *rootJ) override {
+	void dataFromJson(json_t *rootJ) override {
 		json_t *polyphonyJ = json_object_get(rootJ, "polyphony");
 		if (polyphonyJ) {
 			polyphonyMode = json_integer_value(polyphonyJ);
@@ -89,7 +84,7 @@ struct Rings : Module {
 
 		json_t *modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
-			model = (rings::ResonatorModel) json_integer_value(modelJ);
+			resonatorModel = (rings::ResonatorModel) json_integer_value(modelJ);
 		}
 
 		json_t *easterEggJ = json_object_get(rootJ, "easterEgg");
@@ -100,12 +95,12 @@ struct Rings : Module {
 
 	void onReset() override {
 		polyphonyMode = 0;
-		model = rings::RESONATOR_MODEL_MODAL;
+		resonatorModel = rings::RESONATOR_MODEL_MODAL;
 	}
 
 	void onRandomize() override {
 		polyphonyMode = randomu32() % 3;
-		model = (rings::ResonatorModel) (randomu32() % 3);
+		resonatorModel = (rings::ResonatorModel) (randomu32() % 3);
 	}
 };
 
@@ -142,9 +137,9 @@ void Rings::step() {
 	lights[POLYPHONY_RED_LIGHT].value = (polyphonyMode == 1 || polyphonyMode == 2) ? 1.0 : 0.0;
 
 	if (modelTrigger.process(params[RESONATOR_PARAM].value)) {
-		model = (rings::ResonatorModel) ((model + 1) % 3);
+		resonatorModel = (rings::ResonatorModel) ((resonatorModel + 1) % 3);
 	}
-	int modelColor = model % 3;
+	int modelColor = resonatorModel % 3;
 	lights[RESONATOR_GREEN_LIGHT].value = (modelColor == 0 || modelColor == 1) ? 1.0 : 0.0;
 	lights[RESONATOR_RED_LIGHT].value = (modelColor == 1 || modelColor == 2) ? 1.0 : 0.0;
 
@@ -166,9 +161,9 @@ void Rings::step() {
 			part.set_polyphony(polyphony);
 		// Model
 		if (easterEgg)
-			string_synth.set_fx((rings::FxType) model);
+			string_synth.set_fx((rings::FxType) resonatorModel);
 		else
-			part.set_model(model);
+			part.set_model(resonatorModel);
 
 		// Patch
 		rings::Patch patch;
@@ -248,43 +243,43 @@ void Rings::step() {
 
 struct RingsWidget : ModuleWidget {
 	RingsWidget(Rings *module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Rings.svg")));
+		setPanel(SVG::load(assetPlugin(pluginInstance, "res/Rings.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(180, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
-		addChild(Widget::create<ScrewSilver>(Vec(180, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(180, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(180, 365)));
 
-		addParam(ParamWidget::create<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
-		addParam(ParamWidget::create<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(Vec(14, 40), module, Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0));
+		addParam(createParam<TL1105>(Vec(179, 40), module, Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0));
 
-		addParam(ParamWidget::create<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
-		addParam(ParamWidget::create<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan3PSWhite>(Vec(29, 72), module, Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0));
+		addParam(createParam<Rogan3PSWhite>(Vec(126, 72), module, Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5));
 
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSWhite>(Vec(13, 158), module, Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSWhite>(Vec(83, 158), module, Rings::DAMPING_PARAM, 0.0, 1.0, 0.5));
+		addParam(createParam<Rogan1PSWhite>(Vec(154, 158), module, Rings::POSITION_PARAM, 0.0, 1.0, 0.5));
 
-		addParam(ParamWidget::create<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
-		addParam(ParamWidget::create<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(19, 229), module, Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(57, 229), module, Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(96, 229), module, Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(134, 229), module, Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0));
+		addParam(createParam<Trimpot>(Vec(173, 229), module, Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0));
 
-		addInput(Port::create<PJ301MPort>(Vec(15, 273), Port::INPUT, module, Rings::BRIGHTNESS_MOD_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(54, 273), Port::INPUT, module, Rings::FREQUENCY_MOD_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(92, 273), Port::INPUT, module, Rings::DAMPING_MOD_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(131, 273), Port::INPUT, module, Rings::STRUCTURE_MOD_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(169, 273), Port::INPUT, module, Rings::POSITION_MOD_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(15, 273), PortWidget::INPUT, module, Rings::BRIGHTNESS_MOD_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(54, 273), PortWidget::INPUT, module, Rings::FREQUENCY_MOD_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(92, 273), PortWidget::INPUT, module, Rings::DAMPING_MOD_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(131, 273), PortWidget::INPUT, module, Rings::STRUCTURE_MOD_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(169, 273), PortWidget::INPUT, module, Rings::POSITION_MOD_INPUT));
 
-		addInput(Port::create<PJ301MPort>(Vec(15, 316), Port::INPUT, module, Rings::STRUM_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(54, 316), Port::INPUT, module, Rings::PITCH_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(92, 316), Port::INPUT, module, Rings::IN_INPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(131, 316), Port::OUTPUT, module, Rings::ODD_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(169, 316), Port::OUTPUT, module, Rings::EVEN_OUTPUT));
+		addInput(createPort<PJ301MPort>(Vec(15, 316), PortWidget::INPUT, module, Rings::STRUM_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(54, 316), PortWidget::INPUT, module, Rings::PITCH_INPUT));
+		addInput(createPort<PJ301MPort>(Vec(92, 316), PortWidget::INPUT, module, Rings::IN_INPUT));
+		addOutput(createPort<PJ301MPort>(Vec(131, 316), PortWidget::OUTPUT, module, Rings::ODD_OUTPUT));
+		addOutput(createPort<PJ301MPort>(Vec(169, 316), PortWidget::OUTPUT, module, Rings::EVEN_OUTPUT));
 
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
 	}
 
 	void appendContextMenu(Menu *menu) override {
@@ -294,18 +289,18 @@ struct RingsWidget : ModuleWidget {
 		struct RingsModelItem : MenuItem {
 			Rings *rings;
 			rings::ResonatorModel model;
-			void onAction(EventAction &e) override {
-				rings->model = model;
+			void onAction(const event::Action &e) override {
+				rings->resonatorModel = model;
 			}
 			void step() override {
-				rightText = (rings->model == model) ? "✔" : "";
+				rightText = (rings->resonatorModel == model) ? "✔" : "";
 				MenuItem::step();
 			}
 		};
 
 		struct RingsEasterEggItem : MenuItem {
 			Rings *rings;
-			void onAction(EventAction &e) override {
+			void onAction(const event::Action &e) override {
 				rings->easterEgg = !rings->easterEgg;
 			}
 			void step() override {
@@ -329,4 +324,4 @@ struct RingsWidget : ModuleWidget {
 };
 
 
-Model *modelRings = Model::create<Rings, RingsWidget>("Rings");
+Model *modelRings = createModel<Rings, RingsWidget>("Rings");
