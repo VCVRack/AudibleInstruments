@@ -51,15 +51,15 @@ struct Frames : Module {
 
 	Frames() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Frames::GAIN1_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::GAIN2_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::GAIN3_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::GAIN4_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::FRAME_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::MODULATION_PARAM, -1.0, 1.0, 0.0);
-		configParam(Frames::ADD_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::DEL_PARAM, 0.0, 1.0, 0.0);
-		configParam(Frames::OFFSET_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN1_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0);
+		configParam(FRAME_PARAM, 0.0, 1.0, 0.0);
+		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0);
+		configParam(ADD_PARAM, 0.0, 1.0, 0.0);
+		configParam(DEL_PARAM, 0.0, 1.0, 0.0);
+		configParam(OFFSET_PARAM, 0.0, 1.0, 0.0);
 
 		memset(&keyframer, 0, sizeof(keyframer));
 		keyframer.Init();
@@ -69,7 +69,7 @@ struct Frames : Module {
 		onReset();
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// Set gain and timestamp knobs
 		uint16_t controls[4];
 		for (int i = 0; i < 4; i++) {

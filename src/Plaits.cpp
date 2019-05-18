@@ -58,15 +58,15 @@ struct Plaits : Module {
 
 	Plaits() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Plaits::MODEL1_PARAM, 0.0, 1.0, 0.0);
-		configParam(Plaits::MODEL2_PARAM, 0.0, 1.0, 0.0);
-		configParam(Plaits::FREQ_PARAM, -4.0, 4.0, 0.0);
-		configParam(Plaits::HARMONICS_PARAM, 0.0, 1.0, 0.5);
-		configParam(Plaits::TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Plaits::MORPH_PARAM, 0.0, 1.0, 0.5);
-		configParam(Plaits::TIMBRE_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(Plaits::FREQ_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(Plaits::MORPH_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0);
+		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0);
+		configParam(FREQ_PARAM, -4.0, 4.0, 0.0);
+		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5);
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(MORPH_PARAM, 0.0, 1.0, 0.5);
+		configParam(TIMBRE_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0);
 
 		memset(shared_buffer, 0, sizeof(shared_buffer));
 		stmlib::BufferAllocator allocator(shared_buffer, sizeof(shared_buffer));

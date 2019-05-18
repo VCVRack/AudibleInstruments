@@ -225,21 +225,21 @@ struct Marbles : Module {
 
 	Marbles() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Marbles::T_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::X_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::DEJA_VU_PARAM, 0.0, 1.0, 0.5);
-		configParam(Marbles::T_RATE_PARAM, -1.0, 1.0, 0.0);
-		configParam(Marbles::X_SPREAD_PARAM, 0.0, 1.0, 0.5);
-		configParam(Marbles::T_MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::X_MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::T_BIAS_PARAM, 0.0, 1.0, 0.5);
-		configParam(Marbles::X_BIAS_PARAM, 0.0, 1.0, 0.5);
-		configParam(Marbles::T_RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::X_RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::EXTERNAL_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::T_JITTER_PARAM, 0.0, 1.0, 0.0);
-		configParam(Marbles::X_STEPS_PARAM, 0.0, 1.0, 0.5);
+		configParam(T_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
+		configParam(X_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
+		configParam(DEJA_VU_PARAM, 0.0, 1.0, 0.5);
+		configParam(T_RATE_PARAM, -1.0, 1.0, 0.0);
+		configParam(X_SPREAD_PARAM, 0.0, 1.0, 0.5);
+		configParam(T_MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(X_MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0);
+		configParam(T_BIAS_PARAM, 0.0, 1.0, 0.5);
+		configParam(X_BIAS_PARAM, 0.0, 1.0, 0.5);
+		configParam(T_RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(X_RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(EXTERNAL_PARAM, 0.0, 1.0, 0.0);
+		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0);
+		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5);
 
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);

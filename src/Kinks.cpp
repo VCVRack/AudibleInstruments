@@ -37,7 +37,7 @@ struct Kinks : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// Gaussian noise generator
 		float noise = 2.0 * random::normal();
 

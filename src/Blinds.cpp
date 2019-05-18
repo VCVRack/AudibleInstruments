@@ -45,17 +45,17 @@ struct Blinds : Module {
 
 	Blinds() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Blinds::GAIN1_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::GAIN2_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::GAIN3_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::GAIN4_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::MOD1_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::MOD2_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::MOD3_PARAM, -1.0, 1.0, 0.0);
-		configParam(Blinds::MOD4_PARAM, -1.0, 1.0, 0.0);
+		configParam(GAIN1_PARAM, -1.0, 1.0, 0.0);
+		configParam(GAIN2_PARAM, -1.0, 1.0, 0.0);
+		configParam(GAIN3_PARAM, -1.0, 1.0, 0.0);
+		configParam(GAIN4_PARAM, -1.0, 1.0, 0.0);
+		configParam(MOD1_PARAM, -1.0, 1.0, 0.0);
+		configParam(MOD2_PARAM, -1.0, 1.0, 0.0);
+		configParam(MOD3_PARAM, -1.0, 1.0, 0.0);
+		configParam(MOD4_PARAM, -1.0, 1.0, 0.0);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		float out = 0.0;
 
 		for (int i = 0; i < 4; i++) {

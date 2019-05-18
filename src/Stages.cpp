@@ -155,24 +155,24 @@ struct Stages : Module {
 
 	Stages() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Stages::SHAPE_PARAMS + 0, 0.0, 1.0, 0.5);
-		configParam(Stages::SHAPE_PARAMS + 1, 0.0, 1.0, 0.5);
-		configParam(Stages::SHAPE_PARAMS + 2, 0.0, 1.0, 0.5);
-		configParam(Stages::SHAPE_PARAMS + 3, 0.0, 1.0, 0.5);
-		configParam(Stages::SHAPE_PARAMS + 4, 0.0, 1.0, 0.5);
-		configParam(Stages::SHAPE_PARAMS + 5, 0.0, 1.0, 0.5);
-		configParam(Stages::TYPE_PARAMS + 0, 0.0, 1.0, 0.0);
-		configParam(Stages::TYPE_PARAMS + 1, 0.0, 1.0, 0.0);
-		configParam(Stages::TYPE_PARAMS + 2, 0.0, 1.0, 0.0);
-		configParam(Stages::TYPE_PARAMS + 3, 0.0, 1.0, 0.0);
-		configParam(Stages::TYPE_PARAMS + 4, 0.0, 1.0, 0.0);
-		configParam(Stages::TYPE_PARAMS + 5, 0.0, 1.0, 0.0);
-		configParam(Stages::LEVEL_PARAMS + 0, 0.0, 1.0, 0.5);
-		configParam(Stages::LEVEL_PARAMS + 1, 0.0, 1.0, 0.5);
-		configParam(Stages::LEVEL_PARAMS + 2, 0.0, 1.0, 0.5);
-		configParam(Stages::LEVEL_PARAMS + 3, 0.0, 1.0, 0.5);
-		configParam(Stages::LEVEL_PARAMS + 4, 0.0, 1.0, 0.5);
-		configParam(Stages::LEVEL_PARAMS + 5, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAMS + 0, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAMS + 1, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAMS + 2, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAMS + 3, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAMS + 4, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAMS + 5, 0.0, 1.0, 0.5);
+		configParam(TYPE_PARAMS + 0, 0.0, 1.0, 0.0);
+		configParam(TYPE_PARAMS + 1, 0.0, 1.0, 0.0);
+		configParam(TYPE_PARAMS + 2, 0.0, 1.0, 0.0);
+		configParam(TYPE_PARAMS + 3, 0.0, 1.0, 0.0);
+		configParam(TYPE_PARAMS + 4, 0.0, 1.0, 0.0);
+		configParam(TYPE_PARAMS + 5, 0.0, 1.0, 0.0);
+		configParam(LEVEL_PARAMS + 0, 0.0, 1.0, 0.5);
+		configParam(LEVEL_PARAMS + 1, 0.0, 1.0, 0.5);
+		configParam(LEVEL_PARAMS + 2, 0.0, 1.0, 0.5);
+		configParam(LEVEL_PARAMS + 3, 0.0, 1.0, 0.5);
+		configParam(LEVEL_PARAMS + 4, 0.0, 1.0, 0.5);
+		configParam(LEVEL_PARAMS + 5, 0.0, 1.0, 0.5);
 
 		onReset();
 	}

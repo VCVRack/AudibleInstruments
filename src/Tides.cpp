@@ -52,13 +52,13 @@ struct Tides : Module {
 
 	Tides() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Tides::MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Tides::RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Tides::FREQUENCY_PARAM, -48.0, 48.0, 0.0);
-		configParam(Tides::FM_PARAM, -12.0, 12.0, 0.0);
-		configParam(Tides::SHAPE_PARAM, -1.0, 1.0, 0.0);
-		configParam(Tides::SLOPE_PARAM, -1.0, 1.0, 0.0);
-		configParam(Tides::SMOOTHNESS_PARAM, -1.0, 1.0, 0.0);
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(FREQUENCY_PARAM, -48.0, 48.0, 0.0);
+		configParam(FM_PARAM, -12.0, 12.0, 0.0);
+		configParam(SHAPE_PARAM, -1.0, 1.0, 0.0);
+		configParam(SLOPE_PARAM, -1.0, 1.0, 0.0);
+		configParam(SMOOTHNESS_PARAM, -1.0, 1.0, 0.0);
 
 		memset(&generator, 0, sizeof(generator));
 		generator.Init();
@@ -66,7 +66,7 @@ struct Tides : Module {
 		onReset();
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		tides::GeneratorMode mode = generator.mode();
 		if (modeTrigger.process(params[MODE_PARAM].getValue())) {
 			mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);

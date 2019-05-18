@@ -67,19 +67,19 @@ struct Clouds : Module {
 
 	Clouds() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Clouds::POSITION_PARAM, 0.0, 1.0, 0.5);
-		configParam(Clouds::SIZE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Clouds::PITCH_PARAM, -2.0, 2.0, 0.0);
-		configParam(Clouds::IN_GAIN_PARAM, 0.0, 1.0, 0.5);
-		configParam(Clouds::DENSITY_PARAM, 0.0, 1.0, 0.5);
-		configParam(Clouds::TEXTURE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Clouds::BLEND_PARAM, 0.0, 1.0, 0.5);
-		configParam(Clouds::SPREAD_PARAM, 0.0, 1.0, 0.0);
-		configParam(Clouds::FEEDBACK_PARAM, 0.0, 1.0, 0.0);
-		configParam(Clouds::REVERB_PARAM, 0.0, 1.0, 0.0);
-		configParam(Clouds::FREEZE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Clouds::MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Clouds::LOAD_PARAM, 0.0, 1.0, 0.0);
+		configParam(POSITION_PARAM, 0.0, 1.0, 0.5);
+		configParam(SIZE_PARAM, 0.0, 1.0, 0.5);
+		configParam(PITCH_PARAM, -2.0, 2.0, 0.0);
+		configParam(IN_GAIN_PARAM, 0.0, 1.0, 0.5);
+		configParam(DENSITY_PARAM, 0.0, 1.0, 0.5);
+		configParam(TEXTURE_PARAM, 0.0, 1.0, 0.5);
+		configParam(BLEND_PARAM, 0.0, 1.0, 0.5);
+		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0);
+		configParam(FEEDBACK_PARAM, 0.0, 1.0, 0.0);
+		configParam(REVERB_PARAM, 0.0, 1.0, 0.0);
+		configParam(FREEZE_PARAM, 0.0, 1.0, 0.0);
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(LOAD_PARAM, 0.0, 1.0, 0.0);
 
 		const int memLen = 118784;
 		const int ccmLen = 65536 - 128;
@@ -98,7 +98,7 @@ struct Clouds : Module {
 		delete[] block_ccm;
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// Get input
 		dsp::Frame<2> inputFrame = {};
 		if (!inputBuffer.full()) {

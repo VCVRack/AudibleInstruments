@@ -40,13 +40,13 @@ struct Braids : Module {
 
 	Braids() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
-		configParam(Braids::SHAPE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Braids::FINE_PARAM, -1.0, 1.0, 0.0);
-		configParam(Braids::COARSE_PARAM, -2.0, 2.0, 0.0);
-		configParam(Braids::FM_PARAM, -1.0, 1.0, 0.0);
-		configParam(Braids::TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Braids::MODULATION_PARAM, -1.0, 1.0, 0.0);
-		configParam(Braids::COLOR_PARAM, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0);
+		configParam(FINE_PARAM, -1.0, 1.0, 0.0);
+		configParam(COARSE_PARAM, -2.0, 2.0, 0.0);
+		configParam(FM_PARAM, -1.0, 1.0, 0.0);
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0);
+		configParam(COLOR_PARAM, 0.0, 1.0, 0.5);
 
 		memset(&osc, 0, sizeof(osc));
 		osc.Init();
@@ -62,7 +62,7 @@ struct Braids : Module {
 		settings.signature = 0;
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// Trigger
 		bool trig = inputs[TRIG_INPUT].getVoltage() >= 1.0;
 		if (!lastTrig && trig) {

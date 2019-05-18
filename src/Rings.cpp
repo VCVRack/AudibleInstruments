@@ -65,18 +65,18 @@ struct Rings : Module {
 
 	Rings() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Rings::POLYPHONY_PARAM, 0.0, 1.0, 0.0);
-		configParam(Rings::RESONATOR_PARAM, 0.0, 1.0, 0.0);
-		configParam(Rings::FREQUENCY_PARAM, 0.0, 60.0, 30.0);
-		configParam(Rings::STRUCTURE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Rings::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
-		configParam(Rings::DAMPING_PARAM, 0.0, 1.0, 0.5);
-		configParam(Rings::POSITION_PARAM, 0.0, 1.0, 0.5);
-		configParam(Rings::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Rings::FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Rings::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Rings::STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Rings::POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(POLYPHONY_PARAM, 0.0, 1.0, 0.0);
+		configParam(RESONATOR_PARAM, 0.0, 1.0, 0.0);
+		configParam(FREQUENCY_PARAM, 0.0, 60.0, 30.0);
+		configParam(STRUCTURE_PARAM, 0.0, 1.0, 0.5);
+		configParam(BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
+		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5);
+		configParam(POSITION_PARAM, 0.0, 1.0, 0.5);
+		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
 
 		memset(&strummer, 0, sizeof(strummer));
 		memset(&part, 0, sizeof(part));
@@ -87,7 +87,7 @@ struct Rings : Module {
 		string_synth.Init(reverb_buffer);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// TODO
 		// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
 		// Get input

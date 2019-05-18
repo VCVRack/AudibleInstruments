@@ -80,34 +80,34 @@ struct Elements : Module {
 
 	Elements() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Elements::CONTOUR_PARAM, 0.0, 1.0, 1.0);
-		configParam(Elements::BOW_PARAM, 0.0, 1.0, 0.0);
-		configParam(Elements::BLOW_PARAM, 0.0, 1.0, 0.0);
-		configParam(Elements::STRIKE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::COARSE_PARAM, -30.0, 30.0, 0.0);
-		configParam(Elements::FINE_PARAM, -2.0, 2.0, 0.0);
-		configParam(Elements::FM_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::FLOW_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::MALLET_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::GEOMETRY_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::BOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::BLOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::STRIKE_TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::DAMPING_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::POSITION_PARAM, 0.0, 1.0, 0.5);
-		configParam(Elements::SPACE_PARAM, 0.0, 2.0, 0.0);
-		configParam(Elements::BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::FLOW_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::MALLET_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(Elements::SPACE_MOD_PARAM, -2.0, 2.0, 0.0);
-		configParam(Elements::PLAY_PARAM, 0.0, 1.0, 0.0);
+		configParam(CONTOUR_PARAM, 0.0, 1.0, 1.0);
+		configParam(BOW_PARAM, 0.0, 1.0, 0.0);
+		configParam(BLOW_PARAM, 0.0, 1.0, 0.0);
+		configParam(STRIKE_PARAM, 0.0, 1.0, 0.5);
+		configParam(COARSE_PARAM, -30.0, 30.0, 0.0);
+		configParam(FINE_PARAM, -2.0, 2.0, 0.0);
+		configParam(FM_PARAM, -1.0, 1.0, 0.0);
+		configParam(FLOW_PARAM, 0.0, 1.0, 0.5);
+		configParam(MALLET_PARAM, 0.0, 1.0, 0.5);
+		configParam(GEOMETRY_PARAM, 0.0, 1.0, 0.5);
+		configParam(BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
+		configParam(BOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(BLOW_TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(STRIKE_TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5);
+		configParam(POSITION_PARAM, 0.0, 1.0, 0.5);
+		configParam(SPACE_PARAM, 0.0, 2.0, 0.0);
+		configParam(BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(FLOW_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(MALLET_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(SPACE_MOD_PARAM, -2.0, 2.0, 0.0);
+		configParam(PLAY_PARAM, 0.0, 1.0, 0.0);
 
 		part = new elements::Part();
 		// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.
@@ -122,7 +122,7 @@ struct Elements : Module {
 		delete part;
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// Get input
 		if (!inputBuffer.full()) {
 			dsp::Frame<2> inputFrame;

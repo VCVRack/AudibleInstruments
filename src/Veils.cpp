@@ -41,17 +41,17 @@ struct Veils : Module {
 
 	Veils() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Veils::GAIN1_PARAM, 0.0, 1.0, 0.0);
-		configParam(Veils::GAIN2_PARAM, 0.0, 1.0, 0.0);
-		configParam(Veils::GAIN3_PARAM, 0.0, 1.0, 0.0);
-		configParam(Veils::GAIN4_PARAM, 0.0, 1.0, 0.0);
-		configParam(Veils::RESPONSE1_PARAM, 0.0, 1.0, 1.0);
-		configParam(Veils::RESPONSE2_PARAM, 0.0, 1.0, 1.0);
-		configParam(Veils::RESPONSE3_PARAM, 0.0, 1.0, 1.0);
-		configParam(Veils::RESPONSE4_PARAM, 0.0, 1.0, 1.0);
+		configParam(GAIN1_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0);
+		configParam(RESPONSE1_PARAM, 0.0, 1.0, 1.0);
+		configParam(RESPONSE2_PARAM, 0.0, 1.0, 1.0);
+		configParam(RESPONSE3_PARAM, 0.0, 1.0, 1.0);
+		configParam(RESPONSE4_PARAM, 0.0, 1.0, 1.0);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		float out = 0.0;
 
 		for (int i = 0; i < 4; i++) {

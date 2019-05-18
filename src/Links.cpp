@@ -34,7 +34,7 @@ struct Links : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		float inA = inputs[A1_INPUT].getVoltage();
 		float inB = inputs[B1_INPUT].getVoltage() + inputs[B2_INPUT].getVoltage();
 		float inC = inputs[C1_INPUT].getVoltage() + inputs[C2_INPUT].getVoltage() + inputs[C3_INPUT].getVoltage();

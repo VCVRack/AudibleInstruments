@@ -101,19 +101,19 @@ struct Tides2 : Module {
 
 	Tides2() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Tides2::RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Tides2::MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Tides2::FREQUENCY_PARAM, -48, 48, 0.0);
-		configParam(Tides2::SHAPE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Tides2::RAMP_PARAM, 0.0, 1.0, 0.0);
-		configParam(Tides2::SMOOTHNESS_PARAM, 0.0, 1.0, 0.5);
-		configParam(Tides2::SLOPE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Tides2::SHIFT_PARAM, 0.0, 1.0, 0.5);
-		configParam(Tides2::SLOPE_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(Tides2::FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(Tides2::SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(Tides2::SHAPE_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(Tides2::SHIFT_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(RANGE_PARAM, 0.0, 1.0, 0.0);
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0);
+		configParam(FREQUENCY_PARAM, -48, 48, 0.0);
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5);
+		configParam(RAMP_PARAM, 0.0, 1.0, 0.0);
+		configParam(SMOOTHNESS_PARAM, 0.0, 1.0, 0.5);
+		configParam(SLOPE_PARAM, 0.0, 1.0, 0.5);
+		configParam(SHIFT_PARAM, 0.0, 1.0, 0.5);
+		configParam(SLOPE_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(SHAPE_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(SHIFT_CV_PARAM, -1.0, 1.0, 0.0);
 
 		poly_slope_generator.Init();
 		ratio_index_quantizer.Init();

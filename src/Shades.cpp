@@ -32,19 +32,19 @@ struct Shades : Module {
 
 	Shades() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Shades::GAIN1_PARAM, 0.0, 1.0, 0.5);
-		configParam(Shades::GAIN2_PARAM, 0.0, 1.0, 0.5);
-		configParam(Shades::GAIN3_PARAM, 0.0, 1.0, 0.5);
-		configParam(Shades::MODE1_PARAM, 0.0, 1.0, 1.0);
-		configParam(Shades::MODE2_PARAM, 0.0, 1.0, 1.0);
-		configParam(Shades::MODE3_PARAM, 0.0, 1.0, 1.0);
+		configParam(GAIN1_PARAM, 0.0, 1.0, 0.5);
+		configParam(GAIN2_PARAM, 0.0, 1.0, 0.5);
+		configParam(GAIN3_PARAM, 0.0, 1.0, 0.5);
+		configParam(MODE1_PARAM, 0.0, 1.0, 1.0);
+		configParam(MODE2_PARAM, 0.0, 1.0, 1.0);
+		configParam(MODE3_PARAM, 0.0, 1.0, 1.0);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		float out = 0.0;
 
 		for (int i = 0; i < 3; i++) {
-			float in = inputs[IN1_INPUT + i].normalize(5.0);
+			float in = inputs[IN1_INPUT + i].getNormalVoltage(5.0);
 			if ((int)params[MODE1_PARAM + i].getValue() == 1) {
 				// attenuverter
 				in *= 2.0 * params[GAIN1_PARAM + i].getValue() - 1.0;

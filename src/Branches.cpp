@@ -38,10 +38,10 @@ struct Branches : Module {
 
 	Branches() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Branches::THRESHOLD1_PARAM, 0.0, 1.0, 0.5);
-		configParam(Branches::MODE1_PARAM, 0.0, 1.0, 0.0);
-		configParam(Branches::THRESHOLD2_PARAM, 0.0, 1.0, 0.5);
-		configParam(Branches::MODE2_PARAM, 0.0, 1.0, 0.0);
+		configParam(THRESHOLD1_PARAM, 0.0, 1.0, 0.5);
+		configParam(MODE1_PARAM, 0.0, 1.0, 0.0);
+		configParam(THRESHOLD2_PARAM, 0.0, 1.0, 0.5);
+		configParam(MODE2_PARAM, 0.0, 1.0, 0.0);
 	}
 
 	json_t *dataToJson() override {
@@ -65,7 +65,7 @@ struct Branches : Module {
 		}
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		float gate = 0.0;
 		for (int i = 0; i < 2; i++) {
 			// mode button

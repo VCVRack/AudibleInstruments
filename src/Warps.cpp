@@ -40,17 +40,17 @@ struct Warps : Module {
 
 	Warps() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(Warps::ALGORITHM_PARAM, 0.0, 8.0, 0.0);
-		configParam(Warps::TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(Warps::STATE_PARAM, 0.0, 1.0, 0.0);
-		configParam(Warps::LEVEL1_PARAM, 0.0, 1.0, 1.0);
-		configParam(Warps::LEVEL2_PARAM, 0.0, 1.0, 1.0);
+		configParam(ALGORITHM_PARAM, 0.0, 8.0, 0.0);
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5);
+		configParam(STATE_PARAM, 0.0, 1.0, 0.0);
+		configParam(LEVEL1_PARAM, 0.0, 1.0, 1.0);
+		configParam(LEVEL2_PARAM, 0.0, 1.0, 1.0);
 
 		memset(&modulator, 0, sizeof(modulator));
 		modulator.Init(96000.0f);
 	}
 
-	void process(const ProcessArgs &args) {
+	void process(const ProcessArgs &args) override {
 		// State trigger
 		warps::Parameters *p = modulator.mutable_parameters();
 		if (stateTrigger.process(params[STATE_PARAM].getValue())) {
