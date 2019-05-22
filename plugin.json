@@ -14,7 +14,7 @@
     {
       "slug": "Braids",
       "name": "Macro Oscillator",
-      "description": "",
+      "description": "Based on Braids",
       "tags": [
         "Oscillator"
       ]
@@ -22,7 +22,7 @@
     {
       "slug": "Plaits",
       "name": "Macro Oscillator 2",
-      "description": "",
+      "description": "Based on Plaits",
       "tags": [
         "Oscillator"
       ]
@@ -30,7 +30,7 @@
     {
       "slug": "Elements",
       "name": "Modal Synthesizer",
-      "description": "",
+      "description": "Based on Elements",
       "tags": [
         "Physical modeling"
       ]
@@ -38,7 +38,7 @@
     {
       "slug": "Tides",
       "name": "Tidal Modulator",
-      "description": "",
+      "description": "Based on Tides",
       "tags": [
         "LFO",
         "Oscillator",
@@ -49,7 +49,7 @@
     {
       "slug": "Tides2",
       "name": "Tidal Modulator 2",
-      "description": "",
+      "description": "Based on Tides",
       "tags": [
         "LFO",
         "Oscillator",
@@ -60,7 +60,7 @@
     {
       "slug": "Clouds",
       "name": "Texture Synthesizer",
-      "description": "",
+      "description": "Based on Clouds",
       "tags": [
         "Granular",
         "Reverb"
@@ -69,7 +69,7 @@
     {
       "slug": "Warps",
       "name": "Meta Modulator",
-      "description": "",
+      "description": "Based on Warps",
       "tags": [
         "Ring modulator",
         "Waveshaper"
@@ -78,7 +78,7 @@
     {
       "slug": "Rings",
       "name": "Resonator",
-      "description": "",
+      "description": "Based on Rings",
       "tags": [
         "Physical modeling"
       ]
@@ -86,7 +86,7 @@
     {
       "slug": "Links",
       "name": "Multiples",
-      "description": "",
+      "description": "Based on Links",
       "tags": [
         "Multiple",
         "Mixer"
@@ -95,7 +95,7 @@
     {
       "slug": "Kinks",
       "name": "Utilities",
-      "description": "",
+      "description": "Based on Kinks",
       "tags": [
         "Utility",
         "Sample and hold",
@@ -105,7 +105,7 @@
     {
       "slug": "Shades",
       "name": "Mixer",
-      "description": "",
+      "description": "Based on Shades",
       "tags": [
         "Mixer"
       ]
@@ -113,7 +113,7 @@
     {
       "slug": "Branches",
       "name": "Bernoulli Gate",
-      "description": "",
+      "description": "Based on Branches",
       "tags": [
         "Random",
         "Dual"
@@ -122,7 +122,7 @@
     {
       "slug": "Blinds",
       "name": "Quad VC-polarizer",
-      "description": "",
+      "description": "Based on Blinds",
       "tags": [
         "Mixer",
         "Attenuator"
@@ -131,7 +131,7 @@
     {
       "slug": "Veils",
       "name": "Quad VCA",
-      "description": "",
+      "description": "Based on Veils",
       "tags": [
         "Mixer"
       ]
@@ -139,7 +139,7 @@
     {
       "slug": "Frames",
       "name": "Keyframer/Mixer",
-      "description": "",
+      "description": "Based on Frames",
       "tags": [
         "Oscillator",
         "Mixer",
@@ -150,7 +150,7 @@
     {
       "slug": "Stages",
       "name": "Segment Generator",
-      "description": "",
+      "description": "Based on Stages",
       "tags": [
         "Function generator",
         "Envelope generator"
@@ -159,7 +159,7 @@
     {
       "slug": "Marbles",
       "name": "Random Sampler",
-      "description": "",
+      "description": "Based on Marbles",
       "tags": [
         "Random"
       ]
