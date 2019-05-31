@@ -47,9 +47,11 @@ struct Frames : Module {
 	frames::PolyLfo poly_lfo;
 	bool poly_lfo_mode = false;
 	uint16_t lastControls[4] = {};
+	int16_t lastPosition = -1;
 
 	SchmittTrigger addTrigger;
 	SchmittTrigger delTrigger;
+	PulseGenerator frameStepPulse;
 
 	Frames();
 	void step() override;
@@ -196,6 +198,10 @@ void Frames::step() {
 			}
 		}
 		keyframer.Evaluate(timestampMod);
+
+		if (keyframer.position() != lastPosition) {
+			frameStepPulse.trigger(1e-3f);
+		}
 	}
 
 	// Get gains
@@ -221,6 +227,7 @@ void Frames::step() {
 	for (int i = 0; i < 4; i++) {
 		lastControls[i] = controls[i];
 	}
+	lastPosition = keyframer.position();
 
 	// Get inputs
 	float all = ((int)params[OFFSET_PARAM].value == 1) ? 10.0 : 0.0;
@@ -246,6 +253,9 @@ void Frames::step() {
 	}
 
 	outputs[MIX_OUTPUT].value = clamp(mix / 2.0, -10.0f, 10.0f);
+
+	float deltaTime = engineGetSampleTime();
+	outputs[FRAME_STEP_OUTPUT].value = frameStepPulse.process(deltaTime) ? 10.f : 0.f;
 
 	// Set lights
 	for (int i = 0; i < 4; i++) {
