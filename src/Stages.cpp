@@ -59,7 +59,7 @@ struct GroupBuilder {
 
 		int currentGroup = 0;
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			bool gated = (*gateInputs)[first + i].active;
+			bool gated = (*gateInputs)[first + i].isConnected();
 
 			if (!any_gates) {
 				if (!gated) {
