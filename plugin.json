@@ -14,154 +14,171 @@
     {
       "slug": "Braids",
       "name": "Macro Oscillator",
-      "description": "Based on Braids",
+      "description": "Based on Mutable Instruments Braids",
       "tags": [
-        "Oscillator"
+        "Oscillator",
+        "Hardware"
       ]
     },
     {
       "slug": "Plaits",
       "name": "Macro Oscillator 2",
-      "description": "Based on Plaits",
+      "description": "Based on Mutable Instruments Plaits",
       "tags": [
-        "Oscillator"
+        "Oscillator",
+        "Hardware"
       ]
     },
     {
       "slug": "Elements",
       "name": "Modal Synthesizer",
-      "description": "Based on Elements",
+      "description": "Based on Mutable Instruments Elements",
       "tags": [
-        "Physical modeling"
+        "Physical modeling",
+        "Hardware"
       ]
     },
     {
       "slug": "Tides",
       "name": "Tidal Modulator",
-      "description": "Based on Tides",
+      "description": "Based on Mutable Instruments Tides",
       "tags": [
         "LFO",
         "Oscillator",
         "Waveshaper",
-        "Function generator"
+        "Function generator",
+        "Hardware"
       ]
     },
     {
       "slug": "Tides2",
       "name": "Tidal Modulator 2",
-      "description": "Based on Tides",
+      "description": "Based on Mutable Instruments Tides",
       "tags": [
         "LFO",
         "Oscillator",
         "Waveshaper",
-        "Function generator"
+        "Function generator",
+        "Hardware"
       ]
     },
     {
       "slug": "Clouds",
       "name": "Texture Synthesizer",
-      "description": "Based on Clouds",
+      "description": "Based on Mutable Instruments Clouds",
       "tags": [
         "Granular",
-        "Reverb"
+        "Reverb",
+        "Hardware"
       ]
     },
     {
       "slug": "Warps",
       "name": "Meta Modulator",
-      "description": "Based on Warps",
+      "description": "Based on Mutable Instruments Warps",
       "tags": [
         "Ring modulator",
-        "Waveshaper"
+        "Waveshaper",
+        "Hardware"
       ]
     },
     {
       "slug": "Rings",
       "name": "Resonator",
-      "description": "Based on Rings",
+      "description": "Based on Mutable Instruments Rings",
       "tags": [
-        "Physical modeling"
+        "Physical modeling",
+        "Hardware"
       ]
     },
     {
       "slug": "Links",
       "name": "Multiples",
-      "description": "Based on Links",
+      "description": "Based on Mutable Instruments Links",
       "tags": [
         "Multiple",
-        "Mixer"
+        "Mixer",
+        "Hardware"
       ]
     },
     {
       "slug": "Kinks",
       "name": "Utilities",
-      "description": "Based on Kinks",
+      "description": "Based on Mutable Instruments Kinks",
       "tags": [
         "Utility",
         "Sample and hold",
-        "Noise"
+        "Noise",
+        "Hardware"
       ]
     },
     {
       "slug": "Shades",
       "name": "Mixer",
-      "description": "Based on Shades",
+      "description": "Based on Mutable Instruments Shades",
       "tags": [
-        "Mixer"
+        "Mixer",
+        "Hardware"
       ]
     },
     {
       "slug": "Branches",
       "name": "Bernoulli Gate",
-      "description": "Based on Branches",
+      "description": "Based on Mutable Instruments Branches",
       "tags": [
         "Random",
-        "Dual"
+        "Dual",
+        "Hardware"
       ]
     },
     {
       "slug": "Blinds",
       "name": "Quad VC-polarizer",
-      "description": "Based on Blinds",
+      "description": "Based on Mutable Instruments Blinds",
       "tags": [
         "Mixer",
-        "Attenuator"
+        "Attenuator",
+        "Hardware"
       ]
     },
     {
       "slug": "Veils",
       "name": "Quad VCA",
-      "description": "Based on Veils",
+      "description": "Based on Mutable Instruments Veils",
       "tags": [
-        "Mixer"
+        "Mixer",
+        "Hardware"
       ]
     },
     {
       "slug": "Frames",
       "name": "Keyframer/Mixer",
-      "description": "Based on Frames",
+      "description": "Based on Mutable Instruments Frames",
       "tags": [
         "Oscillator",
         "Mixer",
         "Attenuator",
-        "LFO"
+        "LFO",
+        "Hardware"
       ]
     },
     {
       "slug": "Stages",
       "name": "Segment Generator",
-      "description": "Based on Stages",
+      "description": "Based on Mutable Instruments Stages",
       "tags": [
         "Function generator",
-        "Envelope generator"
+        "Envelope generator",
+        "Hardware"
       ]
     },
     {
       "slug": "Marbles",
       "name": "Random Sampler",
-      "description": "Based on Marbles",
+      "description": "Based on Mutable Instruments Marbles",
       "tags": [
-        "Random"
+        "Random",
+        "Hardware"
       ]
     }
   ]
