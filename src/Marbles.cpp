@@ -705,8 +705,9 @@ struct MarblesWidget : ModuleWidget {
 				{"99%",0.99f}
 				};
 				for (int i = 0; i < (int) LENGTHOF(gateLens); i++) {
+					bool checked = rack::math::isNear(gateLens[i].second,module->_gate_len,0.0001);
 					GateLenMenuIndexItem *item = createMenuItem<GateLenMenuIndexItem>(gateLens[i].first,
-			 		CHECKMARK(gateLens[i].second==module->_gate_len));
+			 		CHECKMARK(checked));
 					item->module = module;
 					item->source = gateLens[i].second;
 					submenu->addChild(item);
