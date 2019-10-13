@@ -677,31 +677,44 @@ struct MarblesWidget : ModuleWidget {
 		yDividerItem->module = module;
 		menu->addChild(yDividerItem);
 
-		struct GateLenMenuItem : MenuItem {
-			Marbles *module;
+		struct GateLenMenuIndexItem : MenuItem {
+			Marbles *module = nullptr;
 			float source=0.0f;
 			void onAction(const event::Action &e) override {
 				module->_gate_len = source;
 			}
 		};
-		menu->addChild(new MenuEntry);
-		menu->addChild(createMenuLabel("Gate length"));
-		const std::pair<std::string,float> gateLens[] = {
-			{"1%",0.01f},
-			{"10%",0.1f},
-			{"25%",0.25f},
-			{"50%",0.5f},
-			{"75%",0.75f},
-			{"90%",0.9f},
-			{"99%",0.99f}
+
+		struct GateLenMenuItem : MenuItem
+		{
+			Marbles* module = nullptr;
+			Menu *createChildMenu() override {
+				Menu *submenu = new Menu();
+				const std::pair<std::string,float> gateLens[] = {
+				{"1%",0.01f},
+				{"10%",0.1f},
+				{"25%",0.25f},
+				{"50%",0.5f},
+				{"75%",0.75f},
+				{"90%",0.9f},
+				{"99%",0.99f}
+				};
+				for (int i = 0; i < (int) LENGTHOF(gateLens); i++) {
+					GateLenMenuIndexItem *item = createMenuItem<GateLenMenuIndexItem>(gateLens[i].first,
+			 		CHECKMARK(gateLens[i].second==module->_gate_len));
+					item->module = module;
+					item->source = gateLens[i].second;
+					submenu->addChild(item);
+				}
+				return submenu;
+			}
 		};
-		for (int i = 0; i < (int) LENGTHOF(gateLens); i++) {
-			GateLenMenuItem *item = createMenuItem<GateLenMenuItem>(gateLens[i].first,
-			 CHECKMARK(gateLens[i].second==module->_gate_len));
-			item->module = module;
-			item->source = gateLens[i].second;
-			menu->addChild(item);
-		}
+
+		menu->addChild(new MenuEntry);
+		GateLenMenuItem* glitem = createMenuItem<GateLenMenuItem>("Gate length");
+		glitem->module = module;
+		menu->addChild(glitem);
+		
 	}
 };
 
