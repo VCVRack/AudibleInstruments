@@ -292,7 +292,7 @@ struct Marbles : Module {
 		json_object_set_new(rootJ, "x_scale", json_integer(x_scale));
 		json_object_set_new(rootJ, "y_divider_index", json_integer(y_divider_index));
 		json_object_set_new(rootJ, "x_clock_source_internal", json_integer(x_clock_source_internal));
-
+		json_object_set_new(rootJ, "gate_length", json_real(_gate_len));
 		return rootJ;
 	}
 
@@ -336,6 +336,10 @@ struct Marbles : Module {
 		json_t *x_clock_source_internalJ = json_object_get(rootJ, "x_clock_source_internal");
 		if (x_clock_source_internalJ)
 			x_clock_source_internal = json_integer_value(x_clock_source_internalJ);
+		
+		json_t *gatelenJ = json_object_get(rootJ, "gate_length");
+		if (gatelenJ)
+			_gate_len = json_real_value(gatelenJ);
 	}
 
 	void process(const ProcessArgs &args) override {
