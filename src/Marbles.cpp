@@ -210,7 +210,7 @@ struct Marbles : Module {
 	int x_scale;
 	int y_divider_index;
 	int x_clock_source_internal;
-
+	float _gate_len=0.5f;
 	// Buffers
 	stmlib::GateFlags t_clocks[BLOCK_SIZE] = {};
 	stmlib::GateFlags last_t_clock = 0;
@@ -451,7 +451,7 @@ struct Marbles : Module {
 		t_generator.set_deja_vu(t_deja_vu ? deja_vu : 0.f);
 		t_generator.set_length(deja_vu_length);
 		// TODO
-		t_generator.set_pulse_width_mean(0.f);
+		t_generator.set_pulse_width_mean(_gate_len);
 		t_generator.set_pulse_width_std(0.f);
 
 		t_generator.Process(t_external_clock, t_clocks, ramps, gates, BLOCK_SIZE);
@@ -676,6 +676,32 @@ struct MarblesWidget : ModuleWidget {
 		YDividerItem *yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
 		yDividerItem->module = module;
 		menu->addChild(yDividerItem);
+
+		struct GateLenMenuItem : MenuItem {
+			Marbles *module;
+			float source=0.0f;
+			void onAction(const event::Action &e) override {
+				module->_gate_len = source;
+			}
+		};
+		menu->addChild(new MenuEntry);
+		menu->addChild(createMenuLabel("Gate length"));
+		const std::pair<std::string,float> gateLens[] = {
+			{"1%",0.01f},
+			{"10%",0.1f},
+			{"25%",0.25f},
+			{"50%",0.5f},
+			{"75%",0.75f},
+			{"90%",0.9f},
+			{"99%",0.99f}
+		};
+		for (int i = 0; i < (int) LENGTHOF(gateLens); i++) {
+			GateLenMenuItem *item = createMenuItem<GateLenMenuItem>(gateLens[i].first,
+			 CHECKMARK(gateLens[i].second==module->_gate_len));
+			item->module = module;
+			item->source = gateLens[i].second;
+			menu->addChild(item);
+		}
 	}
 };
 
