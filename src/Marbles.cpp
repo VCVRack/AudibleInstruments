@@ -454,8 +454,9 @@ struct Marbles : Module {
 		t_generator.set_jitter(t_jitter);
 		t_generator.set_deja_vu(t_deja_vu ? deja_vu : 0.f);
 		t_generator.set_length(deja_vu_length);
-		// TODO
+		
 		t_generator.set_pulse_width_mean(_gate_len);
+		// TODO
 		t_generator.set_pulse_width_std(0.f);
 
 		t_generator.Process(t_external_clock, t_clocks, ramps, gates, BLOCK_SIZE);
