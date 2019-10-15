@@ -58,9 +58,9 @@ struct Plaits : Module {
 
 	Plaits() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0, "Model Selection 1");
-		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0, "Model Selection 2");
-		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Coarse Frequency Adjustment");
+		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0, "Model selection 1");
+		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0, "Model selection 2");
+		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Coarse frequency adjustment");
 		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5, "Harmonics");
 		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre");
 		configParam(MORPH_PARAM, 0.0, 1.0, 0.5, "Morph");

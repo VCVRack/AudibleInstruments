@@ -56,10 +56,10 @@ struct Frames : Module {
 		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0, "Gain 3");
 		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0, "Gain 4");
 		configParam(FRAME_PARAM, 0.0, 1.0, 0.0, "Frame");
-		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Animation Attenuverter");
-		configParam(ADD_PARAM, 0.0, 1.0, 0.0, "Add Keyframe");
-		configParam(DEL_PARAM, 0.0, 1.0, 0.0, "Delete Keyframe");
-		configParam(OFFSET_PARAM, 0.0, 1.0, 0.0, "+10V Offset");
+		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Animation attenuverter");
+		configParam(ADD_PARAM, 0.0, 1.0, 0.0, "Add keyframe");
+		configParam(DEL_PARAM, 0.0, 1.0, 0.0, "Delete keyframe");
+		configParam(OFFSET_PARAM, 0.0, 1.0, 0.0, "+10V offset");
 
 		memset(&keyframer, 0, sizeof(keyframer));
 		keyframer.Init();

@@ -52,10 +52,10 @@ struct Tides : Module {
 
 	Tides() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output Mode");
-		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency Range");
-		configParam(FREQUENCY_PARAM, -48.0, 48.0, 0.0, "Main Frequency");
-		configParam(FM_PARAM, -12.0, 12.0, 0.0, "FM Input Attenuverter");
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output mode");
+		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency range");
+		configParam(FREQUENCY_PARAM, -48.0, 48.0, 0.0, "Main frequency");
+		configParam(FM_PARAM, -12.0, 12.0, 0.0, "FM input attenuverter");
 		configParam(SHAPE_PARAM, -1.0, 1.0, 0.0, "Shape");
 		configParam(SLOPE_PARAM, -1.0, 1.0, 0.0, "Slope");
 		configParam(SMOOTHNESS_PARAM, -1.0, 1.0, 0.0, "Smoothness");

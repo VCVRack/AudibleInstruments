@@ -225,20 +225,20 @@ struct Marbles : Module {
 
 	Marbles() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(T_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "t Deja Vu");
-		configParam(X_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "X Deja Vu");
-		configParam(DEJA_VU_PARAM, 0.0, 1.0, 0.5, "Deja Vu Probability");
-		configParam(T_RATE_PARAM, -1.0, 1.0, 0.0, "Clock Rate");
-		configParam(X_SPREAD_PARAM, 0.0, 1.0, 0.5, "Probability Distribution");
-		configParam(T_MODE_PARAM, 0.0, 1.0, 0.0, "t Mode");
-		configParam(X_MODE_PARAM, 0.0, 1.0, 0.0, "X Mode");
-		configParam(DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0, "Loop Length");
-		configParam(T_BIAS_PARAM, 0.0, 1.0, 0.5, "Gate Bias");
-		configParam(X_BIAS_PARAM, 0.0, 1.0, 0.5, "Distribution Bias");
-		configParam(T_RANGE_PARAM, 0.0, 1.0, 0.0, "Clock Range Mode");
-		configParam(X_RANGE_PARAM, 0.0, 1.0, 0.0, "Output Voltage Range Mode");
-		configParam(EXTERNAL_PARAM, 0.0, 1.0, 0.0, "External Processing Mode");
-		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness Amount");
+		configParam(T_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "t deja vu");
+		configParam(X_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "X deja vu");
+		configParam(DEJA_VU_PARAM, 0.0, 1.0, 0.5, "Deja vu probability");
+		configParam(T_RATE_PARAM, -1.0, 1.0, 0.0, "Clock rate");
+		configParam(X_SPREAD_PARAM, 0.0, 1.0, 0.5, "Probability distribution");
+		configParam(T_MODE_PARAM, 0.0, 1.0, 0.0, "t mode");
+		configParam(X_MODE_PARAM, 0.0, 1.0, 0.0, "X mode");
+		configParam(DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0, "Loop length");
+		configParam(T_BIAS_PARAM, 0.0, 1.0, 0.5, "Gate bias");
+		configParam(X_BIAS_PARAM, 0.0, 1.0, 0.5, "Distribution bias");
+		configParam(T_RANGE_PARAM, 0.0, 1.0, 0.0, "Clock range mode");
+		configParam(X_RANGE_PARAM, 0.0, 1.0, 0.0, "Output voltage range mode");
+		configParam(EXTERNAL_PARAM, 0.0, 1.0, 0.0, "External processing mode");
+		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness amount");
 		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5, "Smoothness");
 
 		random_generator.Init(1);

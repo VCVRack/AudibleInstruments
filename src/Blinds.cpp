@@ -45,10 +45,10 @@ struct Blinds : Module {
 
 	Blinds() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(GAIN1_PARAM, -1.0, 1.0, 0.0, "Polarity and Gain 1");
-		configParam(GAIN2_PARAM, -1.0, 1.0, 0.0, "Polarity and Gain 2");
-		configParam(GAIN3_PARAM, -1.0, 1.0, 0.0, "Polarity and Gain 3");
-		configParam(GAIN4_PARAM, -1.0, 1.0, 0.0, "Polarity and Gain 4");
+		configParam(GAIN1_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 1");
+		configParam(GAIN2_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 2");
+		configParam(GAIN3_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 3");
+		configParam(GAIN4_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 4");
 		configParam(MOD1_PARAM, -1.0, 1.0, 0.0, "Modulation 1");
 		configParam(MOD2_PARAM, -1.0, 1.0, 0.0, "Modulation 2");
 		configParam(MOD3_PARAM, -1.0, 1.0, 0.0, "Modulation 3");
