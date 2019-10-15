@@ -40,13 +40,13 @@ struct Braids : Module {
 
 	Braids() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
-		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0);
-		configParam(FINE_PARAM, -1.0, 1.0, 0.0);
-		configParam(COARSE_PARAM, -2.0, 2.0, 0.0);
-		configParam(FM_PARAM, -1.0, 1.0, 0.0);
-		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0);
-		configParam(COLOR_PARAM, 0.0, 1.0, 0.5);
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0, "Model");
+		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine");
+		configParam(COARSE_PARAM, -2.0, 2.0, 0.0, "Coarse");
+		configParam(FM_PARAM, -1.0, 1.0, 0.0, "FM");
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre");
+		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Modulation");
+		configParam(COLOR_PARAM, 0.0, 1.0, 0.5, "Color");
 
 		memset(&osc, 0, sizeof(osc));
 		osc.Init();

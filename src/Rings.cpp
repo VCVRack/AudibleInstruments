@@ -65,18 +65,18 @@ struct Rings : Module {
 
 	Rings() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(POLYPHONY_PARAM, 0.0, 1.0, 0.0);
-		configParam(RESONATOR_PARAM, 0.0, 1.0, 0.0);
-		configParam(FREQUENCY_PARAM, 0.0, 60.0, 30.0);
-		configParam(STRUCTURE_PARAM, 0.0, 1.0, 0.5);
-		configParam(BRIGHTNESS_PARAM, 0.0, 1.0, 0.5);
-		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5);
-		configParam(POSITION_PARAM, 0.0, 1.0, 0.5);
-		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0);
-		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0);
+		configParam(POLYPHONY_PARAM, 0.0, 1.0, 0.0, "Polyphony");
+		configParam(RESONATOR_PARAM, 0.0, 1.0, 0.0, "Resonator Type");
+		configParam(FREQUENCY_PARAM, 0.0, 60.0, 30.0, "Coarse Frequency Adjustment");
+		configParam(STRUCTURE_PARAM, 0.0, 1.0, 0.5, "Harmonic Structure");
+		configParam(BRIGHTNESS_PARAM, 0.0, 1.0, 0.5, "Brightness");
+		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5, "Decay Time");
+		configParam(POSITION_PARAM, 0.0, 1.0, 0.5, "Excitation Position");
+		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0, "Brightness Attenuverter");
+		configParam(FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0, "Frequency Attenuverter");
+		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0, "Damping Attenuverter");
+		configParam(STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0, "Structure Attenuverter");
+		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0, "Position Attenuverter");
 
 		strummer.Init(0.01, 44100.0 / 24);
 		part.Init(reverb_buffer);

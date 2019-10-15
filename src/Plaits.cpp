@@ -58,15 +58,15 @@ struct Plaits : Module {
 
 	Plaits() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0);
-		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0);
-		configParam(FREQ_PARAM, -4.0, 4.0, 0.0);
-		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5);
-		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(MORPH_PARAM, 0.0, 1.0, 0.5);
-		configParam(TIMBRE_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0, "Model Selection 1");
+		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0, "Model Selection 2");
+		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Coarse Frequency Adjustment");
+		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5, "Harmonics");
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre");
+		configParam(MORPH_PARAM, 0.0, 1.0, 0.5, "Morph");
+		configParam(TIMBRE_CV_PARAM, -1.0, 1.0, 0.0, "Timbre CV");
+		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
+		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0, "Morph CV");
 
 		stmlib::BufferAllocator allocator(shared_buffer, sizeof(shared_buffer));
 		voice.Init(&allocator);
@@ -328,4 +328,3 @@ struct PlaitsWidget : ModuleWidget {
 
 
 Model *modelPlaits = createModel<Plaits, PlaitsWidget>("Plaits");
-
