@@ -45,10 +45,10 @@ struct Veils : Module {
 		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0, "Gain 2");
 		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0, "Gain 3");
 		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0, "Gain 4");
-		configParam(RESPONSE1_PARAM, 0.0, 1.0, 1.0, "Response Curve 1");
-		configParam(RESPONSE2_PARAM, 0.0, 1.0, 1.0, "Response Curve 2");
-		configParam(RESPONSE3_PARAM, 0.0, 1.0, 1.0, "Response Curve 3");
-		configParam(RESPONSE4_PARAM, 0.0, 1.0, 1.0, "Response Curve 4");
+		configParam(RESPONSE1_PARAM, 0.0, 1.0, 1.0, "Response curve 1");
+		configParam(RESPONSE2_PARAM, 0.0, 1.0, 1.0, "Response curve 2");
+		configParam(RESPONSE3_PARAM, 0.0, 1.0, 1.0, "Response curve 3");
+		configParam(RESPONSE4_PARAM, 0.0, 1.0, 1.0, "Response curve 4");
 	}
 
 	void process(const ProcessArgs &args) override {
