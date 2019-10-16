@@ -709,7 +709,7 @@ struct MarblesWidget : ModuleWidget {
 				{"99%",0.99f}
 				};
 				for (int i = 0; i < (int) LENGTHOF(gateLens); i++) {
-                    float scaled_len = rescale(module->_gate_len,0.01f,0.99f, 0.0f,1.0f);
+                    float scaled_len = rescale(module->_gate_len,0.0f,1.0f, 0.01f,0.99f);
                     bool checked = isNear(gateLens[i].second,scaled_len,0.0001);
 					GateLenMenuIndexItem *item = createMenuItem<GateLenMenuIndexItem>(gateLens[i].first,
 			 		CHECKMARK(checked));
