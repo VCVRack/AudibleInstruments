@@ -52,13 +52,13 @@ struct Tides : Module {
 
 	Tides() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(FREQUENCY_PARAM, -48.0, 48.0, 0.0);
-		configParam(FM_PARAM, -12.0, 12.0, 0.0);
-		configParam(SHAPE_PARAM, -1.0, 1.0, 0.0);
-		configParam(SLOPE_PARAM, -1.0, 1.0, 0.0);
-		configParam(SMOOTHNESS_PARAM, -1.0, 1.0, 0.0);
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output mode");
+		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency range");
+		configParam(FREQUENCY_PARAM, -48.0, 48.0, 0.0, "Main frequency");
+		configParam(FM_PARAM, -12.0, 12.0, 0.0, "FM input attenuverter");
+		configParam(SHAPE_PARAM, -1.0, 1.0, 0.0, "Shape");
+		configParam(SLOPE_PARAM, -1.0, 1.0, 0.0, "Slope");
+		configParam(SMOOTHNESS_PARAM, -1.0, 1.0, 0.0, "Smoothness");
 
 		memset(&generator, 0, sizeof(generator));
 		generator.Init();

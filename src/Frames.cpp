@@ -51,15 +51,15 @@ struct Frames : Module {
 
 	Frames() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(GAIN1_PARAM, 0.0, 1.0, 0.0);
-		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0);
-		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0);
-		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0);
-		configParam(FRAME_PARAM, 0.0, 1.0, 0.0);
-		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0);
-		configParam(ADD_PARAM, 0.0, 1.0, 0.0);
-		configParam(DEL_PARAM, 0.0, 1.0, 0.0);
-		configParam(OFFSET_PARAM, 0.0, 1.0, 0.0);
+		configParam(GAIN1_PARAM, 0.0, 1.0, 0.0, "Gain 1");
+		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0, "Gain 2");
+		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0, "Gain 3");
+		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0, "Gain 4");
+		configParam(FRAME_PARAM, 0.0, 1.0, 0.0, "Frame");
+		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Animation attenuverter");
+		configParam(ADD_PARAM, 0.0, 1.0, 0.0, "Add keyframe");
+		configParam(DEL_PARAM, 0.0, 1.0, 0.0, "Delete keyframe");
+		configParam(OFFSET_PARAM, 0.0, 1.0, 0.0, "+10V offset");
 
 		memset(&keyframer, 0, sizeof(keyframer));
 		keyframer.Init();

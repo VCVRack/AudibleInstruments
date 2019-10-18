@@ -3,15 +3,6 @@
 
 Based on [Mutable Instruments](https://mutable-instruments.net/) Eurorack modules.
 
-## Building
-
-Compile Rack from source, following the instructions at https://github.com/VCVRack/Rack.
-
-After checking out AudibleInstruments in the `plugins/` directory, get external dependencies with
-
-	git submodule update --init --recursive
-
-
 ## Modules
 
 ### Macro Oscillator

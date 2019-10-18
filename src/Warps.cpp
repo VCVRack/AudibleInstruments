@@ -40,11 +40,11 @@ struct Warps : Module {
 
 	Warps() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(ALGORITHM_PARAM, 0.0, 8.0, 0.0);
-		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5);
-		configParam(STATE_PARAM, 0.0, 1.0, 0.0);
-		configParam(LEVEL1_PARAM, 0.0, 1.0, 1.0);
-		configParam(LEVEL2_PARAM, 0.0, 1.0, 1.0);
+		configParam(ALGORITHM_PARAM, 0.0, 8.0, 0.0, "Modulation algorithm");
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Modulation timbre");
+		configParam(STATE_PARAM, 0.0, 1.0, 0.0, "Internal oscillator state");
+		configParam(LEVEL1_PARAM, 0.0, 1.0, 1.0, "External oscillator amplitude/internal oscillator frequency");
+		configParam(LEVEL2_PARAM, 0.0, 1.0, 1.0, "Modulator amplitude");
 
 		memset(&modulator, 0, sizeof(modulator));
 		modulator.Init(96000.0f);

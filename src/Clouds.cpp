@@ -67,19 +67,19 @@ struct Clouds : Module {
 
 	Clouds() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(POSITION_PARAM, 0.0, 1.0, 0.5);
-		configParam(SIZE_PARAM, 0.0, 1.0, 0.5);
-		configParam(PITCH_PARAM, -2.0, 2.0, 0.0);
-		configParam(IN_GAIN_PARAM, 0.0, 1.0, 0.5);
-		configParam(DENSITY_PARAM, 0.0, 1.0, 0.5);
-		configParam(TEXTURE_PARAM, 0.0, 1.0, 0.5);
-		configParam(BLEND_PARAM, 0.0, 1.0, 0.5);
-		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0);
-		configParam(FEEDBACK_PARAM, 0.0, 1.0, 0.0);
-		configParam(REVERB_PARAM, 0.0, 1.0, 0.0);
-		configParam(FREEZE_PARAM, 0.0, 1.0, 0.0);
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(LOAD_PARAM, 0.0, 1.0, 0.0);
+		configParam(POSITION_PARAM, 0.0, 1.0, 0.5, "Grain position");
+		configParam(SIZE_PARAM, 0.0, 1.0, 0.5, "Grain size");
+		configParam(PITCH_PARAM, -2.0, 2.0, 0.0, "Grain pitch");
+		configParam(IN_GAIN_PARAM, 0.0, 1.0, 0.5, "Audio input gain");
+		configParam(DENSITY_PARAM, 0.0, 1.0, 0.5, "Grain density");
+		configParam(TEXTURE_PARAM, 0.0, 1.0, 0.5, "Grain texture");
+		configParam(BLEND_PARAM, 0.0, 1.0, 0.5, "Dry/wet");
+		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0, "Stereo spread");
+		configParam(FEEDBACK_PARAM, 0.0, 1.0, 0.0, "Feedback amount");
+		configParam(REVERB_PARAM, 0.0, 1.0, 0.0, "Reverb amount");
+		configParam(FREEZE_PARAM, 0.0, 1.0, 0.0, "Freeze");
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Mode");
+		configParam(LOAD_PARAM, 0.0, 1.0, 0.0, "Load/save");
 
 		const int memLen = 118784;
 		const int ccmLen = 65536 - 128;

@@ -226,21 +226,21 @@ struct Marbles : Module {
 
 	Marbles() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(T_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
-		configParam(X_DEJA_VU_PARAM, 0.0, 1.0, 0.0);
-		configParam(DEJA_VU_PARAM, 0.0, 1.0, 0.5);
-		configParam(T_RATE_PARAM, -1.0, 1.0, 0.0);
-		configParam(X_SPREAD_PARAM, 0.0, 1.0, 0.5);
-		configParam(T_MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(X_MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0);
-		configParam(T_BIAS_PARAM, 0.0, 1.0, 0.5);
-		configParam(X_BIAS_PARAM, 0.0, 1.0, 0.5);
-		configParam(T_RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(X_RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(EXTERNAL_PARAM, 0.0, 1.0, 0.0);
-		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0);
-		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5);
+		configParam(T_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "t deja vu");
+		configParam(X_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "X deja vu");
+		configParam(DEJA_VU_PARAM, 0.0, 1.0, 0.5, "Deja vu probability");
+		configParam(T_RATE_PARAM, -1.0, 1.0, 0.0, "Clock rate");
+		configParam(X_SPREAD_PARAM, 0.0, 1.0, 0.5, "Probability distribution");
+		configParam(T_MODE_PARAM, 0.0, 1.0, 0.0, "t mode");
+		configParam(X_MODE_PARAM, 0.0, 1.0, 0.0, "X mode");
+		configParam(DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0, "Loop length");
+		configParam(T_BIAS_PARAM, 0.0, 1.0, 0.5, "Gate bias");
+		configParam(X_BIAS_PARAM, 0.0, 1.0, 0.5, "Distribution bias");
+		configParam(T_RANGE_PARAM, 0.0, 1.0, 0.0, "Clock range mode");
+		configParam(X_RANGE_PARAM, 0.0, 1.0, 0.0, "Output voltage range mode");
+		configParam(EXTERNAL_PARAM, 0.0, 1.0, 0.0, "External processing mode");
+		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness amount");
+		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5, "Smoothness");
 
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);
@@ -768,4 +768,3 @@ struct MarblesWidget : ModuleWidget {
 
 
 Model *modelMarbles = createModel<Marbles, MarblesWidget>("Marbles");
-

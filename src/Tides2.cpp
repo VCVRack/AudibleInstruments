@@ -101,19 +101,19 @@ struct Tides2 : Module {
 
 	Tides2() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(RANGE_PARAM, 0.0, 1.0, 0.0);
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0);
-		configParam(FREQUENCY_PARAM, -48, 48, 0.0);
-		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5);
-		configParam(RAMP_PARAM, 0.0, 1.0, 0.0);
-		configParam(SMOOTHNESS_PARAM, 0.0, 1.0, 0.5);
-		configParam(SLOPE_PARAM, 0.0, 1.0, 0.5);
-		configParam(SHIFT_PARAM, 0.0, 1.0, 0.5);
-		configParam(SLOPE_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(SHAPE_CV_PARAM, -1.0, 1.0, 0.0);
-		configParam(SHIFT_CV_PARAM, -1.0, 1.0, 0.0);
+		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency range");
+		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output mode");
+		configParam(FREQUENCY_PARAM, -48, 48, 0.0, "Ramp mode");
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5, "Frequency");
+		configParam(RAMP_PARAM, 0.0, 1.0, 0.0, "Shape");
+		configParam(SMOOTHNESS_PARAM, 0.0, 1.0, 0.5, "Waveshape transformation");
+		configParam(SLOPE_PARAM, 0.0, 1.0, 0.5, "Ascending/descending ratio");
+		configParam(SHIFT_PARAM, 0.0, 1.0, 0.5, "Output polarization and shifting");
+		configParam(SLOPE_CV_PARAM, -1.0, 1.0, 0.0, "Slope CV");
+		configParam(FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
+		configParam(SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0, "Smoothness CV");
+		configParam(SHAPE_CV_PARAM, -1.0, 1.0, 0.0, "Shape CV");
+		configParam(SHIFT_CV_PARAM, -1.0, 1.0, 0.0, "Shift CV");
 
 		poly_slope_generator.Init();
 		ratio_index_quantizer.Init();
@@ -307,4 +307,3 @@ struct Tides2Widget : ModuleWidget {
 
 
 Model *modelTides2 = createModel<Tides2, Tides2Widget>("Tides2");
-
