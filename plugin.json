@@ -9,6 +9,7 @@
   "pluginUrl": "https://vcvrack.com/AudibleInstruments",
   "manualUrl": "https://vcvrack.com/AudibleInstruments#manual",
   "sourceUrl": "https://github.com/VCVRack/AudibleInstruments",
+  "changelogUrl": "https://github.com/VCVRack/AudibleInstruments/blob/v1/CHANGELOG.md",
   "donateUrl": "",
   "modules": [
     {
