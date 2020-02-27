@@ -1,13 +1,13 @@
 {
   "slug": "AudibleInstruments",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "GPL-3.0-only",
   "name": "Audible Instruments",
   "author": "VCV",
   "authorEmail": "contact@vcvrack.com",
   "authorUrl": "https://vcvrack.com/",
-  "pluginUrl": "https://vcvrack.com/AudibleInstruments.html",
-  "manualUrl": "https://vcvrack.com/AudibleInstruments.html#manual",
+  "pluginUrl": "https://vcvrack.com/AudibleInstruments",
+  "manualUrl": "https://vcvrack.com/AudibleInstruments#manual",
   "sourceUrl": "https://github.com/VCVRack/AudibleInstruments",
   "donateUrl": "",
   "modules": [
@@ -17,7 +17,7 @@
       "description": "Based on Mutable Instruments Braids",
       "tags": [
         "Oscillator",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -26,7 +26,7 @@
       "description": "Based on Mutable Instruments Plaits",
       "tags": [
         "Oscillator",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -35,7 +35,7 @@
       "description": "Based on Mutable Instruments Elements",
       "tags": [
         "Physical modeling",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -47,7 +47,7 @@
         "Oscillator",
         "Waveshaper",
         "Function generator",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -59,7 +59,7 @@
         "Oscillator",
         "Waveshaper",
         "Function generator",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -69,7 +69,7 @@
       "tags": [
         "Granular",
         "Reverb",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -79,7 +79,7 @@
       "tags": [
         "Ring modulator",
         "Waveshaper",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -88,7 +88,7 @@
       "description": "Based on Mutable Instruments Rings",
       "tags": [
         "Physical modeling",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -98,7 +98,7 @@
       "tags": [
         "Multiple",
         "Mixer",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -109,7 +109,7 @@
         "Utility",
         "Sample and hold",
         "Noise",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -118,7 +118,7 @@
       "description": "Based on Mutable Instruments Shades",
       "tags": [
         "Mixer",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -128,7 +128,7 @@
       "tags": [
         "Random",
         "Dual",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -138,7 +138,7 @@
       "tags": [
         "Mixer",
         "Attenuator",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -147,7 +147,7 @@
       "description": "Based on Mutable Instruments Veils",
       "tags": [
         "Mixer",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -159,7 +159,7 @@
         "Mixer",
         "Attenuator",
         "LFO",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -169,7 +169,7 @@
       "tags": [
         "Function generator",
         "Envelope generator",
-        "Hardware"
+        "Hardware clone"
       ]
     },
     {
@@ -178,7 +178,7 @@
       "description": "Based on Mutable Instruments Marbles",
       "tags": [
         "Random",
-        "Hardware"
+        "Hardware clone"
       ]
     }
   ]
