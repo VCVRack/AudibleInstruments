@@ -1,6 +1,6 @@
 {
   "slug": "AudibleInstruments",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "GPL-3.0-only",
   "name": "Audible Instruments",
   "author": "VCV",
@@ -16,6 +16,7 @@
       "slug": "Braids",
       "name": "Macro Oscillator",
       "description": "Based on Mutable Instruments Braids",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-braids-2015",
       "tags": [
         "Oscillator",
         "Hardware clone"
@@ -25,6 +26,7 @@
       "slug": "Plaits",
       "name": "Macro Oscillator 2",
       "description": "Based on Mutable Instruments Plaits",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-plaits",
       "tags": [
         "Oscillator",
         "Hardware clone"
@@ -34,6 +36,7 @@
       "slug": "Elements",
       "name": "Modal Synthesizer",
       "description": "Based on Mutable Instruments Elements",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-elements",
       "tags": [
         "Physical modeling",
         "Hardware clone"
@@ -43,6 +46,7 @@
       "slug": "Tides",
       "name": "Tidal Modulator",
       "description": "Based on Mutable Instruments Tides",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-tides-2014-version",
       "tags": [
         "LFO",
         "Oscillator",
@@ -55,6 +59,7 @@
       "slug": "Tides2",
       "name": "Tidal Modulator 2",
       "description": "Based on Mutable Instruments Tides",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-tides",
       "tags": [
         "LFO",
         "Oscillator",
@@ -67,6 +72,7 @@
       "slug": "Clouds",
       "name": "Texture Synthesizer",
       "description": "Based on Mutable Instruments Clouds",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-clouds",
       "tags": [
         "Granular",
         "Reverb",
@@ -77,6 +83,7 @@
       "slug": "Warps",
       "name": "Meta Modulator",
       "description": "Based on Mutable Instruments Warps",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-warps",
       "tags": [
         "Ring modulator",
         "Waveshaper",
@@ -87,6 +94,7 @@
       "slug": "Rings",
       "name": "Resonator",
       "description": "Based on Mutable Instruments Rings",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-rings",
       "tags": [
         "Physical modeling",
         "Hardware clone"
@@ -96,6 +104,7 @@
       "slug": "Links",
       "name": "Multiples",
       "description": "Based on Mutable Instruments Links",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-links",
       "tags": [
         "Multiple",
         "Mixer",
@@ -106,6 +115,7 @@
       "slug": "Kinks",
       "name": "Utilities",
       "description": "Based on Mutable Instruments Kinks",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-kinks",
       "tags": [
         "Utility",
         "Sample and hold",
@@ -117,6 +127,7 @@
       "slug": "Shades",
       "name": "Mixer",
       "description": "Based on Mutable Instruments Shades",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-shades-",
       "tags": [
         "Mixer",
         "Hardware clone"
@@ -126,6 +137,7 @@
       "slug": "Branches",
       "name": "Bernoulli Gate",
       "description": "Based on Mutable Instruments Branches",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-branches",
       "tags": [
         "Random",
         "Dual",
@@ -136,6 +148,7 @@
       "slug": "Blinds",
       "name": "Quad VC-polarizer",
       "description": "Based on Mutable Instruments Blinds",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-blinds",
       "tags": [
         "Mixer",
         "Attenuator",
@@ -146,6 +159,7 @@
       "slug": "Veils",
       "name": "Quad VCA",
       "description": "Based on Mutable Instruments Veils",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-veils",
       "tags": [
         "Mixer",
         "Hardware clone"
@@ -155,6 +169,7 @@
       "slug": "Frames",
       "name": "Keyframer/Mixer",
       "description": "Based on Mutable Instruments Frames",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-frames",
       "tags": [
         "Oscillator",
         "Mixer",
@@ -167,6 +182,7 @@
       "slug": "Stages",
       "name": "Segment Generator",
       "description": "Based on Mutable Instruments Stages",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-stages",
       "tags": [
         "Function generator",
         "Envelope generator",
@@ -177,6 +193,7 @@
       "slug": "Marbles",
       "name": "Random Sampler",
       "description": "Based on Mutable Instruments Marbles",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-marbles",
       "tags": [
         "Random",
         "Hardware clone"
