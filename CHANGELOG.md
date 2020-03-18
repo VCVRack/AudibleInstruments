@@ -1,3 +1,6 @@
+### 1.0.2 (2020-02-29)
+- Add ModularGrid URLs to manifest.
+
 ### 1.0.1 (2020-02-27)
 - Fix tags and module descriptions.
 
