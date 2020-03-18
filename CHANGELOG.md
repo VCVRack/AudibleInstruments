@@ -1,3 +1,6 @@
+### 1.0.3 (in development)
+- Macro Oscillator: Change range of coarse pitch parameter and default value to match hardware.
+
 ### 1.0.2 (2020-02-29)
 - Add ModularGrid URLs to manifest.
 

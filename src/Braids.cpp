@@ -42,7 +42,7 @@ struct Braids : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
 		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0, "Model");
 		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency adjustment");
-		configParam(COARSE_PARAM, -2.0, 2.0, 0.0, "Coarse frequency adjustment");
+		configParam(COARSE_PARAM, -5.0, 3.0, -1.0, "Coarse frequency adjustment");
 		configParam(FM_PARAM, -1.0, 1.0, 0.0, "FM");
 		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre");
 		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Modulation");
