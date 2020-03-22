@@ -1,4 +1,4 @@
-#include "AudibleInstruments.hpp"
+#include "plugin.hpp"
 
 #pragma GCC diagnostic push
 #ifndef __clang__

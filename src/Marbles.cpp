@@ -1,4 +1,4 @@
-#include "AudibleInstruments.hpp"
+#include "plugin.hpp"
 #include "marbles/random/random_generator.h"
 #include "marbles/random/random_stream.h"
 #include "marbles/random/t_generator.h"

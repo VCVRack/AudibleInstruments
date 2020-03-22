@@ -1,4 +1,4 @@
-#include "AudibleInstruments.hpp"
+#include "plugin.hpp"
 #include "rings/dsp/part.h"
 #include "rings/dsp/strummer.h"
 #include "rings/dsp/string_synth_part.h"
