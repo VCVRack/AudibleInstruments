@@ -198,6 +198,17 @@
         "Random",
         "Hardware clone"
       ]
+    },
+    {
+      "slug": "Ripples",
+      "name": "Liquid Filter",
+      "description": "Based on Mutable Instruments Ripples",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-ripples",
+      "tags": [
+        "Filter",
+        "Voltage-controlled amplifier",
+        "Hardware clone"
+      ]
     }
   ]
 }

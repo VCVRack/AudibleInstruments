@@ -23,3 +23,4 @@ extern Model *modelVeils;
 extern Model *modelFrames;
 extern Model *modelStages;
 extern Model *modelMarbles;
+extern Model* modelRipples;

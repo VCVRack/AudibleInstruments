@@ -23,4 +23,5 @@ void init(rack::Plugin *p) {
 	p->addModel(modelFrames);
 	p->addModel(modelMarbles);
 	p->addModel(modelStages);
+	p->addModel(modelRipples);
 }
