@@ -202,6 +202,7 @@
     },
     {
       "slug": "Ripples",
+      "disabled": true,
       "name": "Liquid Filter",
       "description": "Based on Mutable Instruments Ripples",
       "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-ripples",
