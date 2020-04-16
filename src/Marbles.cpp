@@ -596,7 +596,7 @@ struct MarblesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(new MenuEntry);
+		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Scales"));
 		const std::string scaleLabels[] = {
 			"Major",
@@ -621,7 +621,7 @@ struct MarblesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(new MenuEntry);
+		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Internal X clock source"));
 		const std::string sourceLabels[] = {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
@@ -672,7 +672,7 @@ struct MarblesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(new MenuEntry);
+		menu->addChild(new MenuSeparator);
 		YDividerItem *yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
 		yDividerItem->module = module;
 		menu->addChild(yDividerItem);

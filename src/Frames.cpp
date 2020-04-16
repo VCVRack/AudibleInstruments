@@ -372,7 +372,7 @@ struct FramesWidget : ModuleWidget {
 				Menu *menu = new Menu();
 
 				menu->addChild(construct<MenuLabel>(&MenuLabel::text, string::f("Channel %d", channel + 1)));
-				menu->addChild(construct<MenuLabel>());
+				menu->addChild(new MenuSeparator);
 
 				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interpolation Curve"));
 				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
@@ -381,7 +381,7 @@ struct FramesWidget : ModuleWidget {
 				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
 				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
 				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
-				menu->addChild(construct<MenuLabel>());
+				menu->addChild(new MenuSeparator);
 				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Response Curve"));
 				menu->addChild(construct<FramesResponseItem>(&MenuItem::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
 				menu->addChild(construct<FramesResponseItem>(&MenuItem::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
@@ -409,14 +409,14 @@ struct FramesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(construct<MenuLabel>());
+		menu->addChild(new MenuSeparator);
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channel Settings"));
 		for (int i = 0; i < 4; i++) {
 			menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, string::f("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
 		}
 		menu->addChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
 
-		menu->addChild(construct<MenuLabel>());
+		menu->addChild(new MenuSeparator);
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Mode"));
 		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
 		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));

@@ -155,7 +155,7 @@ struct BranchesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(construct<MenuLabel>());
+		menu->addChild(new MenuSeparator);
 
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channels"));
 		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 1 modes", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));

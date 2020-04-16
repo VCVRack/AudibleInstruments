@@ -53,8 +53,8 @@ struct Plaits : Module {
 	bool lowCpu = false;
 	bool lpg = false;
 
-	dsp::SchmittTrigger model1Trigger;
-	dsp::SchmittTrigger model2Trigger;
+	dsp::BooleanTrigger model1Trigger;
+	dsp::BooleanTrigger model2Trigger;
 
 	Plaits() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -307,7 +307,7 @@ struct PlaitsWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(new MenuEntry);
+		menu->addChild(new MenuSeparator);
 		PlaitsLowCpuItem *lowCpuItem = createMenuItem<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
 		lowCpuItem->module = module;
 		menu->addChild(lowCpuItem);
@@ -315,7 +315,7 @@ struct PlaitsWidget : ModuleWidget {
 		lpgItem->module = module;
 		menu->addChild(lpgItem);
 
-		menu->addChild(new MenuEntry());
+		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Models"));
 		for (int i = 0; i < 16; i++) {
 			PlaitsModelItem *modelItem = createMenuItem<PlaitsModelItem>(modelLabels[i], CHECKMARK(module->patch.engine == i));

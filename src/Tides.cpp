@@ -271,7 +271,7 @@ struct TidesWidget : ModuleWidget {
 			}
 		};
 
-		menu->addChild(new MenuEntry);
+		menu->addChild(new MenuSeparator);
 		SheepItem *sheepItem = createMenuItem<SheepItem>("Sheep", CHECKMARK(module->sheep));
 		sheepItem->module = module;
 		menu->addChild(sheepItem);

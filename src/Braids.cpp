@@ -336,7 +336,7 @@ struct BraidsWidget : ModuleWidget {
 		Braids *braids = dynamic_cast<Braids*>(module);
 		assert(braids);
 
-		menu->addChild(construct<MenuLabel>());
+		menu->addChild(new MenuSeparator);
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Options"));
 		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
 		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
