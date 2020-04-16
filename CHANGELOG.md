@@ -1,5 +1,11 @@
-### 1.0.3 (in development)
-- Macro Oscillator: Change range of coarse pitch parameter and default value to match hardware.
+### 1.1.0 (2020-04-16)
+- Macro Oscillator
+	- Change range of frequency parameter to [-4, 4] octaves in order to match hardware.
+	- Clean up parameter quantities.
+- Macro Oscillator 2
+	- Make polyphonic.
+	- Use separate "invisible" parameters for LPG response and decay, so they can be MIDI-mapped and generally behave better.
+	- Clean up parameter quantities.
 
 ### 1.0.2 (2020-02-29)
 - Add ModularGrid URLs to manifest.
