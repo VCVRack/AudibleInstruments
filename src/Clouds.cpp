@@ -51,9 +51,9 @@ struct Clouds : Module {
 	dsp::DoubleRingBuffer<dsp::Frame<2>, 256> inputBuffer;
 	dsp::DoubleRingBuffer<dsp::Frame<2>, 256> outputBuffer;
 
-	uint8_t *block_mem;
-	uint8_t *block_ccm;
-	clouds::GranularProcessor *processor;
+	uint8_t* block_mem;
+	uint8_t* block_ccm;
+	clouds::GranularProcessor* processor;
 
 	bool triggered = false;
 
@@ -98,7 +98,7 @@ struct Clouds : Module {
 		delete[] block_ccm;
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Get input
 		dsp::Frame<2> inputFrame = {};
 		if (!inputBuffer.full()) {
@@ -143,7 +143,7 @@ struct Clouds : Module {
 			processor->set_quality(quality);
 			processor->Prepare();
 
-			clouds::Parameters *p = processor->mutable_parameters();
+			clouds::Parameters* p = processor->mutable_parameters();
 			p->trigger = triggered;
 			p->gate = triggered;
 			p->freeze = freeze || (inputs[FREEZE_INPUT].getVoltage() >= 1.0);
@@ -208,7 +208,7 @@ struct Clouds : Module {
 		}
 
 		// Lights
-		clouds::Parameters *p = processor->mutable_parameters();
+		clouds::Parameters* p = processor->mutable_parameters();
 		dsp::VuMeter vuMeter;
 		vuMeter.dBInterval = 6.0;
 		dsp::Frame<2> lightFrame = p->freeze ? outputFrame : inputFrame;
@@ -231,8 +231,8 @@ struct Clouds : Module {
 		quality = 0;
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "playback", json_integer((int) playback));
 		json_object_set_new(rootJ, "quality", json_integer(quality));
@@ -241,18 +241,18 @@ struct Clouds : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *playbackJ = json_object_get(rootJ, "playback");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* playbackJ = json_object_get(rootJ, "playback");
 		if (playbackJ) {
 			playback = (clouds::PlaybackMode) json_integer_value(playbackJ);
 		}
 
-		json_t *qualityJ = json_object_get(rootJ, "quality");
+		json_t* qualityJ = json_object_get(rootJ, "quality");
 		if (qualityJ) {
 			quality = json_integer_value(qualityJ);
 		}
 
-		json_t *blendModeJ = json_object_get(rootJ, "blendMode");
+		json_t* blendModeJ = json_object_get(rootJ, "blendMode");
 		if (blendModeJ) {
 			blendMode = json_integer_value(blendModeJ);
 		}
@@ -262,16 +262,16 @@ struct Clouds : Module {
 
 struct FreezeLight : YellowLight {
 	FreezeLight() {
-		box.size = Vec(28-6, 28-6);
+		box.size = Vec(28 - 6, 28 - 6);
 		bgColor = color::BLACK_TRANSPARENT;
 	}
 };
 
 
 struct CloudsBlendItem : MenuItem {
-	Clouds *module;
+	Clouds* module;
 	int blendMode;
-	void onAction(const event::Action &e) override {
+	void onAction(const event::Action& e) override {
 		module->blendMode = blendMode;
 	}
 	void step() override {
@@ -282,9 +282,9 @@ struct CloudsBlendItem : MenuItem {
 
 
 struct CloudsPlaybackItem : MenuItem {
-	Clouds *module;
+	Clouds* module;
 	clouds::PlaybackMode playback;
-	void onAction(const event::Action &e) override {
+	void onAction(const event::Action& e) override {
 		module->playback = playback;
 	}
 	void step() override {
@@ -295,9 +295,9 @@ struct CloudsPlaybackItem : MenuItem {
 
 
 struct CloudsQualityItem : MenuItem {
-	Clouds *module;
+	Clouds* module;
 	int quality;
-	void onAction(const event::Action &e) override {
+	void onAction(const event::Action& e) override {
 		module->quality = quality;
 	}
 	void step() override {
@@ -308,12 +308,12 @@ struct CloudsQualityItem : MenuItem {
 
 
 struct CloudsWidget : ModuleWidget {
-	ParamWidget *blendParam;
-	ParamWidget *spreadParam;
-	ParamWidget *feedbackParam;
-	ParamWidget *reverbParam;
+	ParamWidget* blendParam;
+	ParamWidget* spreadParam;
+	ParamWidget* feedbackParam;
+	ParamWidget* reverbParam;
 
-	CloudsWidget(Clouds *module) {
+	CloudsWidget(Clouds* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Clouds.svg")));
 
@@ -356,7 +356,7 @@ struct CloudsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(188, 317), module, Clouds::OUT_L_OUTPUT));
 		addOutput(createOutput<PJ301MPort>(Vec(230, 317), module, Clouds::OUT_R_OUTPUT));
 
-		addChild(createLight<FreezeLight>(Vec(12+3, 43+3), module, Clouds::FREEZE_LIGHT));
+		addChild(createLight<FreezeLight>(Vec(12 + 3, 43 + 3), module, Clouds::FREEZE_LIGHT));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
@@ -364,7 +364,7 @@ struct CloudsWidget : ModuleWidget {
 	}
 
 	void step() override {
-		Clouds *module = dynamic_cast<Clouds*>(this->module);
+		Clouds* module = dynamic_cast<Clouds*>(this->module);
 
 		if (module) {
 			blendParam->visible = (module->blendMode == 0);
@@ -376,8 +376,8 @@ struct CloudsWidget : ModuleWidget {
 		ModuleWidget::step();
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Clouds *module = dynamic_cast<Clouds*>(this->module);
+	void appendContextMenu(Menu* menu) override {
+		Clouds* module = dynamic_cast<Clouds*>(this->module);
 		assert(module);
 
 		menu->addChild(new MenuSeparator);
@@ -404,4 +404,4 @@ struct CloudsWidget : ModuleWidget {
 };
 
 
-Model *modelClouds = createModel<Clouds, CloudsWidget>("Clouds");
+Model* modelClouds = createModel<Clouds, CloudsWidget>("Clouds");

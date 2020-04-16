@@ -76,7 +76,7 @@ struct Elements : Module {
 	dsp::DoubleRingBuffer<dsp::Frame<2>, 256> outputBuffer;
 
 	uint16_t reverb_buffer[32768] = {};
-	elements::Part *part;
+	elements::Part* part;
 
 	Elements() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -122,7 +122,7 @@ struct Elements : Module {
 		delete part;
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Get input
 		if (!inputBuffer.full()) {
 			dsp::Frame<2> inputFrame;
@@ -171,14 +171,14 @@ struct Elements : Module {
 			p->resonator_brightness = BIND(BRIGHTNESS_PARAM, BRIGHTNESS_MOD_PARAM, BRIGHTNESS_MOD_INPUT);
 			p->resonator_damping = BIND(DAMPING_PARAM, DAMPING_MOD_PARAM, DAMPING_MOD_INPUT);
 			p->resonator_position = BIND(POSITION_PARAM, POSITION_MOD_PARAM, POSITION_MOD_INPUT);
-			p->space = clamp(params[SPACE_PARAM].getValue() + params[SPACE_MOD_PARAM].getValue()*inputs[SPACE_MOD_INPUT].getVoltage()/5.0f, 0.0f, 2.0f);
+			p->space = clamp(params[SPACE_PARAM].getValue() + params[SPACE_MOD_PARAM].getValue() * inputs[SPACE_MOD_INPUT].getVoltage() / 5.0f, 0.0f, 2.0f);
 
 			// Get performance inputs
 			elements::PerformanceState performance;
-			performance.note = 12.0*inputs[NOTE_INPUT].getVoltage() + roundf(params[COARSE_PARAM].getValue()) + params[FINE_PARAM].getValue() + 69.0;
-			performance.modulation = 3.3*dsp::quarticBipolar(params[FM_PARAM].getValue()) * 49.5 * inputs[FM_INPUT].getVoltage()/5.0;
+			performance.note = 12.0 * inputs[NOTE_INPUT].getVoltage() + roundf(params[COARSE_PARAM].getValue()) + params[FINE_PARAM].getValue() + 69.0;
+			performance.modulation = 3.3 * dsp::quarticBipolar(params[FM_PARAM].getValue()) * 49.5 * inputs[FM_INPUT].getVoltage() / 5.0;
 			performance.gate = params[PLAY_PARAM].getValue() >= 1.0 || inputs[GATE_INPUT].getVoltage() >= 1.0;
-			performance.strength = clamp(1.0 - inputs[STRENGTH_INPUT].getVoltage()/5.0f, 0.0f, 1.0f);
+			performance.strength = clamp(1.0 - inputs[STRENGTH_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 
 			// Generate audio
 			part->Process(performance, blow, strike, main, aux, 16);
@@ -212,14 +212,14 @@ struct Elements : Module {
 		}
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "model", json_integer(getModel()));
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *modelJ = json_object_get(rootJ, "model");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
 			setModel(json_integer_value(modelJ));
 		}
@@ -236,9 +236,9 @@ struct Elements : Module {
 
 
 struct ElementsModalItem : MenuItem {
-	Elements *elements;
+	Elements* elements;
 	int model;
-	void onAction(const event::Action &e) override {
+	void onAction(const event::Action& e) override {
 		elements->setModel(model);
 	}
 	void step() override {
@@ -249,7 +249,7 @@ struct ElementsModalItem : MenuItem {
 
 
 struct ElementsWidget : ModuleWidget {
-	ElementsWidget(Elements *module) {
+	ElementsWidget(Elements* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Elements.svg")));
 
@@ -316,18 +316,18 @@ struct ElementsWidget : ModuleWidget {
 
 		struct GateLight : YellowLight {
 			GateLight() {
-				box.size = Vec(28-6, 28-6);
+				box.size = Vec(28 - 6, 28 - 6);
 				bgColor = color::BLACK_TRANSPARENT;
 			}
 		};
 
-		addChild(createLight<GateLight>(Vec(36+3, 116+3), module, Elements::GATE_LIGHT));
+		addChild(createLight<GateLight>(Vec(36 + 3, 116 + 3), module, Elements::GATE_LIGHT));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(184, 165), module, Elements::EXCITER_LIGHT));
 		addChild(createLight<MediumLight<RedLight>>(Vec(395, 165), module, Elements::RESONATOR_LIGHT));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Elements *elements = dynamic_cast<Elements*>(module);
+	void appendContextMenu(Menu* menu) override {
+		Elements* elements = dynamic_cast<Elements*>(module);
 		assert(elements);
 
 		menu->addChild(new MenuSeparator);
@@ -339,4 +339,4 @@ struct ElementsWidget : ModuleWidget {
 };
 
 
-Model *modelElements = createModel<Elements, ElementsWidget>("Elements");
+Model* modelElements = createModel<Elements, ElementsWidget>("Elements");

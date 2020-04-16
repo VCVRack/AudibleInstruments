@@ -83,7 +83,7 @@ struct Rings : Module {
 		string_synth.Init(reverb_buffer);
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// TODO
 		// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
 		// Get input
@@ -105,7 +105,7 @@ struct Rings : Module {
 		lights[POLYPHONY_RED_LIGHT].value = (polyphonyMode == 1 || polyphonyMode == 2) ? 1.0 : 0.0;
 
 		if (modelTrigger.process(params[RESONATOR_PARAM].getValue())) {
-			resonatorModel = (rings::ResonatorModel) ((resonatorModel + 1) % 3);
+			resonatorModel = (rings::ResonatorModel)((resonatorModel + 1) % 3);
 		}
 		int modelColor = resonatorModel % 3;
 		lights[RESONATOR_GREEN_LIGHT].value = (modelColor == 0 || modelColor == 1) ? 1.0 : 0.0;
@@ -135,22 +135,22 @@ struct Rings : Module {
 
 			// Patch
 			rings::Patch patch;
-			float structure = params[STRUCTURE_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[STRUCTURE_MOD_PARAM].getValue())*inputs[STRUCTURE_MOD_INPUT].getVoltage()/5.0;
+			float structure = params[STRUCTURE_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[STRUCTURE_MOD_PARAM].getValue()) * inputs[STRUCTURE_MOD_INPUT].getVoltage() / 5.0;
 			patch.structure = clamp(structure, 0.0f, 0.9995f);
-			patch.brightness = clamp(params[BRIGHTNESS_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].getValue())*inputs[BRIGHTNESS_MOD_INPUT].getVoltage()/5.0, 0.0f, 1.0f);
-			patch.damping = clamp(params[DAMPING_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[DAMPING_MOD_PARAM].getValue())*inputs[DAMPING_MOD_INPUT].getVoltage()/5.0, 0.0f, 0.9995f);
-			patch.position = clamp(params[POSITION_PARAM].getValue() + 3.3*dsp::quadraticBipolar(params[POSITION_MOD_PARAM].getValue())*inputs[POSITION_MOD_INPUT].getVoltage()/5.0, 0.0f, 0.9995f);
+			patch.brightness = clamp(params[BRIGHTNESS_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[BRIGHTNESS_MOD_PARAM].getValue()) * inputs[BRIGHTNESS_MOD_INPUT].getVoltage() / 5.0, 0.0f, 1.0f);
+			patch.damping = clamp(params[DAMPING_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[DAMPING_MOD_PARAM].getValue()) * inputs[DAMPING_MOD_INPUT].getVoltage() / 5.0, 0.0f, 0.9995f);
+			patch.position = clamp(params[POSITION_PARAM].getValue() + 3.3 * dsp::quadraticBipolar(params[POSITION_MOD_PARAM].getValue()) * inputs[POSITION_MOD_INPUT].getVoltage() / 5.0, 0.0f, 0.9995f);
 
 			// Performance
 			rings::PerformanceState performance_state;
-			performance_state.note = 12.0*inputs[PITCH_INPUT].getNormalVoltage(1/12.0);
+			performance_state.note = 12.0 * inputs[PITCH_INPUT].getNormalVoltage(1 / 12.0);
 			float transpose = params[FREQUENCY_PARAM].getValue();
 			// Quantize transpose if pitch input is connected
 			if (inputs[PITCH_INPUT].isConnected()) {
 				transpose = roundf(transpose);
 			}
 			performance_state.tonic = 12.0 + clamp(transpose, 0.0f, 60.0f);
-			performance_state.fm = clamp(48.0 * 3.3*dsp::quarticBipolar(params[FREQUENCY_MOD_PARAM].getValue()) * inputs[FREQUENCY_MOD_INPUT].getNormalVoltage(1.0)/5.0, -48.0f, 48.0f);
+			performance_state.fm = clamp(48.0 * 3.3 * dsp::quarticBipolar(params[FREQUENCY_MOD_PARAM].getValue()) * inputs[FREQUENCY_MOD_INPUT].getNormalVoltage(1.0) / 5.0, -48.0f, 48.0f);
 
 			performance_state.internal_exciter = !inputs[IN_INPUT].isConnected();
 			performance_state.internal_strum = !inputs[STRUM_INPUT].isConnected();
@@ -197,19 +197,19 @@ struct Rings : Module {
 			dsp::Frame<2> outputFrame = outputBuffer.shift();
 			// "Note that you need to insert a jack into each output to split the signals: when only one jack is inserted, both signals are mixed together."
 			if (outputs[ODD_OUTPUT].isConnected() && outputs[EVEN_OUTPUT].isConnected()) {
-				outputs[ODD_OUTPUT].setVoltage(clamp(outputFrame.samples[0], -1.0, 1.0)*5.0);
-				outputs[EVEN_OUTPUT].setVoltage(clamp(outputFrame.samples[1], -1.0, 1.0)*5.0);
+				outputs[ODD_OUTPUT].setVoltage(clamp(outputFrame.samples[0], -1.0, 1.0) * 5.0);
+				outputs[EVEN_OUTPUT].setVoltage(clamp(outputFrame.samples[1], -1.0, 1.0) * 5.0);
 			}
 			else {
-				float v = clamp(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0)*5.0;
+				float v = clamp(outputFrame.samples[0] + outputFrame.samples[1], -1.0, 1.0) * 5.0;
 				outputs[ODD_OUTPUT].setVoltage(v);
 				outputs[EVEN_OUTPUT].setVoltage(v);
 			}
 		}
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "polyphony", json_integer(polyphonyMode));
 		json_object_set_new(rootJ, "model", json_integer((int) resonatorModel));
@@ -218,18 +218,18 @@ struct Rings : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *polyphonyJ = json_object_get(rootJ, "polyphony");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* polyphonyJ = json_object_get(rootJ, "polyphony");
 		if (polyphonyJ) {
 			polyphonyMode = json_integer_value(polyphonyJ);
 		}
 
-		json_t *modelJ = json_object_get(rootJ, "model");
+		json_t* modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
 			resonatorModel = (rings::ResonatorModel) json_integer_value(modelJ);
 		}
 
-		json_t *easterEggJ = json_object_get(rootJ, "easterEgg");
+		json_t* easterEggJ = json_object_get(rootJ, "easterEgg");
 		if (easterEggJ) {
 			easterEgg = json_boolean_value(easterEggJ);
 		}
@@ -242,13 +242,13 @@ struct Rings : Module {
 
 	void onRandomize() override {
 		polyphonyMode = random::u32() % 3;
-		resonatorModel = (rings::ResonatorModel) (random::u32() % 3);
+		resonatorModel = (rings::ResonatorModel)(random::u32() % 3);
 	}
 };
 
 
 struct RingsWidget : ModuleWidget {
-	RingsWidget(Rings *module) {
+	RingsWidget(Rings* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Rings.svg")));
 
@@ -289,14 +289,14 @@ struct RingsWidget : ModuleWidget {
 		addChild(createLight<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Rings *rings = dynamic_cast<Rings*>(module);
+	void appendContextMenu(Menu* menu) override {
+		Rings* rings = dynamic_cast<Rings*>(module);
 		assert(rings);
 
 		struct RingsModelItem : MenuItem {
-			Rings *rings;
+			Rings* rings;
 			rings::ResonatorModel model;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				rings->resonatorModel = model;
 			}
 			void step() override {
@@ -306,8 +306,8 @@ struct RingsWidget : ModuleWidget {
 		};
 
 		struct RingsEasterEggItem : MenuItem {
-			Rings *rings;
-			void onAction(const event::Action &e) override {
+			Rings* rings;
+			void onAction(const event::Action& e) override {
 				rings->easterEgg = !rings->easterEgg;
 			}
 			void step() override {
@@ -331,4 +331,4 @@ struct RingsWidget : ModuleWidget {
 };
 
 
-Model *modelRings = createModel<Rings, RingsWidget>("Rings");
+Model* modelRings = createModel<Rings, RingsWidget>("Rings");

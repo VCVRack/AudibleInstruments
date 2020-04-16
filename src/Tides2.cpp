@@ -129,16 +129,16 @@ struct Tides2 : Module {
 
 	void onRandomize() override {
 		range = random::u32() % 3;
-		output_mode = (tides2::OutputMode) (random::u32() % 4);
-		ramp_mode = (tides2::RampMode) (random::u32() % 3);
+		output_mode = (tides2::OutputMode)(random::u32() % 4);
+		ramp_mode = (tides2::RampMode)(random::u32() % 3);
 	}
 
 	void onSampleRateChange() override {
 		ramp_extractor.Init(APP->engine->getSampleRate(), 40.f / APP->engine->getSampleRate());
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "range", json_integer(range));
 		json_object_set_new(rootJ, "output", json_integer(output_mode));
@@ -147,30 +147,30 @@ struct Tides2 : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *rangeJ = json_object_get(rootJ, "range");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* rangeJ = json_object_get(rootJ, "range");
 		if (rangeJ)
 			range = json_integer_value(rangeJ);
 
-		json_t *outputJ = json_object_get(rootJ, "output");
+		json_t* outputJ = json_object_get(rootJ, "output");
 		if (outputJ)
 			output_mode = (tides2::OutputMode) json_integer_value(outputJ);
 
-		json_t *rampJ = json_object_get(rootJ, "ramp");
+		json_t* rampJ = json_object_get(rootJ, "ramp");
 		if (rampJ)
 			ramp_mode = (tides2::RampMode) json_integer_value(rampJ);
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Switches
 		if (rangeTrigger.process(params[RANGE_PARAM].getValue() > 0.f)) {
 			range = (range + 1) % 3;
 		}
 		if (modeTrigger.process(params[MODE_PARAM].getValue() > 0.f)) {
-			output_mode = (tides2::OutputMode) ((output_mode + 1) % 4);
+			output_mode = (tides2::OutputMode)((output_mode + 1) % 4);
 		}
 		if (rampTrigger.process(params[RAMP_PARAM].getValue() > 0.f)) {
-			ramp_mode = (tides2::RampMode) ((ramp_mode + 1) % 3);
+			ramp_mode = (tides2::RampMode)((ramp_mode + 1) % 3);
 		}
 
 		// Input gates
@@ -199,12 +199,12 @@ struct Tides2 : Module {
 
 				tides2::Ratio r = ratio_index_quantizer.Lookup(kRatios, 0.5f + transposition * 0.0105f, 20);
 				frequency = ramp_extractor.Process(
-					range_mode == tides2::RANGE_AUDIO,
-					range_mode == tides2::RANGE_AUDIO && ramp_mode == tides2::RAMP_MODE_AR,
-					r,
-					clock_flags,
-					ramp,
-					tides2::kBlockSize);
+				              range_mode == tides2::RANGE_AUDIO,
+				              range_mode == tides2::RANGE_AUDIO && ramp_mode == tides2::RAMP_MODE_AR,
+				              r,
+				              clock_flags,
+				              ramp,
+				              tides2::kBlockSize);
 				must_reset_ramp_extractor = false;
 			}
 			else {
@@ -225,18 +225,18 @@ struct Tides2 : Module {
 
 			// Render generator
 			poly_slope_generator.Render(
-				ramp_mode,
-				output_mode,
-				range_mode,
-				frequency,
-				slope,
-				shape,
-				smoothness,
-				shift,
-				trig_flags,
-				!inputs[TRIG_INPUT].isConnected() && inputs[CLOCK_INPUT].isConnected() ? ramp : NULL,
-				out,
-				tides2::kBlockSize);
+			  ramp_mode,
+			  output_mode,
+			  range_mode,
+			  frequency,
+			  slope,
+			  shape,
+			  smoothness,
+			  shift,
+			  trig_flags,
+			  !inputs[TRIG_INPUT].isConnected() && inputs[CLOCK_INPUT].isConnected() ? ramp : NULL,
+			  out,
+			  tides2::kBlockSize);
 
 			// Set lights
 			lights[RANGE_LIGHT + 0].value = (range == 0 || range == 1);
@@ -258,7 +258,7 @@ struct Tides2 : Module {
 
 
 struct Tides2Widget : ModuleWidget {
-	Tides2Widget(Tides2 *module) {
+	Tides2Widget(Tides2* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Tides2.svg")));
 
@@ -306,4 +306,4 @@ struct Tides2Widget : ModuleWidget {
 };
 
 
-Model *modelTides2 = createModel<Tides2, Tides2Widget>("Tides2");
+Model* modelTides2 = createModel<Tides2, Tides2Widget>("Tides2");

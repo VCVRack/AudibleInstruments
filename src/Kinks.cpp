@@ -37,7 +37,7 @@ struct Kinks : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Gaussian noise generator
 		float noise = 2.0 * random::normal();
 
@@ -68,7 +68,7 @@ struct Kinks : Module {
 
 
 struct KinksWidget : ModuleWidget {
-	KinksWidget(Kinks *module) {
+	KinksWidget(Kinks* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Kinks.svg")));
 
@@ -97,4 +97,4 @@ struct KinksWidget : ModuleWidget {
 };
 
 
-Model *modelKinks = createModel<Kinks, KinksWidget>("Kinks");
+Model* modelKinks = createModel<Kinks, KinksWidget>("Kinks");

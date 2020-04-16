@@ -50,9 +50,9 @@ struct Warps : Module {
 		modulator.Init(96000.0f);
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// State trigger
-		warps::Parameters *p = modulator.mutable_parameters();
+		warps::Parameters* p = modulator.mutable_parameters();
 		if (stateTrigger.process(params[STATE_PARAM].getValue())) {
 			p->carrier_shape = (p->carrier_shape + 1) % 4;
 		}
@@ -87,34 +87,34 @@ struct Warps : Module {
 			modulator.Process(inputFrames, outputFrames, 60);
 		}
 
-		inputFrames[frame].l = clamp((int) (inputs[CARRIER_INPUT].getVoltage() / 16.0 * 0x8000), -0x8000, 0x7fff);
-		inputFrames[frame].r = clamp((int) (inputs[MODULATOR_INPUT].getVoltage() / 16.0 * 0x8000), -0x8000, 0x7fff);
+		inputFrames[frame].l = clamp((int)(inputs[CARRIER_INPUT].getVoltage() / 16.0 * 0x8000), -0x8000, 0x7fff);
+		inputFrames[frame].r = clamp((int)(inputs[MODULATOR_INPUT].getVoltage() / 16.0 * 0x8000), -0x8000, 0x7fff);
 		outputs[MODULATOR_OUTPUT].setVoltage((float)outputFrames[frame].l / 0x8000 * 5.0);
 		outputs[AUX_OUTPUT].setVoltage((float)outputFrames[frame].r / 0x8000 * 5.0);
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
-		warps::Parameters *p = modulator.mutable_parameters();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		warps::Parameters* p = modulator.mutable_parameters();
 		json_object_set_new(rootJ, "shape", json_integer(p->carrier_shape));
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *shapeJ = json_object_get(rootJ, "shape");
-		warps::Parameters *p = modulator.mutable_parameters();
+	void dataFromJson(json_t* rootJ) override {
+		json_t* shapeJ = json_object_get(rootJ, "shape");
+		warps::Parameters* p = modulator.mutable_parameters();
 		if (shapeJ) {
 			p->carrier_shape = json_integer_value(shapeJ);
 		}
 	}
 
 	void onReset() override {
-		warps::Parameters *p = modulator.mutable_parameters();
+		warps::Parameters* p = modulator.mutable_parameters();
 		p->carrier_shape = 0;
 	}
 
 	void onRandomize() override {
-		warps::Parameters *p = modulator.mutable_parameters();
+		warps::Parameters* p = modulator.mutable_parameters();
 		p->carrier_shape = random::u32() % 4;
 	}
 };
@@ -128,7 +128,7 @@ struct AlgorithmLight : RedGreenBlueLight {
 
 
 struct WarpsWidget : ModuleWidget {
-	WarpsWidget(Warps *module) {
+	WarpsWidget(Warps* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Warps.svg")));
 
@@ -161,4 +161,4 @@ struct WarpsWidget : ModuleWidget {
 };
 
 
-Model *modelWarps = createModel<Warps, WarpsWidget>("Warps");
+Model* modelWarps = createModel<Warps, WarpsWidget>("Warps");

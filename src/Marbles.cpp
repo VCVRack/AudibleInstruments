@@ -279,8 +279,8 @@ struct Marbles : Module {
 		}
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "t_deja_vu", json_boolean(t_deja_vu));
 		json_object_set_new(rootJ, "x_deja_vu", json_boolean(x_deja_vu));
@@ -296,49 +296,49 @@ struct Marbles : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
 		if (t_deja_vuJ)
 			t_deja_vu = json_boolean_value(t_deja_vuJ);
 
-		json_t *x_deja_vuJ = json_object_get(rootJ, "x_deja_vu");
+		json_t* x_deja_vuJ = json_object_get(rootJ, "x_deja_vu");
 		if (x_deja_vuJ)
 			x_deja_vu = json_boolean_value(x_deja_vuJ);
 
-		json_t *t_modeJ = json_object_get(rootJ, "t_mode");
+		json_t* t_modeJ = json_object_get(rootJ, "t_mode");
 		if (t_modeJ)
 			t_mode = json_integer_value(t_modeJ);
 
-		json_t *x_modeJ = json_object_get(rootJ, "x_mode");
+		json_t* x_modeJ = json_object_get(rootJ, "x_mode");
 		if (x_modeJ)
 			x_mode = json_integer_value(x_modeJ);
 
-		json_t *t_rangeJ = json_object_get(rootJ, "t_range");
+		json_t* t_rangeJ = json_object_get(rootJ, "t_range");
 		if (t_rangeJ)
 			t_range = json_integer_value(t_rangeJ);
 
-		json_t *x_rangeJ = json_object_get(rootJ, "x_range");
+		json_t* x_rangeJ = json_object_get(rootJ, "x_range");
 		if (x_rangeJ)
 			x_range = json_integer_value(x_rangeJ);
 
-		json_t *externalJ = json_object_get(rootJ, "external");
+		json_t* externalJ = json_object_get(rootJ, "external");
 		if (externalJ)
 			external = json_boolean_value(externalJ);
 
-		json_t *x_scaleJ = json_object_get(rootJ, "x_scale");
+		json_t* x_scaleJ = json_object_get(rootJ, "x_scale");
 		if (x_scaleJ)
 			x_scale = json_integer_value(x_scaleJ);
 
-		json_t *y_divider_indexJ = json_object_get(rootJ, "y_divider_index");
+		json_t* y_divider_indexJ = json_object_get(rootJ, "y_divider_index");
 		if (y_divider_indexJ)
 			y_divider_index = json_integer_value(y_divider_indexJ);
 
-		json_t *x_clock_source_internalJ = json_object_get(rootJ, "x_clock_source_internal");
+		json_t* x_clock_source_internalJ = json_object_get(rootJ, "x_clock_source_internal");
 		if (x_clock_source_internalJ)
 			x_clock_source_internal = json_integer_value(x_clock_source_internalJ);
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Buttons
 		if (tDejaVuTrigger.process(params[T_DEJA_VU_PARAM].getValue() <= 0.f)) {
 			t_deja_vu = !t_deja_vu;
@@ -396,21 +396,21 @@ struct Marbles : Module {
 
 		lights[EXTERNAL_LIGHT].setBrightness(external);
 
-		outputs[T1_OUTPUT].setVoltage(gates[blockIndex*2 + 0] ? 10.f : 0.f);
-		lights[T1_LIGHT].setSmoothBrightness(gates[blockIndex*2 + 0], args.sampleTime);
+		outputs[T1_OUTPUT].setVoltage(gates[blockIndex * 2 + 0] ? 10.f : 0.f);
+		lights[T1_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 0], args.sampleTime);
 		outputs[T2_OUTPUT].setVoltage((ramp_master[blockIndex] < 0.5f) ? 10.f : 0.f);
 		lights[T2_LIGHT].setSmoothBrightness(ramp_master[blockIndex] < 0.5f, args.sampleTime);
-		outputs[T3_OUTPUT].setVoltage(gates[blockIndex*2 + 1] ? 10.f : 0.f);
-		lights[T3_LIGHT].setSmoothBrightness(gates[blockIndex*2 + 1], args.sampleTime);
+		outputs[T3_OUTPUT].setVoltage(gates[blockIndex * 2 + 1] ? 10.f : 0.f);
+		lights[T3_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 1], args.sampleTime);
 
-		outputs[X1_OUTPUT].setVoltage(voltages[blockIndex*4 + 0]);
-		lights[X1_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 0], args.sampleTime);
-		outputs[X2_OUTPUT].setVoltage(voltages[blockIndex*4 + 1]);
-		lights[X2_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 1], args.sampleTime);
-		outputs[X3_OUTPUT].setVoltage(voltages[blockIndex*4 + 2]);
-		lights[X3_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 2], args.sampleTime);
-		outputs[Y_OUTPUT].setVoltage(voltages[blockIndex*4 + 3]);
-		lights[Y_LIGHT].setSmoothBrightness(voltages[blockIndex*4 + 3], args.sampleTime);
+		outputs[X1_OUTPUT].setVoltage(voltages[blockIndex * 4 + 0]);
+		lights[X1_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 0], args.sampleTime);
+		outputs[X2_OUTPUT].setVoltage(voltages[blockIndex * 4 + 1]);
+		lights[X2_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 1], args.sampleTime);
+		outputs[X3_OUTPUT].setVoltage(voltages[blockIndex * 4 + 2]);
+		lights[X3_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 2], args.sampleTime);
+		outputs[Y_OUTPUT].setVoltage(voltages[blockIndex * 4 + 3]);
+		lights[Y_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 3], args.sampleTime);
 	}
 
 	void stepBlock() {
@@ -526,7 +526,7 @@ struct CKD6Light : BASE {
 
 
 struct MarblesWidget : ModuleWidget {
-	MarblesWidget(Marbles *module) {
+	MarblesWidget(Marbles* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Marbles.svg")));
 
@@ -585,13 +585,13 @@ struct MarblesWidget : ModuleWidget {
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(78.344, 104.794)), module, Marbles::X3_LIGHT));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Marbles *module = dynamic_cast<Marbles*>(this->module);
+	void appendContextMenu(Menu* menu) override {
+		Marbles* module = dynamic_cast<Marbles*>(this->module);
 
 		struct ScaleItem : MenuItem {
-			Marbles *module;
+			Marbles* module;
 			int scale;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				module->x_scale = scale;
 			}
 		};
@@ -607,16 +607,16 @@ struct MarblesWidget : ModuleWidget {
 			"Raag Shri",
 		};
 		for (int i = 0; i < (int) LENGTHOF(scaleLabels); i++) {
-			ScaleItem *item = createMenuItem<ScaleItem>(scaleLabels[i], CHECKMARK(module->x_scale == i));
+			ScaleItem* item = createMenuItem<ScaleItem>(scaleLabels[i], CHECKMARK(module->x_scale == i));
 			item->module = module;
 			item->scale = i;
 			menu->addChild(item);
 		}
 
 		struct XClockSourceInternal : MenuItem {
-			Marbles *module;
+			Marbles* module;
 			int source;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				module->x_clock_source_internal = source;
 			}
 		};
@@ -630,24 +630,24 @@ struct MarblesWidget : ModuleWidget {
 			"T₃ → X₁, X₂, X₃",
 		};
 		for (int i = 0; i < (int) LENGTHOF(sourceLabels); i++) {
-			XClockSourceInternal *item = createMenuItem<XClockSourceInternal>(sourceLabels[i], CHECKMARK(module->x_clock_source_internal == i));
+			XClockSourceInternal* item = createMenuItem<XClockSourceInternal>(sourceLabels[i], CHECKMARK(module->x_clock_source_internal == i));
 			item->module = module;
 			item->source = i;
 			menu->addChild(item);
 		}
 
 		struct YDividerIndexItem : MenuItem {
-			Marbles *module;
+			Marbles* module;
 			int index;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				module->y_divider_index = index;
 			}
 		};
 
 		struct YDividerItem : MenuItem {
-			Marbles *module;
-			Menu *createChildMenu() override {
-				Menu *menu = new Menu();
+			Marbles* module;
+			Menu* createChildMenu() override {
+				Menu* menu = new Menu();
 				const std::string yDividerRatioLabels[] = {
 					"1/64",
 					"1/48",
@@ -663,7 +663,7 @@ struct MarblesWidget : ModuleWidget {
 					"1",
 				};
 				for (int i = 0; i < (int) LENGTHOF(yDividerRatioLabels); i++) {
-					YDividerIndexItem *item = createMenuItem<YDividerIndexItem>(yDividerRatioLabels[i], CHECKMARK(module->y_divider_index == i));
+					YDividerIndexItem* item = createMenuItem<YDividerIndexItem>(yDividerRatioLabels[i], CHECKMARK(module->y_divider_index == i));
 					item->module = module;
 					item->index = i;
 					menu->addChild(item);
@@ -673,11 +673,11 @@ struct MarblesWidget : ModuleWidget {
 		};
 
 		menu->addChild(new MenuSeparator);
-		YDividerItem *yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
+		YDividerItem* yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
 		yDividerItem->module = module;
 		menu->addChild(yDividerItem);
 	}
 };
 
 
-Model *modelMarbles = createModel<Marbles, MarblesWidget>("Marbles");
+Model* modelMarbles = createModel<Marbles, MarblesWidget>("Marbles");

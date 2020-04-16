@@ -51,7 +51,7 @@ struct Veils : Module {
 		configParam(RESPONSE4_PARAM, 0.0, 1.0, 1.0, "Response curve 4");
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		float out = 0.0;
 
 		for (int i = 0; i < 4; i++) {
@@ -64,8 +64,8 @@ struct Veils : Module {
 				in *= crossfade(exponential, linear, params[RESPONSE1_PARAM + i].getValue());
 			}
 			out += in;
-			lights[OUT1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
-			lights[OUT1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
+			lights[OUT1_POS_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
+			lights[OUT1_NEG_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
 			if (outputs[OUT1_OUTPUT + i].isConnected()) {
 				outputs[OUT1_OUTPUT + i].setVoltage(out);
 				out = 0.0;
@@ -76,7 +76,7 @@ struct Veils : Module {
 
 
 struct VeilsWidget : ModuleWidget {
-	VeilsWidget(Veils *module) {
+	VeilsWidget(Veils* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Veils.svg")));
 
@@ -118,4 +118,4 @@ struct VeilsWidget : ModuleWidget {
 };
 
 
-Model *modelVeils = createModel<Veils, VeilsWidget>("Veils");
+Model* modelVeils = createModel<Veils, VeilsWidget>("Veils");

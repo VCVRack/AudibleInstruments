@@ -1,9 +1,9 @@
 #include "plugin.hpp"
 
 
-Plugin *pluginInstance;
+Plugin* pluginInstance;
 
-void init(rack::Plugin *p) {
+void init(rack::Plugin* p) {
 	pluginInstance = p;
 
 	p->addModel(modelBraids);

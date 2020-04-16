@@ -17,7 +17,7 @@ struct LongPressButton {
 	float pressedTime = 0.f;
 	dsp::BooleanTrigger trigger;
 
-	Events step(Param &param) {
+	Events step(Param& param) {
 		Events result = NO_PRESS;
 
 		bool pressed = param.value > 0.f;
@@ -52,7 +52,7 @@ struct GroupBuilder {
 	GroupInfo groups[NUM_CHANNELS];
 	int groupCount = 0;
 
-	bool buildGroups(std::vector<Input> *gateInputs, size_t first, size_t count) {
+	bool buildGroups(std::vector<Input>* gateInputs, size_t first, size_t count) {
 		bool any_gates = false;
 
 		GroupInfo nextGroups[NUM_CHANNELS];
@@ -81,7 +81,7 @@ struct GroupBuilder {
 			else {
 				if (!gated) {
 					// We've had a gate, this ungated segment is part of the previous group
-					nextGroups[currentGroup-1].segment_count++;
+					nextGroups[currentGroup - 1].segment_count++;
 				}
 				else {
 					// This gated input indicates the start of the next group
@@ -102,8 +102,8 @@ struct GroupBuilder {
 
 		for (int i = 0; i < groupCount; i++) {
 			if (nextGroups[i].segment_count != groups[i].segment_count ||
-					nextGroups[i].gated != groups[i].gated ||
-					nextGroups[i].first_segment != groups[i].first_segment) {
+			    nextGroups[i].gated != groups[i].gated ||
+			    nextGroups[i].first_segment != groups[i].first_segment) {
 				changed = true;
 			}
 
@@ -190,12 +190,12 @@ struct Stages : Module {
 		onSampleRateChange();
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
-		json_t *configurationsJ = json_array();
+		json_t* configurationsJ = json_array();
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			json_t *configurationJ = json_object();
+			json_t* configurationJ = json_object();
 			json_object_set_new(configurationJ, "type", json_integer(configurations[i].type));
 			json_object_set_new(configurationJ, "loop", json_boolean(configurations[i].loop));
 			json_array_insert_new(configurationsJ, i, configurationJ);
@@ -205,16 +205,16 @@ struct Stages : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *configurationsJ = json_object_get(rootJ, "configurations");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* configurationsJ = json_object_get(rootJ, "configurations");
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			json_t *configurationJ = json_array_get(configurationsJ, i);
+			json_t* configurationJ = json_array_get(configurationsJ, i);
 			if (configurationJ) {
-				json_t *typeJ = json_object_get(configurationJ, "type");
+				json_t* typeJ = json_object_get(configurationJ, "type");
 				if (typeJ)
 					configurations[i].type = (stages::segment::Type) json_integer_value(typeJ);
 
-				json_t *loopJ = json_object_get(configurationJ, "loop");
+				json_t* loopJ = json_object_get(configurationJ, "loop");
 				if (loopJ)
 					configurations[i].loop = json_boolean_value(loopJ);
 			}
@@ -242,7 +242,7 @@ struct Stages : Module {
 		// Process block
 		stages::SegmentGenerator::Output out[BLOCK_SIZE] = {};
 		for (int i = 0; i < groupBuilder.groupCount; i++) {
-			GroupInfo &group = groupBuilder.groups[i];
+			GroupInfo& group = groupBuilder.groups[i];
 
 			// Check if the config needs applying to the segment generator for this group
 			bool apply_config = groups_changed;
@@ -292,7 +292,7 @@ struct Stages : Module {
 	}
 
 	void toggleMode(int i) {
-		configurations[i].type = (stages::segment::Type) ((configurations[i].type + 1) % 3);
+		configurations[i].type = (stages::segment::Type)((configurations[i].type + 1) % 3);
 		configuration_changed[i] = true;
 	}
 
@@ -307,7 +307,7 @@ struct Stages : Module {
 				segment_count += groupBuilder.groups[i].segment_count;
 
 				if (segment_count > segment) {
-					GroupInfo &group = groupBuilder.groups[i];
+					GroupInfo& group = groupBuilder.groups[i];
 
 					// See how many loop items we have
 					int numberOfLoopsInGroup = 0;
@@ -329,7 +329,7 @@ struct Stages : Module {
 		}
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Oscillate flashing the type lights
 		lightOscillatorPhase += 0.5f * args.sampleTime;
 		if (lightOscillatorPhase >= 1.0f)
@@ -360,7 +360,7 @@ struct Stages : Module {
 
 		// Output
 		for (int i = 0; i < groupBuilder.groupCount; i++) {
-			GroupInfo &group = groupBuilder.groups[i];
+			GroupInfo& group = groupBuilder.groups[i];
 
 			int numberOfLoopsInGroup = 0;
 			for (int j = 0; j < group.segment_count; j++) {
@@ -393,7 +393,7 @@ struct Stages : Module {
 
 
 struct StagesWidget : ModuleWidget {
-	StagesWidget(Stages *module) {
+	StagesWidget(Stages* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Stages.svg")));
 
@@ -457,4 +457,4 @@ struct StagesWidget : ModuleWidget {
 };
 
 
-Model *modelStages = createModel<Stages, StagesWidget>("Stages");
+Model* modelStages = createModel<Stages, StagesWidget>("Stages");

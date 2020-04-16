@@ -2,7 +2,7 @@
 
 #pragma GCC diagnostic push
 #ifndef __clang__
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+	#pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 #include "plaits/dsp/voice.h"
 #pragma GCC diagnostic pop
@@ -88,8 +88,8 @@ struct Plaits : Module {
 		patch.engine = random::u32() % 16;
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "lowCpu", json_boolean(lowCpu));
 		json_object_set_new(rootJ, "model", json_integer(patch.engine));
@@ -97,27 +97,27 @@ struct Plaits : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *lowCpuJ = json_object_get(rootJ, "lowCpu");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* lowCpuJ = json_object_get(rootJ, "lowCpu");
 		if (lowCpuJ)
 			lowCpu = json_boolean_value(lowCpuJ);
 
-		json_t *modelJ = json_object_get(rootJ, "model");
+		json_t* modelJ = json_object_get(rootJ, "model");
 		if (modelJ)
 			patch.engine = json_integer_value(modelJ);
 
 		// Legacy <=1.0.2
-		json_t *lpgColorJ = json_object_get(rootJ, "lpgColor");
+		json_t* lpgColorJ = json_object_get(rootJ, "lpgColor");
 		if (lpgColorJ)
 			params[LPG_COLOR_PARAM].setValue(json_number_value(lpgColorJ));
 
 		// Legacy <=1.0.2
-		json_t *decayJ = json_object_get(rootJ, "decay");
+		json_t* decayJ = json_object_get(rootJ, "decay");
 		if (decayJ)
 			params[LPG_DECAY_PARAM].setValue(json_number_value(decayJ));
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		int channels = std::max(inputs[NOTE_INPUT].getChannels(), 1);
 
 		if (outputBuffer.empty()) {
@@ -270,7 +270,7 @@ static const std::string modelLabels[16] = {
 struct PlaitsWidget : ModuleWidget {
 	bool lpgMode = false;
 
-	PlaitsWidget(Plaits *module) {
+	PlaitsWidget(Plaits* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Plaits.svg")));
 
@@ -318,43 +318,43 @@ struct PlaitsWidget : ModuleWidget {
 		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 61.11827)), module, Plaits::MODEL_LIGHT + 7 * 2));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Plaits *module = dynamic_cast<Plaits*>(this->module);
+	void appendContextMenu(Menu* menu) override {
+		Plaits* module = dynamic_cast<Plaits*>(this->module);
 
 		struct PlaitsLowCpuItem : MenuItem {
-			Plaits *module;
-			void onAction(const event::Action &e) override {
+			Plaits* module;
+			void onAction(const event::Action& e) override {
 				module->lowCpu ^= true;
 			}
 		};
 
 		struct PlaitsLpgModeItem : MenuItem {
-			PlaitsWidget *moduleWidget;
-			void onAction(const event::Action &e) override {
+			PlaitsWidget* moduleWidget;
+			void onAction(const event::Action& e) override {
 				moduleWidget->setLpgMode(!moduleWidget->getLpgMode());
 			}
 		};
 
 		struct PlaitsModelItem : MenuItem {
-			Plaits *module;
+			Plaits* module;
 			int model;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				module->patch.engine = model;
 			}
 		};
 
 		menu->addChild(new MenuSeparator);
-		PlaitsLowCpuItem *lowCpuItem = createMenuItem<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
+		PlaitsLowCpuItem* lowCpuItem = createMenuItem<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
 		lowCpuItem->module = module;
 		menu->addChild(lowCpuItem);
-		PlaitsLpgModeItem *lpgItem = createMenuItem<PlaitsLpgModeItem>("Edit LPG response/decay", CHECKMARK(getLpgMode()));
+		PlaitsLpgModeItem* lpgItem = createMenuItem<PlaitsLpgModeItem>("Edit LPG response/decay", CHECKMARK(getLpgMode()));
 		lpgItem->moduleWidget = this;
 		menu->addChild(lpgItem);
 
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Models"));
 		for (int i = 0; i < 16; i++) {
-			PlaitsModelItem *modelItem = createMenuItem<PlaitsModelItem>(modelLabels[i], CHECKMARK(module->patch.engine == i));
+			PlaitsModelItem* modelItem = createMenuItem<PlaitsModelItem>(modelLabels[i], CHECKMARK(module->patch.engine == i));
 			modelItem->module = module;
 			modelItem->model = i;
 			menu->addChild(modelItem);
@@ -386,4 +386,4 @@ struct PlaitsWidget : ModuleWidget {
 };
 
 
-Model *modelPlaits = createModel<Plaits, PlaitsWidget>("Plaits");
+Model* modelPlaits = createModel<Plaits, PlaitsWidget>("Plaits");

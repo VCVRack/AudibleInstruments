@@ -55,18 +55,18 @@ struct Blinds : Module {
 		configParam(MOD4_PARAM, -1.0, 1.0, 0.0, "Modulation 4");
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		float out = 0.0;
 
 		for (int i = 0; i < 4; i++) {
 			float g = params[GAIN1_PARAM + i].getValue();
 			g += params[MOD1_PARAM + i].getValue() * inputs[CV1_INPUT + i].getVoltage() / 5.0;
 			g = clamp(g, -2.0f, 2.0f);
-			lights[CV1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, g), args.sampleTime);
-			lights[CV1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -g), args.sampleTime);
+			lights[CV1_POS_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, g), args.sampleTime);
+			lights[CV1_NEG_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, -g), args.sampleTime);
 			out += g * inputs[IN1_INPUT + i].getNormalVoltage(5.0);
-			lights[OUT1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
-			lights[OUT1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
+			lights[OUT1_POS_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
+			lights[OUT1_NEG_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
 			if (outputs[OUT1_OUTPUT + i].isConnected()) {
 				outputs[OUT1_OUTPUT + i].setVoltage(out);
 				out = 0.0;
@@ -77,7 +77,7 @@ struct Blinds : Module {
 
 
 struct BlindsWidget : ModuleWidget {
-	BlindsWidget(Blinds *module) {
+	BlindsWidget(Blinds* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Blinds.svg")));
 
@@ -124,4 +124,4 @@ struct BlindsWidget : ModuleWidget {
 };
 
 
-Model *modelBlinds = createModel<Blinds, BlindsWidget>("Blinds");
+Model* modelBlinds = createModel<Blinds, BlindsWidget>("Blinds");

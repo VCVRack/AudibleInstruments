@@ -62,7 +62,7 @@ struct Braids : Module {
 		settings.signature = 0;
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Trigger
 		bool trig = inputs[TRIG_INPUT].getVoltage() >= 1.0;
 		if (!lastTrig && trig) {
@@ -146,34 +146,34 @@ struct Braids : Module {
 		}
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
-		json_t *settingsJ = json_array();
-		uint8_t *settingsArray = &settings.shape;
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		json_t* settingsJ = json_array();
+		uint8_t* settingsArray = &settings.shape;
 		for (int i = 0; i < 20; i++) {
-			json_t *settingJ = json_integer(settingsArray[i]);
+			json_t* settingJ = json_integer(settingsArray[i]);
 			json_array_insert_new(settingsJ, i, settingJ);
 		}
 		json_object_set_new(rootJ, "settings", settingsJ);
 
-		json_t *lowCpuJ = json_boolean(lowCpu);
+		json_t* lowCpuJ = json_boolean(lowCpu);
 		json_object_set_new(rootJ, "lowCpu", lowCpuJ);
 
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *settingsJ = json_object_get(rootJ, "settings");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* settingsJ = json_object_get(rootJ, "settings");
 		if (settingsJ) {
-			uint8_t *settingsArray = &settings.shape;
+			uint8_t* settingsArray = &settings.shape;
 			for (int i = 0; i < 20; i++) {
-				json_t *settingJ = json_array_get(settingsJ, i);
+				json_t* settingJ = json_array_get(settingsJ, i);
 				if (settingJ)
 					settingsArray[i] = json_integer_value(settingJ);
 			}
 		}
 
-		json_t *lowCpuJ = json_object_get(rootJ, "lowCpu");
+		json_t* lowCpuJ = json_object_get(rootJ, "lowCpu");
 		if (lowCpuJ) {
 			lowCpu = json_boolean_value(lowCpuJ);
 		}
@@ -183,7 +183,7 @@ struct Braids : Module {
 
 
 
-static const char *algo_values[] = {
+static const char* algo_values[] = {
 	"CSAW",
 	"/\\-_",
 	"//-_",
@@ -235,14 +235,14 @@ static const char *algo_values[] = {
 };
 
 struct BraidsDisplay : TransparentWidget {
-	Braids *module;
+	Braids* module;
 	std::shared_ptr<Font> font;
 
 	BraidsDisplay() {
 		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
 	}
 
-	void draw(const DrawArgs &args) override {
+	void draw(const DrawArgs& args) override {
 		int shape = module ? module->settings.shape : 0;
 
 		// Background
@@ -271,10 +271,10 @@ struct BraidsDisplay : TransparentWidget {
 
 
 struct BraidsSettingItem : MenuItem {
-	uint8_t *setting = NULL;
+	uint8_t* setting = NULL;
 	uint8_t offValue = 0;
 	uint8_t onValue = 1;
-	void onAction(const event::Action &e) override {
+	void onAction(const event::Action& e) override {
 		// Toggle setting
 		*setting = (*setting == onValue) ? offValue : onValue;
 	}
@@ -285,8 +285,8 @@ struct BraidsSettingItem : MenuItem {
 };
 
 struct BraidsLowCpuItem : MenuItem {
-	Braids *braids;
-	void onAction(const event::Action &e) override {
+	Braids* braids;
+	void onAction(const event::Action& e) override {
 		braids->lowCpu = !braids->lowCpu;
 	}
 	void step() override {
@@ -297,12 +297,12 @@ struct BraidsLowCpuItem : MenuItem {
 
 
 struct BraidsWidget : ModuleWidget {
-	BraidsWidget(Braids *module) {
+	BraidsWidget(Braids* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Braids.svg")));
 
 		{
-			BraidsDisplay *display = new BraidsDisplay();
+			BraidsDisplay* display = new BraidsDisplay();
 			display->box.pos = Vec(14, 53);
 			display->box.size = Vec(148, 56);
 			display->module = module;
@@ -332,8 +332,8 @@ struct BraidsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(205, 316), module, Braids::OUT_OUTPUT));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Braids *braids = dynamic_cast<Braids*>(module);
+	void appendContextMenu(Menu* menu) override {
+		Braids* braids = dynamic_cast<Braids*>(module);
 		assert(braids);
 
 		menu->addChild(new MenuSeparator);
@@ -346,4 +346,4 @@ struct BraidsWidget : ModuleWidget {
 };
 
 
-Model *modelBraids = createModel<Braids, BraidsWidget>("Braids");
+Model* modelBraids = createModel<Braids, BraidsWidget>("Braids");

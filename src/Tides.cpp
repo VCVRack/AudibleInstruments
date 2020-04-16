@@ -66,10 +66,10 @@ struct Tides : Module {
 		onReset();
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		tides::GeneratorMode mode = generator.mode();
 		if (modeTrigger.process(params[MODE_PARAM].getValue())) {
-			mode = (tides::GeneratorMode) (((int)mode - 1 + 3) % 3);
+			mode = (tides::GeneratorMode)(((int)mode - 1 + 3) % 3);
 			generator.set_mode(mode);
 		}
 		lights[MODE_GREEN_LIGHT].value = (mode == 2) ? 1.0 : 0.0;
@@ -77,7 +77,7 @@ struct Tides : Module {
 
 		tides::GeneratorRange range = generator.range();
 		if (rangeTrigger.process(params[RANGE_PARAM].getValue())) {
-			range = (tides::GeneratorRange) (((int)range - 1 + 3) % 3);
+			range = (tides::GeneratorRange)(((int)range - 1 + 3) % 3);
 			generator.set_range(range);
 		}
 		lights[RANGE_GREEN_LIGHT].value = (range == 2) ? 1.0 : 0.0;
@@ -160,12 +160,12 @@ struct Tides : Module {
 	}
 
 	void onRandomize() override {
-		generator.set_range((tides::GeneratorRange) (random::u32() % 3));
-		generator.set_mode((tides::GeneratorMode) (random::u32() % 3));
+		generator.set_range((tides::GeneratorRange)(random::u32() % 3));
+		generator.set_mode((tides::GeneratorMode)(random::u32() % 3));
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "mode", json_integer((int) generator.mode()));
 		json_object_set_new(rootJ, "range", json_integer((int) generator.range()));
@@ -174,18 +174,18 @@ struct Tides : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *modeJ = json_object_get(rootJ, "mode");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* modeJ = json_object_get(rootJ, "mode");
 		if (modeJ) {
 			generator.set_mode((tides::GeneratorMode) json_integer_value(modeJ));
 		}
 
-		json_t *rangeJ = json_object_get(rootJ, "range");
+		json_t* rangeJ = json_object_get(rootJ, "range");
 		if (rangeJ) {
 			generator.set_range((tides::GeneratorRange) json_integer_value(rangeJ));
 		}
 
-		json_t *sheepJ = json_object_get(rootJ, "sheep");
+		json_t* sheepJ = json_object_get(rootJ, "sheep");
 		if (sheepJ) {
 			sheep = json_boolean_value(sheepJ);
 		}
@@ -194,12 +194,12 @@ struct Tides : Module {
 
 
 struct TidesWidget : ModuleWidget {
-	SvgPanel *tidesPanel;
-	SvgPanel *sheepPanel;
+	SvgPanel* tidesPanel;
+	SvgPanel* sheepPanel;
 
-	TidesWidget(Tides *module) {
+	TidesWidget(Tides* module) {
 		setModule(module);
-		box.size = Vec(15*14, 380);
+		box.size = Vec(15 * 14, 380);
 		{
 			tidesPanel = new SvgPanel();
 			tidesPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Tides.svg")));
@@ -250,7 +250,7 @@ struct TidesWidget : ModuleWidget {
 	}
 
 	void step() override {
-		Tides *tides = dynamic_cast<Tides*>(module);
+		Tides* tides = dynamic_cast<Tides*>(module);
 
 		if (tides) {
 			tidesPanel->visible = !tides->sheep;
@@ -261,22 +261,22 @@ struct TidesWidget : ModuleWidget {
 	}
 
 
-	void appendContextMenu(Menu *menu) override {
-		Tides *module = dynamic_cast<Tides*>(this->module);
+	void appendContextMenu(Menu* menu) override {
+		Tides* module = dynamic_cast<Tides*>(this->module);
 
 		struct SheepItem : MenuItem {
-			Tides *module;
-			void onAction(const event::Action &e) override {
+			Tides* module;
+			void onAction(const event::Action& e) override {
 				module->sheep ^= true;
 			}
 		};
 
 		menu->addChild(new MenuSeparator);
-		SheepItem *sheepItem = createMenuItem<SheepItem>("Sheep", CHECKMARK(module->sheep));
+		SheepItem* sheepItem = createMenuItem<SheepItem>("Sheep", CHECKMARK(module->sheep));
 		sheepItem->module = module;
 		menu->addChild(sheepItem);
 	}
 };
 
 
-Model *modelTides = createModel<Tides, TidesWidget>("Tides");
+Model* modelTides = createModel<Tides, TidesWidget>("Tides");

@@ -40,7 +40,7 @@ struct Shades : Module {
 		configParam(MODE3_PARAM, 0.0, 1.0, 1.0, "Attenuverter/Attenuator mode 3");
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		float out = 0.0;
 
 		for (int i = 0; i < 3; i++) {
@@ -54,8 +54,8 @@ struct Shades : Module {
 				in *= params[GAIN1_PARAM + i].getValue();
 			}
 			out += in;
-			lights[OUT1_POS_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
-			lights[OUT1_NEG_LIGHT + 2*i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
+			lights[OUT1_POS_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, out / 5.0), args.sampleTime);
+			lights[OUT1_NEG_LIGHT + 2 * i].setSmoothBrightness(fmaxf(0.0, -out / 5.0), args.sampleTime);
 			if (outputs[OUT1_OUTPUT + i].isConnected()) {
 				outputs[OUT1_OUTPUT + i].setVoltage(out);
 				out = 0.0;
@@ -66,7 +66,7 @@ struct Shades : Module {
 
 
 struct ShadesWidget : ModuleWidget {
-	ShadesWidget(Shades *module) {
+	ShadesWidget(Shades* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Shades.svg")));
 
@@ -96,4 +96,4 @@ struct ShadesWidget : ModuleWidget {
 };
 
 
-Model *modelShades = createModel<Shades, ShadesWidget>("Shades");
+Model* modelShades = createModel<Shades, ShadesWidget>("Shades");

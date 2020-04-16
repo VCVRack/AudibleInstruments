@@ -69,7 +69,7 @@ struct Frames : Module {
 		onReset();
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		// Set gain and timestamp knobs
 		uint16_t controls[4];
 		for (int i = 0; i < 4; i++) {
@@ -105,7 +105,7 @@ struct Frames : Module {
 						keyframer.set_immediate(i, controls[i]);
 					}
 					if (nearestIndex >= 0) {
-						frames::Keyframe *nearestKeyframe = keyframer.mutable_keyframe(nearestIndex);
+						frames::Keyframe* nearestKeyframe = keyframer.mutable_keyframe(nearestIndex);
 						nearestKeyframe->values[i] = controls[i];
 					}
 				}
@@ -187,7 +187,7 @@ struct Frames : Module {
 		}
 
 		// Set frame light colors
-		const uint8_t *colors;
+		const uint8_t* colors;
 		if (poly_lfo_mode) {
 			colors = poly_lfo.color();
 		}
@@ -201,14 +201,14 @@ struct Frames : Module {
 		}
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
 
-		json_t *keyframesJ = json_array();
+		json_t* keyframesJ = json_array();
 		for (int i = 0; i < keyframer.num_keyframes(); i++) {
-			json_t *keyframeJ = json_array();
-			frames::Keyframe *keyframe = keyframer.mutable_keyframe(i);
+			json_t* keyframeJ = json_array();
+			frames::Keyframe* keyframe = keyframer.mutable_keyframe(i);
 			json_array_append_new(keyframeJ, json_integer(keyframe->timestamp));
 			for (int k = 0; k < 4; k++) {
 				json_array_append_new(keyframeJ, json_integer(keyframe->values[k]));
@@ -217,9 +217,9 @@ struct Frames : Module {
 		}
 		json_object_set_new(rootJ, "keyframes", keyframesJ);
 
-		json_t *channelsJ = json_array();
+		json_t* channelsJ = json_array();
 		for (int i = 0; i < 4; i++) {
-			json_t *channelJ = json_object();
+			json_t* channelJ = json_object();
 			json_object_set_new(channelJ, "curve", json_integer((int) keyframer.mutable_settings(i)->easing_curve));
 			json_object_set_new(channelJ, "response", json_integer(keyframer.mutable_settings(i)->response));
 			json_array_append_new(channelsJ, channelJ);
@@ -229,14 +229,14 @@ struct Frames : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *polyLfoJ = json_object_get(rootJ, "polyLfo");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* polyLfoJ = json_object_get(rootJ, "polyLfo");
 		if (polyLfoJ)
 			poly_lfo_mode = json_boolean_value(polyLfoJ);
 
-		json_t *keyframesJ = json_object_get(rootJ, "keyframes");
+		json_t* keyframesJ = json_object_get(rootJ, "keyframes");
 		if (keyframesJ) {
-			json_t *keyframeJ;
+			json_t* keyframeJ;
 			size_t i;
 			json_array_foreach(keyframesJ, i, keyframeJ) {
 				uint16_t timestamp = json_integer_value(json_array_get(keyframeJ, 0));
@@ -248,15 +248,15 @@ struct Frames : Module {
 			}
 		}
 
-		json_t *channelsJ = json_object_get(rootJ, "channels");
+		json_t* channelsJ = json_object_get(rootJ, "channels");
 		if (channelsJ) {
 			for (int i = 0; i < 4; i++) {
-				json_t *channelJ = json_array_get(channelsJ, i);
+				json_t* channelJ = json_array_get(channelsJ, i);
 				if (channelJ) {
-					json_t *curveJ = json_object_get(channelJ, "curve");
+					json_t* curveJ = json_object_get(channelJ, "curve");
 					if (curveJ)
 						keyframer.mutable_settings(i)->easing_curve = (frames::EasingCurve) json_integer_value(curveJ);
-					json_t *responseJ = json_object_get(channelJ, "response");
+					json_t* responseJ = json_object_get(channelJ, "response");
 					if (responseJ)
 						keyframer.mutable_settings(i)->response = json_integer_value(responseJ);
 				}
@@ -288,14 +288,14 @@ struct CKSSRot : SVGSwitch {
 
 
 struct FramesWidget : ModuleWidget {
-	FramesWidget(Frames *module) {
+	FramesWidget(Frames* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Frames.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x-30, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 365)));
 
 		addParam(createParam<Rogan1PSWhite>(Vec(14, 52), module, Frames::GAIN1_PARAM));
 		addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM));
@@ -335,15 +335,15 @@ struct FramesWidget : ModuleWidget {
 		addChild(createLight<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Frames *frames = dynamic_cast<Frames*>(module);
+	void appendContextMenu(Menu* menu) override {
+		Frames* frames = dynamic_cast<Frames*>(module);
 		assert(frames);
 
 		struct FramesCurveItem : MenuItem {
-			Frames *frames;
+			Frames* frames;
 			uint8_t channel;
 			frames::EasingCurve curve;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				frames->keyframer.mutable_settings(channel)->easing_curve = curve;
 			}
 			void step() override {
@@ -353,10 +353,10 @@ struct FramesWidget : ModuleWidget {
 		};
 
 		struct FramesResponseItem : MenuItem {
-			Frames *frames;
+			Frames* frames;
 			uint8_t channel;
 			uint8_t response;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				frames->keyframer.mutable_settings(channel)->response = response;
 			}
 			void step() override {
@@ -366,10 +366,10 @@ struct FramesWidget : ModuleWidget {
 		};
 
 		struct FramesChannelSettingsItem : MenuItem {
-			Frames *frames;
+			Frames* frames;
 			uint8_t channel;
-			Menu *createChildMenu() override {
-				Menu *menu = new Menu();
+			Menu* createChildMenu() override {
+				Menu* menu = new Menu();
 
 				menu->addChild(construct<MenuLabel>(&MenuLabel::text, string::f("Channel %d", channel + 1)));
 				menu->addChild(new MenuSeparator);
@@ -391,16 +391,16 @@ struct FramesWidget : ModuleWidget {
 		};
 
 		struct FramesClearItem : MenuItem {
-			Frames *frames;
-			void onAction(const event::Action &e) override {
+			Frames* frames;
+			void onAction(const event::Action& e) override {
 				frames->keyframer.Clear();
 			}
 		};
 
 		struct FramesModeItem : MenuItem {
-			Frames *frames;
+			Frames* frames;
 			bool poly_lfo_mode;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				frames->poly_lfo_mode = poly_lfo_mode;
 			}
 			void step() override {
@@ -424,4 +424,4 @@ struct FramesWidget : ModuleWidget {
 };
 
 
-Model *modelFrames = createModel<Frames, FramesWidget>("Frames");
+Model* modelFrames = createModel<Frames, FramesWidget>("Frames");

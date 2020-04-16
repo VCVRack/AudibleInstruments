@@ -44,9 +44,9 @@ struct Branches : Module {
 		configParam(MODE2_PARAM, 0.0, 1.0, 0.0, "Mode 2");
 	}
 
-	json_t *dataToJson() override {
-		json_t *rootJ = json_object();
-		json_t *modesJ = json_array();
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		json_t* modesJ = json_array();
 		for (int i = 0; i < 2; i++) {
 			json_array_insert_new(modesJ, i, json_boolean(modes[i]));
 		}
@@ -54,18 +54,18 @@ struct Branches : Module {
 		return rootJ;
 	}
 
-	void dataFromJson(json_t *rootJ) override {
-		json_t *modesJ = json_object_get(rootJ, "modes");
+	void dataFromJson(json_t* rootJ) override {
+		json_t* modesJ = json_object_get(rootJ, "modes");
 		if (modesJ) {
 			for (int i = 0; i < 2; i++) {
-				json_t *modeJ = json_array_get(modesJ, i);
+				json_t* modeJ = json_array_get(modesJ, i);
 				if (modeJ)
 					modes[i] = json_boolean_value(modeJ);
 			}
 		}
 	}
 
-	void process(const ProcessArgs &args) override {
+	void process(const ProcessArgs& args) override {
 		float gate = 0.0;
 		for (int i = 0; i < 2; i++) {
 			// mode button
@@ -90,13 +90,13 @@ struct Branches : Module {
 				}
 
 				if (!outcomes[i])
-					lights[STATE1_POS_LIGHT + 2*i].value = 1.0;
+					lights[STATE1_POS_LIGHT + 2 * i].value = 1.0;
 				else
-					lights[STATE1_NEG_LIGHT + 2*i].value = 1.0;
+					lights[STATE1_NEG_LIGHT + 2 * i].value = 1.0;
 			}
 
-			lights[STATE1_POS_LIGHT + 2*i].value *= 1.0 - args.sampleTime * 15.0;
-			lights[STATE1_NEG_LIGHT + 2*i].value *= 1.0 - args.sampleTime * 15.0;
+			lights[STATE1_POS_LIGHT + 2 * i].value *= 1.0 - args.sampleTime * 15.0;
+			lights[STATE1_NEG_LIGHT + 2 * i].value *= 1.0 - args.sampleTime * 15.0;
 			lights[MODE1_LIGHT + i].value = modes[i] ? 1.0 : 0.0;
 
 			outputs[OUT1A_OUTPUT + i].setVoltage(outcomes[i] ? 0.0 : gate);
@@ -114,7 +114,7 @@ struct Branches : Module {
 
 
 struct BranchesWidget : ModuleWidget {
-	BranchesWidget(Branches *module) {
+	BranchesWidget(Branches* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Branches.svg")));
 
@@ -139,14 +139,14 @@ struct BranchesWidget : ModuleWidget {
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
 	}
 
-	void appendContextMenu(Menu *menu) override {
-		Branches *branches = dynamic_cast<Branches*>(module);
+	void appendContextMenu(Menu* menu) override {
+		Branches* branches = dynamic_cast<Branches*>(module);
 		assert(branches);
 
 		struct BranchesModeItem : MenuItem {
-			Branches *branches;
+			Branches* branches;
 			int channel;
-			void onAction(const event::Action &e) override {
+			void onAction(const event::Action& e) override {
 				branches->modes[channel] ^= 1;
 			}
 			void step() override {
@@ -164,4 +164,4 @@ struct BranchesWidget : ModuleWidget {
 };
 
 
-Model *modelBranches = createModel<Branches, BranchesWidget>("Branches");
+Model* modelBranches = createModel<Branches, BranchesWidget>("Branches");
