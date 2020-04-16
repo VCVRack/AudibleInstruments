@@ -41,12 +41,12 @@ struct Braids : Module {
 	Braids() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
 		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0, "Model");
-		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency adjustment");
-		configParam(COARSE_PARAM, -5.0, 3.0, -1.0, "Coarse frequency adjustment");
+		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency", " semitones");
+		configParam(COARSE_PARAM, -5.0, 3.0, -1.0, "Coarse frequency", " semitones", 0.f, 12.f, 12.f);
 		configParam(FM_PARAM, -1.0, 1.0, 0.0, "FM");
-		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre");
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre", "%", 0.f, 100.f);
 		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Modulation");
-		configParam(COLOR_PARAM, 0.0, 1.0, 0.5, "Color");
+		configParam(COLOR_PARAM, 0.0, 1.0, 0.5, "Color", "%", 0.f, 100.f);
 
 		memset(&osc, 0, sizeof(osc));
 		osc.Init();
