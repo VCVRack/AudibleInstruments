@@ -19,6 +19,8 @@ struct Plaits : Module {
 		TIMBRE_CV_PARAM,
 		FREQ_CV_PARAM,
 		MORPH_CV_PARAM,
+		LPG_COLOR_PARAM,
+		LPG_DECAY_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -42,16 +44,14 @@ struct Plaits : Module {
 		NUM_LIGHTS
 	};
 
-	plaits::Voice voice;
+	plaits::Voice voice[16];
 	plaits::Patch patch = {};
-	plaits::Modulations modulations = {};
-	char shared_buffer[16384] = {};
+	char shared_buffer[16][16384] = {};
 	float triPhase = 0.f;
 
-	dsp::SampleRateConverter<2> outputSrc;
-	dsp::DoubleRingBuffer<dsp::Frame<2>, 256> outputBuffer;
+	dsp::SampleRateConverter<16 * 2> outputSrc;
+	dsp::DoubleRingBuffer<dsp::Frame<16 * 2>, 256> outputBuffer;
 	bool lowCpu = false;
-	bool lpg = false;
 
 	dsp::BooleanTrigger model1Trigger;
 	dsp::BooleanTrigger model2Trigger;
@@ -60,16 +60,20 @@ struct Plaits : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0, "Model selection 1");
 		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0, "Model selection 2");
-		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Coarse frequency adjustment");
-		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5, "Harmonics");
-		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre");
-		configParam(MORPH_PARAM, 0.0, 1.0, 0.5, "Morph");
+		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Frequency", " semitones", 0.f, 12.f);
+		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5, "Harmonics", "%", 0.f, 100.f);
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre", "%", 0.f, 100.f);
+		configParam(LPG_COLOR_PARAM, 0.0, 1.0, 0.5, "Lowpass gate response", "%", 0.f, 100.f);
+		configParam(MORPH_PARAM, 0.0, 1.0, 0.5, "Morph", "%", 0.f, 100.f);
+		configParam(LPG_DECAY_PARAM, 0.0, 1.0, 0.5, "Lowpass gate decay", "%", 0.f, 100.f);
 		configParam(TIMBRE_CV_PARAM, -1.0, 1.0, 0.0, "Timbre CV");
 		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
 		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0, "Morph CV");
 
-		stmlib::BufferAllocator allocator(shared_buffer, sizeof(shared_buffer));
-		voice.Init(&allocator);
+		for (int i = 0; i < 16; i++) {
+			stmlib::BufferAllocator allocator(shared_buffer[i], sizeof(shared_buffer[i]));
+			voice[i].Init(&allocator);
+		}
 
 		onReset();
 	}
@@ -89,8 +93,6 @@ struct Plaits : Module {
 
 		json_object_set_new(rootJ, "lowCpu", json_boolean(lowCpu));
 		json_object_set_new(rootJ, "model", json_integer(patch.engine));
-		json_object_set_new(rootJ, "lpgColor", json_real(patch.lpg_colour));
-		json_object_set_new(rootJ, "decay", json_real(patch.decay));
 
 		return rootJ;
 	}
@@ -104,16 +106,20 @@ struct Plaits : Module {
 		if (modelJ)
 			patch.engine = json_integer_value(modelJ);
 
+		// Legacy <=1.0.2
 		json_t *lpgColorJ = json_object_get(rootJ, "lpgColor");
 		if (lpgColorJ)
-			patch.lpg_colour = json_number_value(lpgColorJ);
+			params[LPG_COLOR_PARAM].setValue(json_number_value(lpgColorJ));
 
+		// Legacy <=1.0.2
 		json_t *decayJ = json_object_get(rootJ, "decay");
 		if (decayJ)
-			patch.decay = json_number_value(decayJ);
+			params[LPG_DECAY_PARAM].setValue(json_number_value(decayJ));
 	}
 
 	void process(const ProcessArgs &args) override {
+		int channels = std::max(inputs[NOTE_INPUT].getChannels(), 1);
+
 		if (outputBuffer.empty()) {
 			const int blockSize = 12;
 
@@ -136,74 +142,91 @@ struct Plaits : Module {
 			}
 
 			// Model lights
-			int activeEngine = voice.active_engine();
+			// Pulse light at 2 Hz
 			triPhase += 2.f * args.sampleTime * blockSize;
 			if (triPhase >= 1.f)
 				triPhase -= 1.f;
 			float tri = (triPhase < 0.5f) ? triPhase * 2.f : (1.f - triPhase) * 2.f;
 
-			for (int i = 0; i < 8; i++) {
-				lights[MODEL_LIGHT + 2*i + 0].setBrightness((activeEngine == i) ? 1.f : (patch.engine == i) ? tri : 0.f);
-				lights[MODEL_LIGHT + 2*i + 1].setBrightness((activeEngine == i + 8) ? 1.f : (patch.engine == i + 8) ? tri : 0.f);
+			// Get active engines of all voice channels
+			bool activeEngines[16] = {};
+			bool pulse = false;
+			for (int c = 0; c < channels; c++) {
+				int activeEngine = voice[c].active_engine();
+				activeEngines[activeEngine] = true;
+				// Pulse the light if at least one voice is using a different engine.
+				if (activeEngine != patch.engine)
+					pulse = true;
+			}
+
+			// Set model lights
+			for (int i = 0; i < 16; i++) {
+				// Transpose the [light][color] table
+				int lightId = (i % 8) * 2 + (i / 8);
+				float brightness = activeEngines[i];
+				if (patch.engine == i && pulse)
+					brightness = tri;
+				lights[MODEL_LIGHT + lightId].setBrightness(brightness);
 			}
 
 			// Calculate pitch for lowCpu mode if needed
 			float pitch = params[FREQ_PARAM].getValue();
 			if (lowCpu)
-				pitch += log2f(48000.f * args.sampleTime);
+				pitch += std::log2(48000.f * args.sampleTime);
 			// Update patch
 			patch.note = 60.f + pitch * 12.f;
 			patch.harmonics = params[HARMONICS_PARAM].getValue();
-			if (!lpg) {
-				patch.timbre = params[TIMBRE_PARAM].getValue();
-				patch.morph = params[MORPH_PARAM].getValue();
-			}
-			else {
-				patch.lpg_colour = params[TIMBRE_PARAM].getValue();
-				patch.decay = params[MORPH_PARAM].getValue();
-			}
+			patch.timbre = params[TIMBRE_PARAM].getValue();
+			patch.morph = params[MORPH_PARAM].getValue();
+			patch.lpg_colour = params[LPG_COLOR_PARAM].getValue();
+			patch.decay = params[LPG_DECAY_PARAM].getValue();
 			patch.frequency_modulation_amount = params[FREQ_CV_PARAM].getValue();
 			patch.timbre_modulation_amount = params[TIMBRE_CV_PARAM].getValue();
 			patch.morph_modulation_amount = params[MORPH_CV_PARAM].getValue();
 
-			// Update modulations
-			modulations.engine = inputs[ENGINE_INPUT].getVoltage() / 5.f;
-			modulations.note = inputs[NOTE_INPUT].getVoltage() * 12.f;
-			modulations.frequency = inputs[FREQ_INPUT].getVoltage() * 6.f;
-			modulations.harmonics = inputs[HARMONICS_INPUT].getVoltage() / 5.f;
-			modulations.timbre = inputs[TIMBRE_INPUT].getVoltage() / 8.f;
-			modulations.morph = inputs[MORPH_INPUT].getVoltage() / 8.f;
-			// Triggers at around 0.7 V
-			modulations.trigger = inputs[TRIGGER_INPUT].getVoltage() / 3.f;
-			modulations.level = inputs[LEVEL_INPUT].getVoltage() / 8.f;
+			// Render output buffer for each voice
+			dsp::Frame<16 * 2> outputFrames[blockSize];
+			for (int c = 0; c < channels; c++) {
+				// Construct modulations
+				plaits::Modulations modulations;
+				modulations.engine = inputs[ENGINE_INPUT].getPolyVoltage(c) / 5.f;
+				modulations.note = inputs[NOTE_INPUT].getVoltage(c) * 12.f;
+				modulations.frequency = inputs[FREQ_INPUT].getPolyVoltage(c) * 6.f;
+				modulations.harmonics = inputs[HARMONICS_INPUT].getPolyVoltage(c) / 5.f;
+				modulations.timbre = inputs[TIMBRE_INPUT].getPolyVoltage(c) / 8.f;
+				modulations.morph = inputs[MORPH_INPUT].getPolyVoltage(c) / 8.f;
+				// Triggers at around 0.7 V
+				modulations.trigger = inputs[TRIGGER_INPUT].getPolyVoltage(c) / 3.f;
+				modulations.level = inputs[LEVEL_INPUT].getPolyVoltage(c) / 8.f;
 
-			modulations.frequency_patched = inputs[FREQ_INPUT].isConnected();
-			modulations.timbre_patched = inputs[TIMBRE_INPUT].isConnected();
-			modulations.morph_patched = inputs[MORPH_INPUT].isConnected();
-			modulations.trigger_patched = inputs[TRIGGER_INPUT].isConnected();
-			modulations.level_patched = inputs[LEVEL_INPUT].isConnected();
+				modulations.frequency_patched = inputs[FREQ_INPUT].isConnected();
+				modulations.timbre_patched = inputs[TIMBRE_INPUT].isConnected();
+				modulations.morph_patched = inputs[MORPH_INPUT].isConnected();
+				modulations.trigger_patched = inputs[TRIGGER_INPUT].isConnected();
+				modulations.level_patched = inputs[LEVEL_INPUT].isConnected();
 
-			// Render frames
-			plaits::Voice::Frame output[blockSize];
-			voice.Render(patch, modulations, output, blockSize);
+				// Render frames
+				plaits::Voice::Frame output[blockSize];
+				voice[c].Render(patch, modulations, output, blockSize);
 
-			// Convert output to frames
-			dsp::Frame<2> outputFrames[blockSize];
-			for (int i = 0; i < blockSize; i++) {
-				outputFrames[i].samples[0] = output[i].out / 32768.f;
-				outputFrames[i].samples[1] = output[i].aux / 32768.f;
+				// Convert output to frames
+				for (int i = 0; i < blockSize; i++) {
+					outputFrames[i].samples[c * 2 + 0] = output[i].out / 32768.f;
+					outputFrames[i].samples[c * 2 + 1] = output[i].aux / 32768.f;
+				}
 			}
 
 			// Convert output
 			if (lowCpu) {
 				int len = std::min((int) outputBuffer.capacity(), blockSize);
-				memcpy(outputBuffer.endData(), outputFrames, len * sizeof(dsp::Frame<2>));
+				std::memcpy(outputBuffer.endData(), outputFrames, len * sizeof(outputFrames[0]));
 				outputBuffer.endIncr(len);
 			}
 			else {
-				outputSrc.setRates(48000, args.sampleRate);
+				outputSrc.setRates(48000, (int) args.sampleRate);
 				int inLen = blockSize;
 				int outLen = outputBuffer.capacity();
+				outputSrc.setChannels(channels * 2);
 				outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
 				outputBuffer.endIncr(outLen);
 			}
@@ -211,11 +234,15 @@ struct Plaits : Module {
 
 		// Set output
 		if (!outputBuffer.empty()) {
-			dsp::Frame<2> outputFrame = outputBuffer.shift();
-			// Inverting op-amp on outputs
-			outputs[OUT_OUTPUT].setVoltage(-outputFrame.samples[0] * 5.f);
-			outputs[AUX_OUTPUT].setVoltage(-outputFrame.samples[1] * 5.f);
+			dsp::Frame<16 * 2> outputFrame = outputBuffer.shift();
+			for (int c = 0; c < channels; c++) {
+				// Inverting op-amp on outputs
+				outputs[OUT_OUTPUT].setVoltage(-outputFrame.samples[c * 2 + 0] * 5.f, c);
+				outputs[AUX_OUTPUT].setVoltage(-outputFrame.samples[c * 2 + 1] * 5.f, c);
+			}
 		}
+		outputs[OUT_OUTPUT].setChannels(channels);
+		outputs[AUX_OUTPUT].setChannels(channels);
 	}
 };
 
@@ -241,6 +268,8 @@ static const std::string modelLabels[16] = {
 
 
 struct PlaitsWidget : ModuleWidget {
+	bool lpgMode = false;
+
 	PlaitsWidget(Plaits *module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Plaits.svg")));
@@ -259,6 +288,13 @@ struct PlaitsWidget : ModuleWidget {
 		addParam(createParam<Trimpot>(mm2px(Vec(7.88712, 77.60705)), module, Plaits::TIMBRE_CV_PARAM));
 		addParam(createParam<Trimpot>(mm2px(Vec(27.2245, 77.60705)), module, Plaits::FREQ_CV_PARAM));
 		addParam(createParam<Trimpot>(mm2px(Vec(46.56189, 77.60705)), module, Plaits::MORPH_CV_PARAM));
+
+		ParamWidget* lpgColorParam = createParam<Rogan1PSBlue>(mm2px(Vec(4.04171, 49.6562)), module, Plaits::LPG_COLOR_PARAM);
+		lpgColorParam->hide();
+		addParam(lpgColorParam);
+		ParamWidget* decayParam = createParam<Rogan1PSBlue>(mm2px(Vec(42.71716, 49.6562)), module, Plaits::LPG_DECAY_PARAM);
+		decayParam->hide();
+		addParam(decayParam);
 
 		addInput(createInput<PJ301MPort>(mm2px(Vec(3.31381, 92.48067)), module, Plaits::ENGINE_INPUT));
 		addInput(createInput<PJ301MPort>(mm2px(Vec(14.75983, 92.48067)), module, Plaits::TIMBRE_INPUT));
@@ -292,10 +328,10 @@ struct PlaitsWidget : ModuleWidget {
 			}
 		};
 
-		struct PlaitsLPGItem : MenuItem {
-			Plaits *module;
+		struct PlaitsLpgModeItem : MenuItem {
+			PlaitsWidget *moduleWidget;
 			void onAction(const event::Action &e) override {
-				module->lpg ^= true;
+				moduleWidget->setLpgMode(!moduleWidget->getLpgMode());
 			}
 		};
 
@@ -311,8 +347,8 @@ struct PlaitsWidget : ModuleWidget {
 		PlaitsLowCpuItem *lowCpuItem = createMenuItem<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
 		lowCpuItem->module = module;
 		menu->addChild(lowCpuItem);
-		PlaitsLPGItem *lpgItem = createMenuItem<PlaitsLPGItem>("Edit LPG response/decay", CHECKMARK(module->lpg));
-		lpgItem->module = module;
+		PlaitsLpgModeItem *lpgItem = createMenuItem<PlaitsLpgModeItem>("Edit LPG response/decay", CHECKMARK(getLpgMode()));
+		lpgItem->moduleWidget = this;
 		menu->addChild(lpgItem);
 
 		menu->addChild(new MenuSeparator);
@@ -323,6 +359,29 @@ struct PlaitsWidget : ModuleWidget {
 			modelItem->model = i;
 			menu->addChild(modelItem);
 		}
+	}
+
+	void setLpgMode(bool lpgMode) {
+		// ModuleWidget::getParam() doesn't work if the ModuleWidget doesn't have a module.
+		if (!module)
+			return;
+		if (lpgMode) {
+			getParam(Plaits::MORPH_PARAM)->hide();
+			getParam(Plaits::TIMBRE_PARAM)->hide();
+			getParam(Plaits::LPG_DECAY_PARAM)->show();
+			getParam(Plaits::LPG_COLOR_PARAM)->show();
+		}
+		else {
+			getParam(Plaits::MORPH_PARAM)->show();
+			getParam(Plaits::TIMBRE_PARAM)->show();
+			getParam(Plaits::LPG_DECAY_PARAM)->hide();
+			getParam(Plaits::LPG_COLOR_PARAM)->hide();
+		}
+		this->lpgMode = lpgMode;
+	}
+
+	bool getLpgMode() {
+		return this->lpgMode;
 	}
 };
 
