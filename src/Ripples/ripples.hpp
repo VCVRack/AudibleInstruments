@@ -22,6 +22,93 @@
 
 using namespace rack;
 
+namespace ripples
+{
+
+// Frequency knob
+static const float kFreqKnobMin = 20.f;
+static const float kFreqKnobMax = 20000.f;
+static const float kFreqKnobVoltage =
+    std::log2f(kFreqKnobMax / kFreqKnobMin);
+
+// Calculate base and multiplier values to pass to configParam so that the
+// knob value is labeled in Hz.
+// Model the knob as a generic V/oct input with 100k input impedance.
+// Assume the internal knob voltage `v` is on the interval [0, vmax] and
+// let `p` be the position of the knob varying linearly along [0, 1]. Then,
+//   freq = fmin * 2^v
+//   v = vmax * p
+//   vmax = log2(fmax / fmin)
+//   freq = fmin * 2^(log2(fmax / fmin) * p)
+//        = fmin * (fmax / fmin)^p
+static const float kFreqKnobDisplayBase = kFreqKnobMax / kFreqKnobMin;
+static const float kFreqKnobDisplayMultiplier = kFreqKnobMin;
+
+// Frequency CV amplifier
+// The 2164's gain constant is -33mV/dB. Multiply by 6dB/1V to find the
+// nominal gain of the amplifier.
+static const float kVCAGainConstant = -33e-3f;
+static const float kPlus6dB = 20.f * std::log10(2.f);
+static const float kFreqAmpGain = kVCAGainConstant * kPlus6dB;
+static const float kFreqInputR = 100e3f;
+static const float kFreqAmpR = -kFreqAmpGain * kFreqInputR;
+static const float kFreqAmpC = 560e-12f;
+
+// Resonance CV amplifier
+static const float kResInputR = 22e3f;
+static const float kResKnobV = 12.f;
+static const float kResKnobR = 62e3f;
+static const float kResAmpR = 47e3f;
+static const float kResAmpC = 560e-12f;
+
+// Gain CV amplifier
+static const float kGainInputR = 27e3f;
+static const float kGainNormalV = 12.f;
+static const float kGainNormalR = 15e3f;
+static const float kGainAmpR = 47e3f;
+static const float kGainAmpC = 560e-12f;
+
+// Filter core
+static const float kFilterMaxCutoff = kFreqKnobMax;
+static const float kFilterCellR = 33e3f;
+static const float kFilterCellRC =
+    1.f / (2.f * M_PI * kFilterMaxCutoff);
+static const float kFilterCellC = kFilterCellRC / kFilterCellR;
+static const float kFilterInputR = 100e3f;
+static const float kFilterInputGain = kFilterCellR / kFilterInputR;
+static const float kFilterCellSelfModulation = 0.01f;
+
+// Filter core feedback path
+static const float kFeedbackRt = 22e3f;
+static const float kFeedbackRb = 1e3f;
+static const float kFeedbackR = kFeedbackRt + kFeedbackRb;
+static const float kFeedbackGain = kFeedbackRb / kFeedbackR;
+
+// Filter core feedforward path
+static const float kFeedforwardRt = 300e3f;
+static const float kFeedforwardRb = 1e3f;
+static const float kFeedforwardR = kFeedforwardRt + kFeedforwardRb;
+static const float kFeedforwardGain = kFeedforwardRb / kFeedforwardR;
+static const float kFeedforwardC = 220e-9f;
+
+// Filter output amplifiers
+static const float kLP2Gain = -100e3f / 39e3f;
+static const float kLP4Gain = -100e3f / 33e3f;
+static const float kBP2Gain = -100e3f / 39e3f;
+
+// VCA
+static const float kVCAInputC = 4.7e-6f;
+static const float kVCAInputRt = 100e3f;
+static const float kVCAInputRb = 1e3f;
+static const float kVCAInputR = kVCAInputRt + kVCAInputRb;
+static const float kVCAInputGain = kVCAInputRb / kVCAInputR;
+static const float kVCAOutputR = 100e3f;
+
+// Voltage-to-current converters
+// Saturation voltage at BJT collector
+static const float kVtoICollectorVSat = -10.f;
+
+
 class RipplesEngine
 {
 public:
@@ -46,89 +133,6 @@ public:
         float lp4;
         float lp4vca;
     };
-
-    // Frequency knob
-    static constexpr float kFreqKnobMin = 20.f;
-    static constexpr float kFreqKnobMax = 20000.f;
-    static constexpr float kFreqKnobVoltage =
-        std::log2f(kFreqKnobMax / kFreqKnobMin);
-
-    // Calculate base and multiplier values to pass to configParam so that the
-    // knob value is labeled in Hz.
-    // Model the knob as a generic V/oct input with 100k input impedance.
-    // Assume the internal knob voltage `v` is on the interval [0, vmax] and
-    // let `p` be the position of the knob varying linearly along [0, 1]. Then,
-    //   freq = fmin * 2^v
-    //   v = vmax * p
-    //   vmax = log2(fmax / fmin)
-    //   freq = fmin * 2^(log2(fmax / fmin) * p)
-    //        = fmin * (fmax / fmin)^p
-    static constexpr float kFreqKnobDisplayBase = kFreqKnobMax / kFreqKnobMin;
-    static constexpr float kFreqKnobDisplayMultiplier = kFreqKnobMin;
-
-    // Frequency CV amplifier
-    // The 2164's gain constant is -33mV/dB. Multiply by 6dB/1V to find the
-    // nominal gain of the amplifier.
-    static constexpr float kVCAGainConstant = -33e-3f;
-    static constexpr float kPlus6dB = 20.f * std::log10(2.f);
-    static constexpr float kFreqAmpGain = kVCAGainConstant * kPlus6dB;
-    static constexpr float kFreqInputR = 100e3f;
-    static constexpr float kFreqAmpR = -kFreqAmpGain * kFreqInputR;
-    static constexpr float kFreqAmpC = 560e-12f;
-
-    // Resonance CV amplifier
-    static constexpr float kResInputR = 22e3f;
-    static constexpr float kResKnobV = 12.f;
-    static constexpr float kResKnobR = 62e3f;
-    static constexpr float kResAmpR = 47e3f;
-    static constexpr float kResAmpC = 560e-12f;
-
-    // Gain CV amplifier
-    static constexpr float kGainInputR = 27e3f;
-    static constexpr float kGainNormalV = 12.f;
-    static constexpr float kGainNormalR = 15e3f;
-    static constexpr float kGainAmpR = 47e3f;
-    static constexpr float kGainAmpC = 560e-12f;
-
-    // Filter core
-    static constexpr float kFilterMaxCutoff = kFreqKnobMax;
-    static constexpr float kFilterCellR = 33e3f;
-    static constexpr float kFilterCellRC =
-        1.f / (2.f * M_PI * kFilterMaxCutoff);
-    static constexpr float kFilterCellC = kFilterCellRC / kFilterCellR;
-    static constexpr float kFilterInputR = 100e3f;
-    static constexpr float kFilterInputGain = kFilterCellR / kFilterInputR;
-    static constexpr float kFilterCellSelfModulation = 0.01f;
-
-    // Filter core feedback path
-    static constexpr float kFeedbackRt = 22e3f;
-    static constexpr float kFeedbackRb = 1e3f;
-    static constexpr float kFeedbackR = kFeedbackRt + kFeedbackRb;
-    static constexpr float kFeedbackGain = kFeedbackRb / kFeedbackR;
-
-    // Filter core feedforward path
-    static constexpr float kFeedforwardRt = 300e3f;
-    static constexpr float kFeedforwardRb = 1e3f;
-    static constexpr float kFeedforwardR = kFeedforwardRt + kFeedforwardRb;
-    static constexpr float kFeedforwardGain = kFeedforwardRb / kFeedforwardR;
-    static constexpr float kFeedforwardC = 220e-9f;
-
-    // Filter output amplifiers
-    static constexpr float kLP2Gain = -100e3f / 39e3f;
-    static constexpr float kLP4Gain = -100e3f / 33e3f;
-    static constexpr float kBP2Gain = -100e3f / 39e3f;
-
-    // VCA
-    static constexpr float kVCAInputC = 4.7e-6f;
-    static constexpr float kVCAInputRt = 100e3f;
-    static constexpr float kVCAInputRb = 1e3f;
-    static constexpr float kVCAInputR = kVCAInputRt + kVCAInputRb;
-    static constexpr float kVCAInputGain = kVCAInputRb / kVCAInputR;
-    static constexpr float kVCAOutputR = 100e3f;
-
-    // Voltage-to-current converters
-    // Saturation voltage at BJT collector
-    static constexpr float kVtoICollectorVSat = -10.f;
 
     RipplesEngine()
     {
@@ -337,10 +341,10 @@ protected:
         // or equivalently,
         //   i_out = i_abc * tanh(vi / (2vt))
 
-        constexpr float kTemperature = 40.f; // Silicon temperature in Celsius
-        constexpr float kKoverQ = 8.617333262145e-5;
-        constexpr float kKelvin = 273.15f; // 0C in K
-        constexpr float kVt =  kKoverQ * (kTemperature + kKelvin);
+        const float kTemperature = 40.f; // Silicon temperature in Celsius
+        const float kKoverQ = 8.617333262145e-5;
+        const float kKelvin = 273.15f; // 0C in K
+        const float kVt =  kKoverQ * (kTemperature + kKelvin);
 
         T vi = vp - vn;
         T z = vi / (2 * kVt);
@@ -353,3 +357,5 @@ protected:
         return i_abc * p;
     }
 };
+
+}
