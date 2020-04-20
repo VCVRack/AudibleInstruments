@@ -1,6 +1,6 @@
 {
   "slug": "AudibleInstruments",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "GPL-3.0-or-later",
   "name": "Audible Instruments",
   "author": "VCV",
@@ -202,14 +202,14 @@
     },
     {
       "slug": "Ripples",
-      "disabled": true,
       "name": "Liquid Filter",
       "description": "Based on Mutable Instruments Ripples",
       "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-ripples",
       "tags": [
         "Filter",
         "Voltage-controlled amplifier",
-        "Hardware clone"
+        "Hardware clone",
+        "Polyphonic"
       ]
     }
   ]

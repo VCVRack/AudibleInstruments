@@ -1,4 +1,5 @@
 #include "plugin.hpp"
+#include "Ripples/ripples.hpp"
 
 
 struct Ripples : Module {
@@ -27,14 +28,65 @@ struct Ripples : Module {
 		NUM_LIGHTS
 	};
 
+	RipplesEngine engines[16];
+
 	Ripples() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(RES_PARAM, 0.f, 1.f, 0.5f, "Resonance");
-		configParam(FREQ_PARAM, 0.f, 1.f, 0.5f, "Frequency");
-		configParam(FM_PARAM, 0.f, 1.f, 0.5f, "Frequency modulation");
+		configParam(RES_PARAM, 0.f, 1.f, 0.f, "Resonance", "%", 0, 100);
+		configParam(FREQ_PARAM, std::log2(RipplesEngine::kFreqKnobMin), std::log2(RipplesEngine::kFreqKnobMax), std::log2(RipplesEngine::kFreqKnobMax), "Frequency", " Hz", 2.f);
+		configParam(FM_PARAM, -1.f, 1.f, 0.f, "Frequency modulation", "%", 0, 100);
+
+		onSampleRateChange();
+	}
+
+	void onReset() override {
+		onSampleRateChange();
+	}
+
+	void onSampleRateChange() override {
+		// TODO In Rack v2, replace with args.sampleRate
+		for (int c = 0; c < 16; c++) {
+			engines[c].setSampleRate(APP->engine->getSampleRate());
+		}
 	}
 
 	void process(const ProcessArgs& args) override {
+		int channels = std::max(inputs[IN_INPUT].getChannels(), 1);
+
+		// Reuse the same frame object for multiple engines because the params aren't touched.
+		RipplesEngine::Frame frame;
+		frame.res_knob = params[RES_PARAM].getValue();
+		frame.freq_knob = rescale(params[FREQ_PARAM].getValue(), std::log2(RipplesEngine::kFreqKnobMin), std::log2(RipplesEngine::kFreqKnobMax), 0.f, 1.f);
+		frame.fm_knob = params[FM_PARAM].getValue();
+		frame.gain_cv_present = inputs[GAIN_INPUT].isConnected();
+
+		for (int c = 0; c < channels; c++) {
+			frame.res_cv = inputs[RES_INPUT].getPolyVoltage(c);
+			frame.freq_cv = inputs[FREQ_INPUT].getPolyVoltage(c);
+			frame.fm_cv = inputs[FM_INPUT].getPolyVoltage(c);
+			frame.input = inputs[IN_INPUT].getVoltage(c);
+			frame.gain_cv = inputs[GAIN_INPUT].getPolyVoltage(c);
+
+			engines[c].process(frame);
+
+			// Although rare, using extreme parameters, I've been able to produce nonfinite floats with the filter model, so detect them and reset the state.
+			if (!std::isfinite(frame.bp2)) {
+				// A reset() method would be nice, but we can just reinitialize it.
+				engines[c] = RipplesEngine();
+				engines[c].setSampleRate(args.sampleRate);
+			}
+			else {
+				outputs[BP2_OUTPUT].setVoltage(frame.bp2, c);
+				outputs[LP2_OUTPUT].setVoltage(frame.lp2, c);
+				outputs[LP4_OUTPUT].setVoltage(frame.lp4, c);
+				outputs[LP4VCA_OUTPUT].setVoltage(frame.lp4vca, c);
+			}
+		}
+
+		outputs[BP2_OUTPUT].setChannels(channels);
+		outputs[LP2_OUTPUT].setChannels(channels);
+		outputs[LP4_OUTPUT].setChannels(channels);
+		outputs[LP4VCA_OUTPUT].setChannels(channels);
 	}
 };
 

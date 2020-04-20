@@ -52,15 +52,15 @@ Based on [Blinds](https://mutable-instruments.net/modules/blinds), [Manual](http
 ### Quad VCA
 Based on [Veils](https://mutable-instruments.net/modules/veils), [Manual](https://mutable-instruments.net/modules/veils/manual/)
 
+### Liquid Filter
+Based on [Ripples](https://mutable-instruments.net/modules/ripples), [Manual](https://mutable-instruments.net/modules/ripples/manual/)
+- Virtual analog model provided by [Alright Devices](https://www.alrightdevices.com/) after successful crowdfunding.
+
 
 ## Not yet ported
 
 ### [Peaks](https://mutable-instruments.net/modules/peaks)
 [Manual](https://mutable-instruments.net/modules/peaks/manual/)
-
-### [Ripples](https://mutable-instruments.net/modules/ripples)
-[Manual](https://mutable-instruments.net/modules/ripples/manual/)
-- analog, but I own a unit. need a free afternoon to port
 
 ### [Shelves](https://mutable-instruments.net/modules/shelves)
 [Manual](https://mutable-instruments.net/modules/shelves/manual/)

@@ -1,3 +1,6 @@
+### 1.2.0 (2020-04-20)
+- Add Liquid Filter
+
 ### 1.1.0 (2020-04-16)
 - Macro Oscillator
 	- Change range of frequency parameter to [-4, 4] octaves in order to match hardware.
