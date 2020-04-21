@@ -108,6 +108,9 @@ static const float kVCAOutputR = 100e3f;
 // Saturation voltage at BJT collector
 static const float kVtoICollectorVSat = -10.f;
 
+// Opamp saturation voltage
+static const float kOpampSatV = 10.6f;
+
 
 class RipplesEngine
 {
@@ -280,6 +283,8 @@ protected:
             return dvout;
         });
 
+        cell_voltage_ = simd::clamp(cell_voltage_, -kOpampSatV, kOpampSatV);
+
         float lp1 = cell_voltage_[0];
         float lp2 = cell_voltage_[1];
         float lp4 = cell_voltage_[3];
@@ -344,10 +349,12 @@ protected:
         const float kTemperature = 40.f; // Silicon temperature in Celsius
         const float kKoverQ = 8.617333262145e-5;
         const float kKelvin = 273.15f; // 0C in K
-        const float kVt =  kKoverQ * (kTemperature + kKelvin);
+        const float kVt = kKoverQ * (kTemperature + kKelvin);
+        const float kZlim = 2.f * std::sqrt(3.f);
 
         T vi = vp - vn;
-        T z = vi / (2 * kVt);
+        T zlim = kZlim;
+        T z = math::clamp(vi / (2 * kVt), -zlim, zlim);
 
         // Pade approximant of tanh(z)
         T z2 = z * z;
