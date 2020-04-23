@@ -24,9 +24,9 @@ struct Links : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		A_POS_LIGHT, A_NEG_LIGHT,
-		B_POS_LIGHT, B_NEG_LIGHT,
-		C_POS_LIGHT, C_NEG_LIGHT,
+		ENUMS(A_LIGHT, 2),
+		ENUMS(B_LIGHT, 2),
+		ENUMS(C_LIGHT, 2),
 		NUM_LIGHTS
 	};
 
@@ -35,23 +35,50 @@ struct Links : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		float inA = inputs[A1_INPUT].getVoltage();
-		float inB = inputs[B1_INPUT].getVoltage() + inputs[B2_INPUT].getVoltage();
-		float inC = inputs[C1_INPUT].getVoltage() + inputs[C2_INPUT].getVoltage() + inputs[C3_INPUT].getVoltage();
+		// Section A
+		{
+			int channels = std::max(inputs[A1_INPUT].getChannels(), 1);
+			float in[16];
+			for (int c = 0; c < channels; c++) {
+				in[c] = inputs[A1_INPUT].getVoltage(c);
+				outputs[A1_OUTPUT].setVoltage(in[c], c);
+				outputs[A2_OUTPUT].setVoltage(in[c], c);
+				outputs[A3_OUTPUT].setVoltage(in[c], c);
+			}
+			outputs[A1_OUTPUT].setChannels(channels);
+			outputs[A2_OUTPUT].setChannels(channels);
+			outputs[A3_OUTPUT].setChannels(channels);
+			lights[A_LIGHT + 0].setSmoothBrightness(in[0] / 5.f, args.sampleTime);
+			lights[A_LIGHT + 1].setSmoothBrightness(-in[0] / 5.f, args.sampleTime);
+		}
 
-		outputs[A1_OUTPUT].setVoltage(inA);
-		outputs[A2_OUTPUT].setVoltage(inA);
-		outputs[A3_OUTPUT].setVoltage(inA);
-		outputs[B1_OUTPUT].setVoltage(inB);
-		outputs[B2_OUTPUT].setVoltage(inB);
-		outputs[C1_OUTPUT].setVoltage(inC);
+		// Section B
+		{
+			int channels = std::max(std::max(inputs[B1_INPUT].getChannels(), inputs[B2_INPUT].getChannels()), 1);
+			float in[16];
+			for (int c = 0; c < channels; c++) {
+				in[c] = inputs[B1_INPUT].getPolyVoltage(c) + inputs[B2_INPUT].getPolyVoltage(c);
+				outputs[B1_OUTPUT].setVoltage(in[c], c);
+				outputs[B2_OUTPUT].setVoltage(in[c], c);
+			}
+			outputs[B1_OUTPUT].setChannels(channels);
+			outputs[B2_OUTPUT].setChannels(channels);
+			lights[B_LIGHT + 0].setSmoothBrightness(in[0] / 5.f, args.sampleTime);
+			lights[B_LIGHT + 1].setSmoothBrightness(-in[0] / 5.f, args.sampleTime);
+		}
 
-		lights[A_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inA / 5.0), args.sampleTime);
-		lights[A_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inA / 5.0), args.sampleTime);
-		lights[B_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inB / 5.0), args.sampleTime);
-		lights[B_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inB / 5.0), args.sampleTime);
-		lights[C_POS_LIGHT].setSmoothBrightness(fmaxf(0.0, inC / 5.0), args.sampleTime);
-		lights[C_NEG_LIGHT].setSmoothBrightness(fmaxf(0.0, -inC / 5.0), args.sampleTime);
+		// Section C
+		{
+			int channels = std::max(std::max(std::max(inputs[C1_INPUT].getChannels(), inputs[C2_INPUT].getChannels()), inputs[C3_INPUT].getChannels()), 1);
+			float in[16];
+			for (int c = 0; c < channels; c++) {
+				in[c] = inputs[C1_INPUT].getPolyVoltage(c) + inputs[C2_INPUT].getPolyVoltage(c) + inputs[C3_INPUT].getPolyVoltage(c);
+				outputs[C1_OUTPUT].setVoltage(in[c], c);
+			}
+			outputs[C1_OUTPUT].setChannels(channels);
+			lights[C_LIGHT + 0].setSmoothBrightness(in[0] / 5.f, args.sampleTime);
+			lights[C_LIGHT + 1].setSmoothBrightness(-in[0] / 5.f, args.sampleTime);
+		}
 	}
 };
 
@@ -79,9 +106,9 @@ struct LinksWidget : ModuleWidget {
 		addInput(createInput<PJ301MPort>(Vec(4, 316), module, Links::C3_INPUT));
 		addOutput(createOutput<PJ301MPort>(Vec(31, 316), module, Links::C1_OUTPUT));
 
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 59), module, Links::A_POS_LIGHT));
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 161), module, Links::B_POS_LIGHT));
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_POS_LIGHT));
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 59), module, Links::A_LIGHT));
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 161), module, Links::B_LIGHT));
+		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_LIGHT));
 	}
 };
 
