@@ -230,6 +230,17 @@
         "Hardware clone",
         "Polyphonic"
       ]
+    },
+    {
+      "slug": "Edges",
+      "name": "Quad Chiptune Audio Generator",
+      "description": "Based on Mutable Instruments Edges",
+      "manualUrl": "https://mutable-instruments.net/modules/edges/manual/",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-edges",
+      "tags": [
+        "Oscillator",
+        "Hardware clone"
+      ]
     }
   ]
 }
