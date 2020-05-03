@@ -69,18 +69,10 @@ struct Ripples : Module {
 
 			engines[c].process(frame);
 
-			// Although rare, using extreme parameters, I've been able to produce nonfinite floats with the filter model, so detect them and reset the state.
-			if (!std::isfinite(frame.bp2)) {
-				// A reset() method would be nice, but we can just reinitialize it.
-				engines[c] = ripples::RipplesEngine();
-				engines[c].setSampleRate(args.sampleRate);
-			}
-			else {
-				outputs[BP2_OUTPUT].setVoltage(frame.bp2, c);
-				outputs[LP2_OUTPUT].setVoltage(frame.lp2, c);
-				outputs[LP4_OUTPUT].setVoltage(frame.lp4, c);
-				outputs[LP4VCA_OUTPUT].setVoltage(frame.lp4vca, c);
-			}
+			outputs[BP2_OUTPUT].setVoltage(frame.bp2, c);
+			outputs[LP2_OUTPUT].setVoltage(frame.lp2, c);
+			outputs[LP4_OUTPUT].setVoltage(frame.lp4, c);
+			outputs[LP4VCA_OUTPUT].setVoltage(frame.lp4vca, c);
 		}
 
 		outputs[BP2_OUTPUT].setChannels(channels);
