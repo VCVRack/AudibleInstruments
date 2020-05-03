@@ -24,3 +24,4 @@ extern Model* modelFrames;
 extern Model* modelStages;
 extern Model* modelMarbles;
 extern Model* modelRipples;
+extern Model* modelShelves;

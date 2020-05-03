@@ -230,6 +230,17 @@
         "Hardware clone",
         "Polyphonic"
       ]
+    },
+    {
+      "slug": "Shelves",
+      "name": "EQ Filter",
+      "description": "Based on Mutable Instruments Shelves",
+      "manualUrl": "https://mutable-instruments.net/modules/shelves/manual/",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-shelves-2015",
+      "tags": [
+        "Equalizer",
+        "Filter"
+      ]
     }
   ]
 }
