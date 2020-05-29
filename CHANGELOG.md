@@ -1,3 +1,6 @@
+### 1.3.0 (2020-05-29)
+- Add EQ Filter.
+
 ### 1.2.1 (2020-04-23)
 - Multiples
 	- Make polyphonic.

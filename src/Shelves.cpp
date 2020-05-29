@@ -1,4 +1,15 @@
 #include "plugin.hpp"
+#include "Shelves/shelves.hpp"
+
+
+static const float freqMin = std::log2(shelves::kFreqKnobMin);
+static const float freqMax = std::log2(shelves::kFreqKnobMax);
+static const float freqInit = (freqMin + freqMax) / 2;
+static const float gainMin = -shelves::kGainKnobRange;
+static const float gainMax = shelves::kGainKnobRange;
+static const float qMin = std::log2(shelves::kQKnobMin);
+static const float qMax = std::log2(shelves::kQKnobMax);
+static const float qInit = (qMin + qMax) / 2;
 
 
 struct Shelves : Module {
@@ -46,21 +57,122 @@ struct Shelves : Module {
 		NUM_LIGHTS
 	};
 
+	shelves::ShelvesEngine engines[16];
+	bool preGain;
+
 	Shelves() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(HS_FREQ_PARAM, 0.f, 1.f, 0.f, "High-shelf frequency");
-		configParam(HS_GAIN_PARAM, 0.f, 1.f, 0.f, "High-shelf gain");
-		configParam(P1_FREQ_PARAM, 0.f, 1.f, 0.f, "Parametric 1 frequency");
-		configParam(P1_GAIN_PARAM, 0.f, 1.f, 0.f, "Parametric 1 gain");
-		configParam(P1_Q_PARAM, 0.f, 1.f, 0.f, "Parametric 1 quality");
-		configParam(P2_FREQ_PARAM, 0.f, 1.f, 0.f, "Parametric 2 frequency");
-		configParam(P2_GAIN_PARAM, 0.f, 1.f, 0.f, "Parametric 2 gain");
-		configParam(P2_Q_PARAM, 0.f, 1.f, 0.f, "Parametric 2 quality");
-		configParam(LS_FREQ_PARAM, 0.f, 1.f, 0.f, "Low-shelf frequency");
-		configParam(LS_GAIN_PARAM, 0.f, 1.f, 0.f, "Low-shelf gain");
+
+		configParam(HS_FREQ_PARAM, freqMin, freqMax, freqInit, "High-shelf frequency", " Hz", 2.f);
+		configParam(P1_FREQ_PARAM, freqMin, freqMax, freqInit, "Parametric 1 frequency", " Hz", 2.f);
+		configParam(P2_FREQ_PARAM, freqMin, freqMax, freqInit, "Parametric 2 frequency", " Hz", 2.f);
+		configParam(LS_FREQ_PARAM, freqMin, freqMax, freqInit, "Low-shelf frequency", " Hz", 2.f);
+
+		configParam(HS_GAIN_PARAM, gainMin, gainMax, 0.f, "High-shelf gain", " dB");
+		configParam(P1_GAIN_PARAM, gainMin, gainMax, 0.f, "Parametric 1 gain", " dB");
+		configParam(P2_GAIN_PARAM, gainMin, gainMax, 0.f, "Parametric 2 gain", " dB");
+		configParam(LS_GAIN_PARAM, gainMin, gainMax, 0.f, "Low-shelf gain", " dB");
+
+		configParam(P1_Q_PARAM, qMin, qMax, qInit, "Parametric 1 quality", "", 2.f);
+		configParam(P2_Q_PARAM, qMin, qMax, qInit, "Parametric 2 quality", "", 2.f);
+
+		onReset();
+	}
+
+	void onReset() override {
+		preGain = false;
+		onSampleRateChange();
+	}
+
+	void onSampleRateChange() override {
+		// TODO In Rack v2, replace with args.sampleRate
+		for (int c = 0; c < 16; c++) {
+			engines[c].setSampleRate(APP->engine->getSampleRate());
+		}
 	}
 
 	void process(const ProcessArgs& args) override {
+		int channels = std::max(inputs[IN_INPUT].getChannels(), 1);
+
+		// Reuse the same frame object for multiple engines because the params aren't touched.
+		shelves::ShelvesEngine::Frame frame;
+		frame.pre_gain = preGain;
+
+		frame.hs_freq_knob = rescale(params[HS_FREQ_PARAM].getValue(), freqMin, freqMax, 0.f, 1.f);
+		frame.p1_freq_knob = rescale(params[P1_FREQ_PARAM].getValue(), freqMin, freqMax, 0.f, 1.f);
+		frame.p2_freq_knob = rescale(params[P2_FREQ_PARAM].getValue(), freqMin, freqMax, 0.f, 1.f);
+		frame.ls_freq_knob = rescale(params[LS_FREQ_PARAM].getValue(), freqMin, freqMax, 0.f, 1.f);
+
+		frame.hs_gain_knob = params[HS_GAIN_PARAM].getValue() / shelves::kGainKnobRange;
+		frame.p1_gain_knob = params[P1_GAIN_PARAM].getValue() / shelves::kGainKnobRange;
+		frame.p2_gain_knob = params[P2_GAIN_PARAM].getValue() / shelves::kGainKnobRange;
+		frame.ls_gain_knob = params[LS_GAIN_PARAM].getValue() / shelves::kGainKnobRange;
+
+		frame.p1_q_knob = rescale(params[P1_Q_PARAM].getValue(), qMin, qMax, 0.f, 1.f);
+		frame.p2_q_knob = rescale(params[P2_Q_PARAM].getValue(), qMin, qMax, 0.f, 1.f);
+
+		frame.hs_freq_cv_connected = inputs[HS_FREQ_INPUT].isConnected();
+		frame.hs_gain_cv_connected = inputs[HS_GAIN_INPUT].isConnected();
+		frame.p1_freq_cv_connected = inputs[P1_FREQ_INPUT].isConnected();
+		frame.p1_gain_cv_connected = inputs[P1_GAIN_INPUT].isConnected();
+		frame.p1_q_cv_connected = inputs[P1_Q_INPUT].isConnected();
+		frame.p2_freq_cv_connected = inputs[P2_FREQ_INPUT].isConnected();
+		frame.p2_gain_cv_connected = inputs[P2_GAIN_INPUT].isConnected();
+		frame.p2_q_cv_connected = inputs[P2_Q_INPUT].isConnected();
+		frame.ls_freq_cv_connected = inputs[LS_FREQ_INPUT].isConnected();
+		frame.ls_gain_cv_connected = inputs[LS_GAIN_INPUT].isConnected();
+		frame.global_freq_cv_connected = inputs[FREQ_INPUT].isConnected();
+		frame.global_gain_cv_connected = inputs[GAIN_INPUT].isConnected();
+
+		frame.p1_hp_out_connected = outputs[P1_HP_OUTPUT].isConnected();
+		frame.p1_bp_out_connected = outputs[P1_BP_OUTPUT].isConnected();
+		frame.p1_lp_out_connected = outputs[P1_LP_OUTPUT].isConnected();
+		frame.p2_hp_out_connected = outputs[P2_HP_OUTPUT].isConnected();
+		frame.p2_bp_out_connected = outputs[P2_BP_OUTPUT].isConnected();
+		frame.p2_lp_out_connected = outputs[P2_LP_OUTPUT].isConnected();
+
+		float clipLight = 0.f;
+
+		for (int c = 0; c < channels; c++) {
+			frame.main_in = inputs[IN_INPUT].getVoltage(c);
+			frame.hs_freq_cv = inputs[HS_FREQ_INPUT].getPolyVoltage(c);
+			frame.hs_gain_cv = inputs[HS_GAIN_INPUT].getPolyVoltage(c);
+			frame.p1_freq_cv = inputs[P1_FREQ_INPUT].getPolyVoltage(c);
+			frame.p1_gain_cv = inputs[P1_GAIN_INPUT].getPolyVoltage(c);
+			frame.p1_q_cv = inputs[P1_Q_INPUT].getPolyVoltage(c);
+			frame.p2_freq_cv = inputs[P2_FREQ_INPUT].getPolyVoltage(c);
+			frame.p2_gain_cv = inputs[P2_GAIN_INPUT].getPolyVoltage(c);
+			frame.p2_q_cv = inputs[P2_Q_INPUT].getPolyVoltage(c);
+			frame.ls_freq_cv = inputs[LS_FREQ_INPUT].getPolyVoltage(c);
+			frame.ls_gain_cv = inputs[LS_GAIN_INPUT].getPolyVoltage(c);
+			frame.global_freq_cv = inputs[FREQ_INPUT].getPolyVoltage(c);
+			frame.global_gain_cv = inputs[GAIN_INPUT].getPolyVoltage(c);
+
+			engines[c].process(frame);
+
+			outputs[P1_HP_OUTPUT].setVoltage(frame.p1_hp_out);
+			outputs[P1_BP_OUTPUT].setVoltage(frame.p1_bp_out);
+			outputs[P1_LP_OUTPUT].setVoltage(frame.p1_lp_out);
+			outputs[P2_HP_OUTPUT].setVoltage(frame.p2_hp_out);
+			outputs[P2_BP_OUTPUT].setVoltage(frame.p2_bp_out);
+			outputs[P2_LP_OUTPUT].setVoltage(frame.p2_lp_out);
+			outputs[OUT_OUTPUT].setVoltage(frame.main_out);
+			clipLight += frame.clip;
+		}
+
+		lights[CLIP_LIGHT].setSmoothBrightness(clipLight, args.sampleTime);
+	}
+
+	json_t* dataToJson() override {
+		json_t* root_j = json_object();
+		json_object_set_new(root_j, "preGain", json_boolean(preGain));
+		return root_j;
+	}
+
+	void dataFromJson(json_t* root_j) override {
+		json_t* preGainJ = json_object_get(root_j, "preGain");
+		if (preGainJ)
+			preGain = json_boolean_value(preGainJ);
 	}
 };
 
@@ -109,6 +221,23 @@ struct ShelvesWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(65.682, 109.475)), module, Shelves::OUT_OUTPUT));
 
 		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(53.629, 109.475)), module, Shelves::CLIP_LIGHT));
+	}
+
+	void appendContextMenu(Menu* menu) override {
+		Shelves* module = dynamic_cast<Shelves*>(this->module);
+
+		menu->addChild(new MenuSeparator);
+
+		struct PreGainItem : MenuItem {
+			Shelves* module;
+			void onAction(const event::Action& e) override {
+				module->preGain ^= true;
+			}
+		};
+
+		PreGainItem* preGainItem = createMenuItem<PreGainItem>("Pad input by -6dB", CHECKMARK(module->preGain));
+		preGainItem->module = module;
+		menu->addChild(preGainItem);
 	}
 };
 
