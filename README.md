@@ -56,15 +56,15 @@ Based on [Veils](https://mutable-instruments.net/modules/veils), [Manual](https:
 Based on [Ripples](https://mutable-instruments.net/modules/ripples), [Manual](https://mutable-instruments.net/modules/ripples/manual/)
 - Virtual analog model provided by [Alright Devices](https://www.alrightdevices.com/) after successful crowdfunding.
 
+### EQ Filter
+Based on [Shelves](https://mutable-instruments.net/modules/shelves), [Manual](https://mutable-instruments.net/modules/shelves/manual/)
+- Virtual analog model provided by [Alright Devices](https://www.alrightdevices.com/) after successful crowdfunding.
+
 
 ## Not yet ported
 
 ### [Peaks](https://mutable-instruments.net/modules/peaks)
 [Manual](https://mutable-instruments.net/modules/peaks/manual/)
-
-### [Shelves](https://mutable-instruments.net/modules/shelves)
-[Manual](https://mutable-instruments.net/modules/shelves/manual/)
-- analog, will not port unless I buy/borrow one or someone contributes a technical model
 
 ### [Streams](https://mutable-instruments.net/modules/streams)
 [Manual](https://mutable-instruments.net/modules/streams/manual/)
