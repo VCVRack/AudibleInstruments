@@ -150,16 +150,23 @@ struct Shelves : Module {
 
 			engines[c].process(frame);
 
-			outputs[P1_HP_OUTPUT].setVoltage(frame.p1_hp_out);
-			outputs[P1_BP_OUTPUT].setVoltage(frame.p1_bp_out);
-			outputs[P1_LP_OUTPUT].setVoltage(frame.p1_lp_out);
-			outputs[P2_HP_OUTPUT].setVoltage(frame.p2_hp_out);
-			outputs[P2_BP_OUTPUT].setVoltage(frame.p2_bp_out);
-			outputs[P2_LP_OUTPUT].setVoltage(frame.p2_lp_out);
-			outputs[OUT_OUTPUT].setVoltage(frame.main_out);
+			outputs[P1_HP_OUTPUT].setVoltage(frame.p1_hp_out, c);
+			outputs[P1_BP_OUTPUT].setVoltage(frame.p1_bp_out, c);
+			outputs[P1_LP_OUTPUT].setVoltage(frame.p1_lp_out, c);
+			outputs[P2_HP_OUTPUT].setVoltage(frame.p2_hp_out, c);
+			outputs[P2_BP_OUTPUT].setVoltage(frame.p2_bp_out, c);
+			outputs[P2_LP_OUTPUT].setVoltage(frame.p2_lp_out, c);
+			outputs[OUT_OUTPUT].setVoltage(frame.main_out, c);
 			clipLight += frame.clip;
 		}
 
+		outputs[P1_HP_OUTPUT].setChannels(channels);
+		outputs[P1_BP_OUTPUT].setChannels(channels);
+		outputs[P1_LP_OUTPUT].setChannels(channels);
+		outputs[P2_HP_OUTPUT].setChannels(channels);
+		outputs[P2_BP_OUTPUT].setChannels(channels);
+		outputs[P2_LP_OUTPUT].setChannels(channels);
+		outputs[OUT_OUTPUT].setChannels(channels);
 		lights[CLIP_LIGHT].setSmoothBrightness(clipLight, args.sampleTime);
 	}
 
