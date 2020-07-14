@@ -24,24 +24,87 @@ struct Branches : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		MODE1_LIGHT,
-		MODE2_LIGHT,
-		STATE1_POS_LIGHT, STATE1_NEG_LIGHT,
-		STATE2_POS_LIGHT, STATE2_NEG_LIGHT,
+		ENUMS(STATE_LIGHTS, 2 * 2),
 		NUM_LIGHTS
 	};
 
-	dsp::SchmittTrigger gateTriggers[2];
-	dsp::SchmittTrigger modeTriggers[2];
+	dsp::BooleanTrigger gateTriggers[2][16];
+	dsp::BooleanTrigger modeTriggers[2];
 	bool modes[2] = {};
-	bool outcomes[2] = {};
+	bool outcomes[2][16] = {};
 
 	Branches() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(THRESHOLD1_PARAM, 0.0, 1.0, 0.5, "Probability 1");
-		configParam(MODE1_PARAM, 0.0, 1.0, 0.0, "Mode 1");
-		configParam(THRESHOLD2_PARAM, 0.0, 1.0, 0.5, "Probability 2");
-		configParam(MODE2_PARAM, 0.0, 1.0, 0.0, "Mode 2");
+		configParam(THRESHOLD1_PARAM, 0.0, 1.0, 0.5, "Channel 1 probability", "%", 0, 100);
+		configParam(MODE1_PARAM, 0.0, 1.0, 0.0, "Channel 1 mode");
+		configParam(THRESHOLD2_PARAM, 0.0, 1.0, 0.5, "Channel 2 probability", "%", 0, 100);
+		configParam(MODE2_PARAM, 0.0, 1.0, 0.0, "Channel 2 mode");
+	}
+
+	void process(const ProcessArgs& args) override {
+		for (int i = 0; i < 2; i++) {
+			// Get input
+			Input* input = &inputs[IN1_INPUT + i];
+			// 2nd input is normalized to 1st.
+			if (i == 1 && !input->isConnected())
+				input = &inputs[IN1_INPUT + 0];
+			int channels = std::max(input->getChannels(), 1);
+
+			// mode button
+			if (modeTriggers[i].process(params[MODE1_PARAM + i].getValue() > 0.f))
+				modes[i] ^= true;
+
+			bool lightA = false;
+			bool lightB = false;
+
+			// Process triggers
+			for (int c = 0; c < channels; c++) {
+				bool gate = input->getVoltage(c) >= 2.f;
+				if (gateTriggers[i][c].process(gate)) {
+					// trigger
+					// We don't have to clamp here because the threshold comparison works without it.
+					float threshold = params[THRESHOLD1_PARAM + i].getValue() + inputs[P1_INPUT + i].getPolyVoltage(c) / 10.f;
+					bool toss = (random::uniform() < threshold);
+					if (!modes[i]) {
+						// direct modes
+						outcomes[i][c] = toss;
+					}
+					else {
+						// toggle modes
+						if (toss)
+							outcomes[i][c] ^= true;
+					}
+				}
+
+				// Output gate logic
+				bool gateA = !outcomes[i][c] && (modes[i] ? true : gate);
+				bool gateB = outcomes[i][c] && (modes[i] ? true : gate);
+
+				if (gateA)
+					lightA = true;
+				if (gateB)
+					lightB = true;
+
+				// Set output gates
+				outputs[OUT1A_OUTPUT + i].setVoltage(gateA ? 10.f : 0.f, c);
+				outputs[OUT1B_OUTPUT + i].setVoltage(gateB ? 10.f : 0.f, c);
+			}
+
+			outputs[OUT1A_OUTPUT + i].setChannels(channels);
+			outputs[OUT1B_OUTPUT + i].setChannels(channels);
+
+			lights[STATE_LIGHTS + i * 2 + 1].setSmoothBrightness(lightA, args.sampleTime);
+			lights[STATE_LIGHTS + i * 2 + 0].setSmoothBrightness(lightB, args.sampleTime);
+		}
+	}
+
+	void onReset() override {
+		for (int i = 0; i < 2; i++) {
+			modes[i] = false;
+			for (int c = 0; c < 16; c++) {
+				outcomes[i][c] = false;
+			}
+		}
 	}
 
 	json_t* dataToJson() override {
@@ -64,52 +127,6 @@ struct Branches : Module {
 			}
 		}
 	}
-
-	void process(const ProcessArgs& args) override {
-		float gate = 0.0;
-		for (int i = 0; i < 2; i++) {
-			// mode button
-			if (modeTriggers[i].process(params[MODE1_PARAM + i].getValue()))
-				modes[i] = !modes[i];
-
-			if (inputs[IN1_INPUT + i].isConnected())
-				gate = inputs[IN1_INPUT + i].getVoltage();
-
-			if (gateTriggers[i].process(gate)) {
-				// trigger
-				float r = random::uniform();
-				float threshold = clamp(params[THRESHOLD1_PARAM + i].getValue() + inputs[P1_INPUT + i].getVoltage() / 10.f, 0.f, 1.f);
-				bool toss = (r < threshold);
-				if (!modes[i]) {
-					// direct modes
-					outcomes[i] = toss;
-				}
-				else {
-					// toggle modes
-					outcomes[i] = (outcomes[i] != toss);
-				}
-
-				if (!outcomes[i])
-					lights[STATE1_POS_LIGHT + 2 * i].value = 1.0;
-				else
-					lights[STATE1_NEG_LIGHT + 2 * i].value = 1.0;
-			}
-
-			lights[STATE1_POS_LIGHT + 2 * i].value *= 1.0 - args.sampleTime * 15.0;
-			lights[STATE1_NEG_LIGHT + 2 * i].value *= 1.0 - args.sampleTime * 15.0;
-			lights[MODE1_LIGHT + i].value = modes[i] ? 1.0 : 0.0;
-
-			outputs[OUT1A_OUTPUT + i].setVoltage(outcomes[i] ? 0.0 : gate);
-			outputs[OUT1B_OUTPUT + i].setVoltage(outcomes[i] ? gate : 0.0);
-		}
-	}
-
-	void onReset() override {
-		for (int i = 0; i < 2; i++) {
-			modes[i] = false;
-			outcomes[i] = false;
-		}
-	}
 };
 
 
@@ -118,25 +135,26 @@ struct BranchesWidget : ModuleWidget {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Branches.svg")));
 
-		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParam<Rogan1PSRed>(Vec(24, 64), module, Branches::THRESHOLD1_PARAM));
-		addParam(createParam<TL1105>(Vec(69, 58), module, Branches::MODE1_PARAM));
-		addInput(createInput<PJ301MPort>(Vec(9, 122), module, Branches::IN1_INPUT));
-		addInput(createInput<PJ301MPort>(Vec(55, 122), module, Branches::P1_INPUT));
-		addOutput(createOutput<PJ301MPort>(Vec(9, 160), module, Branches::OUT1A_OUTPUT));
-		addOutput(createOutput<PJ301MPort>(Vec(55, 160), module, Branches::OUT1B_OUTPUT));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(25.852, 22.24)), module, Branches::MODE1_PARAM));
+		addParam(createParamCentered<Rogan1PSRed>(mm2px(Vec(15.057, 28.595)), module, Branches::THRESHOLD1_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(25.852, 74.95)), module, Branches::MODE2_PARAM));
+		addParam(createParamCentered<Rogan1PSGreen>(mm2px(Vec(15.057, 81.296)), module, Branches::THRESHOLD2_PARAM));
 
-		addParam(createParam<Rogan1PSGreen>(Vec(24, 220), module, Branches::THRESHOLD2_PARAM));
-		addParam(createParam<TL1105>(Vec(69, 214), module, Branches::MODE2_PARAM));
-		addInput(createInput<PJ301MPort>(Vec(9, 278), module, Branches::IN2_INPUT));
-		addInput(createInput<PJ301MPort>(Vec(55, 278), module, Branches::P2_INPUT));
-		addOutput(createOutput<PJ301MPort>(Vec(9, 316), module, Branches::OUT2A_OUTPUT));
-		addOutput(createOutput<PJ301MPort>(Vec(55, 316), module, Branches::OUT2B_OUTPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.112, 45.74)), module, Branches::IN1_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(22.991, 45.74)), module, Branches::P1_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.112, 98.44)), module, Branches::IN2_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(22.991, 98.44)), module, Branches::P2_INPUT));
 
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 169), module, Branches::STATE1_POS_LIGHT));
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(40, 325), module, Branches::STATE2_POS_LIGHT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.112, 58.44)), module, Branches::OUT1A_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.991, 58.44)), module, Branches::OUT1B_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7.112, 111.14)), module, Branches::OUT2A_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(22.991, 111.14)), module, Branches::OUT2B_OUTPUT));
+
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(15.052, 58.45)), module, Branches::STATE_LIGHTS + 0 * 2));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(15.052, 111.151)), module, Branches::STATE_LIGHTS + 1 * 2));
 	}
 
 	void appendContextMenu(Menu* menu) override {
@@ -145,12 +163,12 @@ struct BranchesWidget : ModuleWidget {
 
 		struct BranchesModeItem : MenuItem {
 			Branches* branches;
-			int channel;
+			int i;
 			void onAction(const event::Action& e) override {
-				branches->modes[channel] ^= 1;
+				branches->modes[i] ^= 1;
 			}
 			void step() override {
-				rightText = branches->modes[channel] ? "Toggle" : "Latch";
+				rightText = branches->modes[i] ? "Latch" : "Toggle";
 				MenuItem::step();
 			}
 		};
@@ -158,8 +176,8 @@ struct BranchesWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator);
 
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channels"));
-		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 1 modes", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 0));
-		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 2 modes", &BranchesModeItem::branches, branches, &BranchesModeItem::channel, 1));
+		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::i, 0));
+		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::i, 1));
 	}
 };
 
