@@ -243,6 +243,16 @@
         "Filter",
         "Polyphonic"
       ]
+    },
+    {
+      "slug": "Streams",
+      "name": "Dual Dynamics Gate",
+      "description": "Based on Mutable Instruments Streams",
+      "tags": [
+        "Dynamics",
+        "Low-pass gate",
+        "Polyphonic"
+      ]
     }
   ]
 }
