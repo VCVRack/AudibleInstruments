@@ -77,6 +77,7 @@ struct Elements : Module {
 
 	uint16_t reverb_buffer[32768] = {};
 	elements::Part* part;
+	bool easterEgg = false;
 
 	Elements() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -232,6 +233,10 @@ struct Elements : Module {
 	void setModel(int model) {
 		part->set_resonator_model((elements::ResonatorModel)model);
 	}
+
+	void setEasterEgg() {
+		part->set_easter_egg(easterEgg);
+	}
 };
 
 
@@ -243,6 +248,18 @@ struct ElementsModalItem : MenuItem {
 	}
 	void step() override {
 		rightText = CHECKMARK(elements->getModel() == model);
+		MenuItem::step();
+	}
+};
+
+struct ElementsEasterEggItem : MenuItem {
+	Elements* elements;
+	void onAction(const event::Action& e) override {
+		elements->easterEgg = !elements->easterEgg;
+		elements->setEasterEgg();
+	}
+	void step() override {
+		rightText = (elements->easterEgg) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -335,6 +352,8 @@ struct ElementsWidget : ModuleWidget {
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
+		menu->addChild(new MenuSeparator);
+		menu->addChild(construct<ElementsEasterEggItem>(&MenuItem::text, "Easter egg", &ElementsEasterEggItem::elements, elements));
 	}
 };
 
