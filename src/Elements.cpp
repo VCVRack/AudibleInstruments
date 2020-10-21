@@ -77,7 +77,6 @@ struct Elements : Module {
 
 	uint16_t reverb_buffer[32768] = {};
 	elements::Part* part;
-	bool easterEgg = false;
 
 	Elements() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -216,7 +215,6 @@ struct Elements : Module {
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "model", json_integer(getModel()));
-		json_object_set_new(rootJ, "easterEgg", json_boolean(easterEgg));
 		return rootJ;
 	}
 
@@ -225,23 +223,25 @@ struct Elements : Module {
 		if (modelJ) {
 			setModel(json_integer_value(modelJ));
 		}
-		json_t* easterEggJ = json_object_get(rootJ, "easterEgg");
-		if (easterEggJ) {
-			easterEgg = json_boolean_value(easterEggJ);
-			setEasterEgg();
-		}
 	}
 
 	int getModel() {
-		return (int)part->resonator_model();
+		if (part->easter_egg())
+			return -1;
+		return (int) part->resonator_model();
 	}
 
+	/** Sets the resonator model.
+	-1 means easter egg (Ominous voice)
+	*/
 	void setModel(int model) {
-		part->set_resonator_model((elements::ResonatorModel)model);
-	}
-
-	void setEasterEgg() {
-		part->set_easter_egg(easterEgg);
+		if (model < 0) {
+			part->set_easter_egg(true);
+		}
+		else {
+			part->set_easter_egg(false);
+			part->set_resonator_model((elements::ResonatorModel) model);
+		}
 	}
 };
 
@@ -254,18 +254,6 @@ struct ElementsModalItem : MenuItem {
 	}
 	void step() override {
 		rightText = CHECKMARK(elements->getModel() == model);
-		MenuItem::step();
-	}
-};
-
-struct ElementsEasterEggItem : MenuItem {
-	Elements* elements;
-	void onAction(const event::Action& e) override {
-		elements->easterEgg = !elements->easterEgg;
-		elements->setEasterEgg();
-	}
-	void step() override {
-		rightText = (elements->easterEgg) ? "✔" : "";
 		MenuItem::step();
 	}
 };
@@ -358,8 +346,7 @@ struct ElementsWidget : ModuleWidget {
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
 		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
-		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<ElementsEasterEggItem>(&MenuItem::text, "Easter egg", &ElementsEasterEggItem::elements, elements));
+		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Ominous voice", &ElementsModalItem::elements, elements, &ElementsModalItem::model, -1));
 	}
 };
 
