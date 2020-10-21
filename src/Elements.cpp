@@ -216,6 +216,7 @@ struct Elements : Module {
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "model", json_integer(getModel()));
+		json_object_set_new(rootJ, "easterEgg", json_boolean(easterEgg));
 		return rootJ;
 	}
 
@@ -223,6 +224,11 @@ struct Elements : Module {
 		json_t* modelJ = json_object_get(rootJ, "model");
 		if (modelJ) {
 			setModel(json_integer_value(modelJ));
+		}
+		json_t* easterEggJ = json_object_get(rootJ, "easterEgg");
+		if (easterEggJ) {
+			easterEgg = json_boolean_value(easterEggJ);
+			setEasterEgg();
 		}
 	}
 
