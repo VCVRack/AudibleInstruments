@@ -1,3 +1,7 @@
+### 1.4.0 (in development)
+- Add "Ominous voice" (easter egg) mode to Elements.
+- Make Elements polyphonic.
+
 ### 1.3.1 (2020-07-14)
 - Rewrite and re-panel Branches.
 - Make Branches polyphonic.
