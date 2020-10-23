@@ -1,4 +1,4 @@
-### 1.4.0 (in development)
+### 1.4.0 (2020-10-22)
 - Add "Ominous voice" (easter egg) mode to Elements.
 - Make Elements polyphonic.
 
