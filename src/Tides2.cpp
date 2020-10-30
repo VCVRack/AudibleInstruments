@@ -103,9 +103,9 @@ struct Tides2 : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency range");
 		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output mode");
-		configParam(FREQUENCY_PARAM, -48, 48, 0.0, "Ramp mode");
-		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5, "Frequency");
-		configParam(RAMP_PARAM, 0.0, 1.0, 0.0, "Shape");
+		configParam(FREQUENCY_PARAM, -48, 48, 0.0, "Frequency");
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5, "Shape");
+		configParam(RAMP_PARAM, 0.0, 1.0, 0.0, "Ramp mode");
 		configParam(SMOOTHNESS_PARAM, 0.0, 1.0, 0.5, "Waveshape transformation");
 		configParam(SLOPE_PARAM, 0.0, 1.0, 0.5, "Ascending/descending ratio");
 		configParam(SHIFT_PARAM, 0.0, 1.0, 0.5, "Output polarization and shifting");
