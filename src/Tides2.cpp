@@ -303,6 +303,89 @@ struct Tides2Widget : ModuleWidget {
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(49.075, 104.749)), module, Tides2::OUTPUT_LIGHTS + 2));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(60.525, 104.749)), module, Tides2::OUTPUT_LIGHTS + 3));
 	}
+
+	void appendContextMenu(Menu* menu) override {
+		Tides2* module = dynamic_cast<Tides2*>(this->module);
+
+		// Frequency Range
+
+		struct Tides2FrequencyRangeItem : MenuItem {
+			Tides2* module;
+			int range;
+			void onAction(const event::Action& e) override {
+				module->range = range;
+			}
+		};
+
+		static const std::string frequencyRangeLabels[3] = {
+			"Low (2 minutes to 2 Hz)",
+			"Medium (0.125 Hz to 32 Hz)",
+			"High (8 Hz to 2 kHz)"
+		};
+
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Frequency Range"));
+		for (int i = 0; i < 3; i++) {
+			Tides2FrequencyRangeItem* modelItem =
+				createMenuItem<Tides2FrequencyRangeItem>(frequencyRangeLabels[i], CHECKMARK(module->range == i));
+			modelItem->module = module;
+			modelItem->range = i;
+			menu->addChild(modelItem);
+		}
+
+		// Output Mode
+
+		struct Tides2OutputModeItem : MenuItem {
+			Tides2* module;
+			tides2::OutputMode output_mode;
+			void onAction(const event::Action& e) override {
+				module->output_mode = output_mode;
+			}
+		};
+
+		static const std::string outputModeLabels[4] = {
+			"Different Shapes",
+			"Different Amplitudes",
+			"Different Times",
+			"Different Frequencies"
+		};
+
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Output Mode"));
+		for (int i = 0; i < 4; i++) {
+			Tides2OutputModeItem* modelItem =
+				createMenuItem<Tides2OutputModeItem>(outputModeLabels[i], CHECKMARK(module->output_mode == i));
+			modelItem->module = module;
+			modelItem->output_mode = static_cast<tides2::OutputMode>(i);
+			menu->addChild(modelItem);
+		}
+
+		// Ramp Mode
+
+		struct Tides2RampModeItem : MenuItem {
+			Tides2* module;
+			tides2::RampMode ramp_mode;
+			void onAction(const event::Action& e) override {
+				module->ramp_mode = ramp_mode;
+			}
+		};
+
+		static const std::string rampModeLabels[3] = {
+			"AD Envelope",
+			"Looping (VC-LFO/VCDO)",
+			"AR envelope"
+		};
+
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Ramp Mode"));
+		for (int i = 0; i < 3; i++) {
+			Tides2RampModeItem* modelItem =
+				createMenuItem<Tides2RampModeItem>(rampModeLabels[i], CHECKMARK(module->ramp_mode == i));
+			modelItem->module = module;
+			modelItem->ramp_mode = static_cast<tides2::RampMode>(i);
+			menu->addChild(modelItem);
+		}
+	}
 };
 
 
