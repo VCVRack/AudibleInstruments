@@ -262,7 +262,7 @@ struct Marbles : Module {
 		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness amount");
 		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5, "Smoothness");
 
-		configParam(Y_RATE_PARAM, 0.0, 1.0, 0.5, "Clock divide");
+		configParam(Y_RATE_PARAM, 0.0, 1.0, 4.5 / LENGTHOF(y_divider_ratios), "Clock divide");
 		configParam(Y_SPREAD_PARAM, 0.0, 1.0, 0.5, "Probability distribution");
 		configParam(Y_BIAS_PARAM, 0.0, 1.0, 0.5, "Voltage offset");
 		configParam(Y_STEPS_PARAM, 0.0, 1.0, 0.0, "Smoothness");
@@ -286,7 +286,7 @@ struct Marbles : Module {
 		x_range = 1;
 		external = false;
 		x_scale = 0;
-		y_divider_index = 8;
+		y_divider_index = 4;
 		x_clock_source_internal = 0;
 		edit_mode = 0;
 	}
@@ -519,7 +519,6 @@ struct Marbles : Module {
 
 		marbles::GroupSettings y;
 		y.control_mode = marbles::CONTROL_MODE_IDENTICAL;
-		// TODO
 		y.voltage_range = marbles::VOLTAGE_RANGE_FULL;
 		y.register_mode = false;
 		y.register_value = 0.0f;
