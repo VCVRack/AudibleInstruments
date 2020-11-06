@@ -248,7 +248,6 @@
       "slug": "Streams",
       "name": "Dual Dynamics Gate",
       "description": "Based on Mutable Instruments Streams",
-      "disabled": true,
       "tags": [
         "Dynamics",
         "Low-pass gate",

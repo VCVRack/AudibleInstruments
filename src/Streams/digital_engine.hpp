@@ -17,10 +17,10 @@
 #pragma once
 
 #include <cmath>
-#include "rack.hpp"
+#include <rack.hpp>
 #include "cv_scaler.hpp"
 #include "ui.hpp"
-#include "eurorack/streams/processor.h"
+#include <streams/processor.h>
 
 namespace streams
 {

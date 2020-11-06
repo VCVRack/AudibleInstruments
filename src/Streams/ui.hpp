@@ -30,16 +30,16 @@
 
 #include <algorithm>
 
-#include "stmlib/stmlib.h"
-#include "src/Streams/event_queue.hpp"
+#include <stmlib/stmlib.h>
+#include "event_queue.hpp"
 
-#include "src/Streams/audio_cv_meter.hpp"
-#include "src/Streams/cv_scaler.hpp"
-#include "streams/processor.h"
+#include "audio_cv_meter.hpp"
+#include "cv_scaler.hpp"
+#include <streams/processor.h>
 
-#include "src/Streams/adc.hpp"
-#include "src/Streams/leds.hpp"
-#include "src/Streams/switches.hpp"
+#include "adc.hpp"
+#include "leds.hpp"
+#include "switches.hpp"
 
 namespace streams
 {

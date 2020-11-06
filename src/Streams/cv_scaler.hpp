@@ -28,9 +28,9 @@
 
 #pragma once
 
-#include "stmlib/stmlib.h"
+#include <stmlib/stmlib.h>
 
-#include "streams/gain.h"
+#include <streams/gain.h>
 
 #include "adc.hpp"
 

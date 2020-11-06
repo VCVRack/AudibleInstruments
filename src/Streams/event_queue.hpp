@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "stmlib/utils/ring_buffer.h"
+#include <stmlib/utils/ring_buffer.h>
 
 namespace streams
 {

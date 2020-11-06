@@ -30,7 +30,7 @@
 
 #include <algorithm>
 
-#include "stmlib/stmlib.h"
+#include <stmlib/stmlib.h>
 
 namespace streams
 {

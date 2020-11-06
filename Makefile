@@ -90,6 +90,15 @@ SOURCES += eurorack/marbles/random/quantizer.cc
 SOURCES += eurorack/marbles/ramp/ramp_extractor.cc
 SOURCES += eurorack/marbles/resources.cc
 
+SOURCES += eurorack/streams/resources.cc
+SOURCES += eurorack/streams/processor.cc
+SOURCES += eurorack/streams/follower.cc
+SOURCES += eurorack/streams/lorenz_generator.cc
+SOURCES += eurorack/streams/envelope.cc
+SOURCES += eurorack/streams/svf.cc
+SOURCES += eurorack/streams/vactrol.cc
+SOURCES += eurorack/streams/compressor.cc
+
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 

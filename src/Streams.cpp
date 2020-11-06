@@ -19,478 +19,427 @@
 #include "plugin.hpp"
 #include "Streams/streams.hpp"
 
-namespace streams
-{
+namespace streams {
 
-struct StreamsChannelMode
-{
-    ProcessorFunction function;
-    bool alternate;
-    std::string label;
+struct StreamsChannelMode {
+	ProcessorFunction function;
+	bool alternate;
+	std::string label;
 };
 
 static constexpr int kNumChannelModes = 10;
 
-static const StreamsChannelMode kChannelModeTable[kNumChannelModes] =
-{
-    {PROCESSOR_FUNCTION_ENVELOPE,          false, "Envelope"},
-    {PROCESSOR_FUNCTION_VACTROL,           false, "Vactrol"},
-    {PROCESSOR_FUNCTION_FOLLOWER,          false, "Follower"},
-    {PROCESSOR_FUNCTION_COMPRESSOR,        false, "Compressor"},
-    {PROCESSOR_FUNCTION_ENVELOPE,          true,  "AR envelope"},
-    {PROCESSOR_FUNCTION_VACTROL,           true,  "Plucked vactrol"},
-    {PROCESSOR_FUNCTION_FOLLOWER,          true,  "Cutoff controller"},
-    {PROCESSOR_FUNCTION_COMPRESSOR,        true,  "Slow compressor"},
-    {PROCESSOR_FUNCTION_FILTER_CONTROLLER, true,  "Direct VCF controller"},
-    {PROCESSOR_FUNCTION_LORENZ_GENERATOR,  false, "Lorenz generator"},
+static const StreamsChannelMode kChannelModeTable[kNumChannelModes] = {
+	{PROCESSOR_FUNCTION_ENVELOPE,          false, "Envelope"},
+	{PROCESSOR_FUNCTION_VACTROL,           false, "Vactrol"},
+	{PROCESSOR_FUNCTION_FOLLOWER,          false, "Follower"},
+	{PROCESSOR_FUNCTION_COMPRESSOR,        false, "Compressor"},
+	{PROCESSOR_FUNCTION_ENVELOPE,          true,  "AR envelope"},
+	{PROCESSOR_FUNCTION_VACTROL,           true,  "Plucked vactrol"},
+	{PROCESSOR_FUNCTION_FOLLOWER,          true,  "Cutoff controller"},
+	{PROCESSOR_FUNCTION_COMPRESSOR,        true,  "Slow compressor"},
+	{PROCESSOR_FUNCTION_FILTER_CONTROLLER, true,  "Direct VCF controller"},
+	{PROCESSOR_FUNCTION_LORENZ_GENERATOR,  false, "Lorenz generator"},
 };
 
-struct StreamsMonitorMode
-{
-    MonitorMode mode;
-    std::string label;
+struct StreamsMonitorMode {
+	MonitorMode mode;
+	std::string label;
 };
 
 static constexpr int kNumMonitorModes = 4;
 
-static const StreamsMonitorMode kMonitorModeTable[kNumMonitorModes] =
-{
-    {MONITOR_MODE_EXCITE_IN, "Excite"},
-    {MONITOR_MODE_VCA_CV,    "Level"},
-    {MONITOR_MODE_AUDIO_IN,  "In"},
-    {MONITOR_MODE_OUTPUT,    "Out"},
+static const StreamsMonitorMode kMonitorModeTable[kNumMonitorModes] = {
+	{MONITOR_MODE_EXCITE_IN, "Excite"},
+	{MONITOR_MODE_VCA_CV,    "Level"},
+	{MONITOR_MODE_AUDIO_IN,  "In"},
+	{MONITOR_MODE_OUTPUT,    "Out"},
 };
 
 }
 
-struct Streams : Module
-{
-    enum ParamIds
-    {
-        CH1_SHAPE_PARAM,
-        CH1_MOD_PARAM,
-        CH1_LEVEL_MOD_PARAM,
-        CH1_RESPONSE_PARAM,
-        CH2_SHAPE_PARAM,
-        CH2_MOD_PARAM,
-        CH2_LEVEL_MOD_PARAM,
-        CH2_RESPONSE_PARAM,
-        CH1_FUNCTION_BUTTON_PARAM,
-        CH2_FUNCTION_BUTTON_PARAM,
-        METERING_BUTTON_PARAM,
-        NUM_PARAMS
-    };
-    enum InputIds
-    {
-        CH1_EXCITE_INPUT,
-        CH1_SIGNAL_INPUT,
-        CH1_LEVEL_INPUT,
-        CH2_EXCITE_INPUT,
-        CH2_SIGNAL_INPUT,
-        CH2_LEVEL_INPUT,
-        NUM_INPUTS
-    };
-    enum OutputIds
-    {
-        CH1_SIGNAL_OUTPUT,
-        CH2_SIGNAL_OUTPUT,
-        NUM_OUTPUTS
-    };
-    enum LightIds
-    {
-        CH1_LIGHT_1_G,
-        CH1_LIGHT_1_R,
-        CH1_LIGHT_2_G,
-        CH1_LIGHT_2_R,
-        CH1_LIGHT_3_G,
-        CH1_LIGHT_3_R,
-        CH1_LIGHT_4_G,
-        CH1_LIGHT_4_R,
-        CH2_LIGHT_1_G,
-        CH2_LIGHT_1_R,
-        CH2_LIGHT_2_G,
-        CH2_LIGHT_2_R,
-        CH2_LIGHT_3_G,
-        CH2_LIGHT_3_R,
-        CH2_LIGHT_4_G,
-        CH2_LIGHT_4_R,
-        NUM_LIGHTS
-    };
+struct Streams : Module {
+	enum ParamIds {
+		CH1_SHAPE_PARAM,
+		CH1_MOD_PARAM,
+		CH1_LEVEL_MOD_PARAM,
+		CH1_RESPONSE_PARAM,
+		CH2_SHAPE_PARAM,
+		CH2_MOD_PARAM,
+		CH2_LEVEL_MOD_PARAM,
+		CH2_RESPONSE_PARAM,
+		CH1_FUNCTION_BUTTON_PARAM,
+		CH2_FUNCTION_BUTTON_PARAM,
+		METERING_BUTTON_PARAM,
+		NUM_PARAMS
+	};
+	enum InputIds {
+		CH1_EXCITE_INPUT,
+		CH1_SIGNAL_INPUT,
+		CH1_LEVEL_INPUT,
+		CH2_EXCITE_INPUT,
+		CH2_SIGNAL_INPUT,
+		CH2_LEVEL_INPUT,
+		NUM_INPUTS
+	};
+	enum OutputIds {
+		CH1_SIGNAL_OUTPUT,
+		CH2_SIGNAL_OUTPUT,
+		NUM_OUTPUTS
+	};
+	enum LightIds {
+		CH1_LIGHT_1_G,
+		CH1_LIGHT_1_R,
+		CH1_LIGHT_2_G,
+		CH1_LIGHT_2_R,
+		CH1_LIGHT_3_G,
+		CH1_LIGHT_3_R,
+		CH1_LIGHT_4_G,
+		CH1_LIGHT_4_R,
+		CH2_LIGHT_1_G,
+		CH2_LIGHT_1_R,
+		CH2_LIGHT_2_G,
+		CH2_LIGHT_2_R,
+		CH2_LIGHT_3_G,
+		CH2_LIGHT_3_R,
+		CH2_LIGHT_4_G,
+		CH2_LIGHT_4_R,
+		NUM_LIGHTS
+	};
 
-    static constexpr int kNumEngines = 16;
-    streams::StreamsEngine engine_[kNumEngines];
-    float brightness_[NUM_LIGHTS][kNumEngines];
-    int prev_num_channels_;
+	streams::StreamsEngine engines[PORT_MAX_CHANNELS];
+	int prevNumChannels;
+	float brightnesses[NUM_LIGHTS][PORT_MAX_CHANNELS];
 
-    Streams()
-    {
-        config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+	Streams() {
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-        configParam(CH1_SHAPE_PARAM,     0.f, 1.f, 0.f);
-        configParam(CH1_MOD_PARAM,       0.f, 1.f, 0.5f);
-        configParam(CH1_LEVEL_MOD_PARAM, 0.f, 1.f, 0.f);
-        configParam(CH2_SHAPE_PARAM,     0.f, 1.f, 0.f);
-        configParam(CH2_MOD_PARAM,       0.f, 1.f, 0.5f);
-        configParam(CH2_LEVEL_MOD_PARAM, 0.f, 1.f, 0.f);
-        configParam(CH1_RESPONSE_PARAM,  0.f, 1.f, 0.f);
-        configParam(CH2_RESPONSE_PARAM,  0.f, 1.f, 0.f);
+		configParam(CH1_SHAPE_PARAM,     0.f, 1.f, 0.5f, "Ch 1 shape");
+		configParam(CH1_MOD_PARAM,       0.f, 1.f, 0.5f, "Ch 1 mod");
+		configParam(CH1_LEVEL_MOD_PARAM, 0.f, 1.f, 0.5f, "Ch 1 level mod");
+		configParam(CH2_SHAPE_PARAM,     0.f, 1.f, 0.5f, "Ch 2 shape");
+		configParam(CH2_MOD_PARAM,       0.f, 1.f, 0.5f, "Ch 2 mod");
+		configParam(CH2_LEVEL_MOD_PARAM, 0.f, 1.f, 0.5f, "Ch 2 level mod");
+		configParam(CH1_RESPONSE_PARAM,  0.f, 1.f, 0.5f, "Ch 1 response");
+		configParam(CH2_RESPONSE_PARAM,  0.f, 1.f, 0.5f, "Ch 2 response");
 
-        configParam(CH1_FUNCTION_BUTTON_PARAM,  0.f, 1.f, 0.f);
-        configParam(CH2_FUNCTION_BUTTON_PARAM,  0.f, 1.f, 0.f);
-        configParam(METERING_BUTTON_PARAM,      0.f, 1.f, 0.f);
+		configParam(CH1_FUNCTION_BUTTON_PARAM,  0.f, 1.f, 0.f, "Ch 1 function");
+		configParam(CH2_FUNCTION_BUTTON_PARAM,  0.f, 1.f, 0.f, "Ch 2 function");
+		configParam(METERING_BUTTON_PARAM,      0.f, 1.f, 0.f, "Meter");
 
-        onReset();
-    }
+		onReset();
+	}
 
-    void onReset() override
-    {
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].Reset();
+	void onReset() override {
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].Reset();
+		}
 
-            for (int i = 0; i < NUM_LIGHTS; i++)
-            {
-                brightness_[c][i] = 0.f;
-            }
-        }
+		prevNumChannels = 1;
+		onSampleRateChange();
+	}
 
-        prev_num_channels_ = 1;
-        onSampleRateChange();
-    }
+	void onSampleRateChange() override {
+		float sampleRate = APP->engine->getSampleRate();
 
-    void onSampleRateChange() override
-    {
-        float sample_rate = APP->engine->getSampleRate();
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].SetSampleRate(sampleRate);
+		}
+	}
 
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].SetSampleRate(sample_rate);
-        }
-    }
+	json_t* dataToJson() override {
+		streams::UiSettings settings = engines[0].ui_settings();
+		json_t* rootJ = json_object();
+		json_object_set_new(rootJ, "function1",    json_integer(settings.function[0]));
+		json_object_set_new(rootJ, "function2",    json_integer(settings.function[1]));
+		json_object_set_new(rootJ, "alternate1",   json_integer(settings.alternate[0]));
+		json_object_set_new(rootJ, "alternate2",   json_integer(settings.alternate[1]));
+		json_object_set_new(rootJ, "monitorMode", json_integer(settings.monitor_mode));
+		json_object_set_new(rootJ, "linked",       json_integer(settings.linked));
+		return rootJ;
+	}
 
-    json_t* dataToJson() override
-    {
-        streams::UiSettings settings = engine_[0].ui_settings();
-        json_t* root_j = json_object();
-        json_object_set_new(root_j, "function1",    json_integer(settings.function[0]));
-        json_object_set_new(root_j, "function2",    json_integer(settings.function[1]));
-        json_object_set_new(root_j, "alternate1",   json_integer(settings.alternate[0]));
-        json_object_set_new(root_j, "alternate2",   json_integer(settings.alternate[1]));
-        json_object_set_new(root_j, "monitor_mode", json_integer(settings.monitor_mode));
-        json_object_set_new(root_j, "linked",       json_integer(settings.linked));
-        return root_j;
-    }
+	void dataFromJson(json_t* rootJ) override {
+		json_t* function1J    = json_object_get(rootJ, "function1");
+		json_t* function2J    = json_object_get(rootJ, "function2");
+		json_t* alternate1J   = json_object_get(rootJ, "alternate1");
+		json_t* alternate2J   = json_object_get(rootJ, "alternate2");
+		json_t* monitorModeJ = json_object_get(rootJ, "monitorMode");
+		json_t* linkedJ       = json_object_get(rootJ, "linked");
 
-    void dataFromJson(json_t* root_j) override
-    {
-        json_t* function1_j    = json_object_get(root_j, "function1");
-        json_t* function2_j    = json_object_get(root_j, "function2");
-        json_t* alternate1_j   = json_object_get(root_j, "alternate1");
-        json_t* alternate2_j   = json_object_get(root_j, "alternate2");
-        json_t* monitor_mode_j = json_object_get(root_j, "monitor_mode");
-        json_t* linked_j       = json_object_get(root_j, "linked");
+		streams::UiSettings settings = {};
 
-        streams::UiSettings settings = {};
+		if (function1J)
+			settings.function[0]  = json_integer_value(function1J);
+		if (function2J)
+			settings.function[1]  = json_integer_value(function2J);
+		if (alternate1J)
+			settings.alternate[0] = json_integer_value(alternate1J);
+		if (alternate2J)
+			settings.alternate[1] = json_integer_value(alternate2J);
+		if (monitorModeJ)
+			settings.monitor_mode = json_integer_value(monitorModeJ);
+		if (linkedJ)
+			settings.linked       = json_integer_value(linkedJ);
 
-        if (function1_j)    settings.function[0]  = json_integer_value(function1_j);
-        if (function2_j)    settings.function[1]  = json_integer_value(function2_j);
-        if (alternate1_j)   settings.alternate[0] = json_integer_value(alternate1_j);
-        if (alternate2_j)   settings.alternate[1] = json_integer_value(alternate2_j);
-        if (monitor_mode_j) settings.monitor_mode = json_integer_value(monitor_mode_j);
-        if (linked_j)       settings.linked       = json_integer_value(linked_j);
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].ApplySettings(settings);
+		}
+	}
 
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].ApplySettings(settings);
-        }
-    }
+	void onRandomize() override {
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].Randomize();
+		}
+	}
 
-    void onRandomize() override
-    {
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].Randomize();
-        }
-    }
+	void toggleLink() {
+		streams::UiSettings settings = engines[0].ui_settings();
+		settings.linked ^= 1;
 
-    void ToggleLink()
-    {
-        streams::UiSettings settings = engine_[0].ui_settings();
-        settings.linked ^= 1;
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].ApplySettings(settings);
+		}
+	}
 
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].ApplySettings(settings);
-        }
-    }
+	void setChannelMode(int channel, int mode_id) {
+		streams::UiSettings settings = engines[0].ui_settings();
+		settings.function[channel] = streams::kChannelModeTable[mode_id].function;
+		settings.alternate[channel] = streams::kChannelModeTable[mode_id].alternate;
 
-    void SetChannelMode(int channel, int mode_id)
-    {
-        streams::UiSettings settings = engine_[0].ui_settings();
-        settings.function[channel] = streams::kChannelModeTable[mode_id].function;
-        settings.alternate[channel] = streams::kChannelModeTable[mode_id].alternate;
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].ApplySettings(settings);
+		}
+	}
 
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].ApplySettings(settings);
-        }
-    }
+	void setMonitorMode(int mode_id) {
+		streams::UiSettings settings = engines[0].ui_settings();
+		settings.monitor_mode = streams::kMonitorModeTable[mode_id].mode;
 
-    void SetMonitorMode(int mode_id)
-    {
-        streams::UiSettings settings = engine_[0].ui_settings();
-        settings.monitor_mode = streams::kMonitorModeTable[mode_id].mode;
+		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
+			engines[c].ApplySettings(settings);
+		}
+	}
 
-        for (int c = 0; c < kNumEngines; c++)
-        {
-            engine_[c].ApplySettings(settings);
-        }
-    }
+	int function(int channel) {
+		return engines[0].ui_settings().function[channel];
+	}
 
-    int function(int channel)
-    {
-        return engine_[0].ui_settings().function[channel];
-    }
+	int alternate(int channel) {
+		return engines[0].ui_settings().alternate[channel];
+	}
 
-    int alternate(int channel)
-    {
-        return engine_[0].ui_settings().alternate[channel];
-    }
+	bool linked() {
+		return engines[0].ui_settings().linked;
+	}
 
-    bool linked()
-    {
-        return engine_[0].ui_settings().linked;
-    }
+	int monitorMode() {
+		return engines[0].ui_settings().monitor_mode;
+	}
 
-    int monitor_mode()
-    {
-        return engine_[0].ui_settings().monitor_mode;
-    }
+	void process(const ProcessArgs& args) override {
+		int numChannels = std::max(inputs[CH1_SIGNAL_INPUT].getChannels(), inputs[CH2_SIGNAL_INPUT].getChannels());
+		numChannels = std::max(numChannels, 1);
 
-    void process(const ProcessArgs& args) override
-    {
-        int num_channels = std::max(inputs[CH1_SIGNAL_INPUT].getChannels(),
-                                    inputs[CH2_SIGNAL_INPUT].getChannels());
-        num_channels = std::max(num_channels, 1);
+		if (numChannels > prevNumChannels) {
+			for (int c = prevNumChannels; c < numChannels; c++) {
+				engines[c].SyncUI(engines[0]);
+			}
+		}
 
-        if (num_channels > prev_num_channels_)
-        {
-            for (int c = prev_num_channels_; c < num_channels; c++)
-            {
-                engine_[c].SyncUI(engine_[0]);
-            }
-        }
+		prevNumChannels = numChannels;
 
-        prev_num_channels_ = num_channels;
+		// Reuse the same frame object for multiple engines because the params
+		// aren't touched.
+		streams::StreamsEngine::Frame frame;
 
-        // Reuse the same frame object for multiple engines because the params
-        // aren't touched.
-        streams::StreamsEngine::Frame frame;
+		frame.ch1.shape_knob          = params[CH1_SHAPE_PARAM]    .getValue();
+		frame.ch1.mod_knob            = params[CH1_MOD_PARAM]      .getValue();
+		frame.ch1.level_mod_knob      = params[CH1_LEVEL_MOD_PARAM].getValue();
+		frame.ch1.response_knob       = params[CH1_RESPONSE_PARAM] .getValue();
+		frame.ch2.shape_knob          = params[CH2_SHAPE_PARAM]    .getValue();
+		frame.ch2.mod_knob            = params[CH2_MOD_PARAM]      .getValue();
+		frame.ch2.level_mod_knob      = params[CH2_LEVEL_MOD_PARAM].getValue();
+		frame.ch2.response_knob       = params[CH2_RESPONSE_PARAM] .getValue();
 
-        frame.ch1.shape_knob          = params[CH1_SHAPE_PARAM]    .getValue();
-        frame.ch1.mod_knob            = params[CH1_MOD_PARAM]      .getValue();
-        frame.ch1.level_mod_knob      = params[CH1_LEVEL_MOD_PARAM].getValue();
-        frame.ch1.response_knob       = params[CH1_RESPONSE_PARAM] .getValue();
-        frame.ch2.shape_knob          = params[CH2_SHAPE_PARAM]    .getValue();
-        frame.ch2.mod_knob            = params[CH2_MOD_PARAM]      .getValue();
-        frame.ch2.level_mod_knob      = params[CH2_LEVEL_MOD_PARAM].getValue();
-        frame.ch2.response_knob       = params[CH2_RESPONSE_PARAM] .getValue();
+		frame.ch1.signal_in_connected = inputs[CH1_SIGNAL_INPUT].isConnected();
+		frame.ch1.level_cv_connected  = inputs[CH1_LEVEL_INPUT] .isConnected();
+		frame.ch2.signal_in_connected = inputs[CH2_SIGNAL_INPUT].isConnected();
+		frame.ch2.level_cv_connected  = inputs[CH2_LEVEL_INPUT] .isConnected();
 
-        frame.ch1.signal_in_connected = inputs[CH1_SIGNAL_INPUT].isConnected();
-        frame.ch1.level_cv_connected  = inputs[CH1_LEVEL_INPUT] .isConnected();
-        frame.ch2.signal_in_connected = inputs[CH2_SIGNAL_INPUT].isConnected();
-        frame.ch2.level_cv_connected  = inputs[CH2_LEVEL_INPUT] .isConnected();
+		frame.ch1.function_button     = params[CH1_FUNCTION_BUTTON_PARAM].getValue();
+		frame.ch2.function_button     = params[CH2_FUNCTION_BUTTON_PARAM].getValue();
+		frame.metering_button         = params[METERING_BUTTON_PARAM].getValue();
 
-        frame.ch1.function_button     = params[CH1_FUNCTION_BUTTON_PARAM].getValue();
-        frame.ch2.function_button     = params[CH2_FUNCTION_BUTTON_PARAM].getValue();
-        frame.metering_button         = params[METERING_BUTTON_PARAM].getValue();
+		bool lights_updated = false;
 
-        bool lights_updated = false;
+		for (int c = 0; c < numChannels; c++) {
+			frame.ch1.excite_in = inputs[CH1_EXCITE_INPUT].getPolyVoltage(c);
+			frame.ch1.signal_in = inputs[CH1_SIGNAL_INPUT].getPolyVoltage(c);
+			frame.ch1.level_cv  = inputs[CH1_LEVEL_INPUT] .getPolyVoltage(c);
+			frame.ch2.excite_in = inputs[CH2_EXCITE_INPUT].getPolyVoltage(c);
+			frame.ch2.signal_in = inputs[CH2_SIGNAL_INPUT].getPolyVoltage(c);
+			frame.ch2.level_cv  = inputs[CH2_LEVEL_INPUT] .getPolyVoltage(c);
 
-        for (int c = 0; c < num_channels; c++)
-        {
-            frame.ch1.excite_in = inputs[CH1_EXCITE_INPUT].getPolyVoltage(c);
-            frame.ch1.signal_in = inputs[CH1_SIGNAL_INPUT].getPolyVoltage(c);
-            frame.ch1.level_cv  = inputs[CH1_LEVEL_INPUT] .getPolyVoltage(c);
-            frame.ch2.excite_in = inputs[CH2_EXCITE_INPUT].getPolyVoltage(c);
-            frame.ch2.signal_in = inputs[CH2_SIGNAL_INPUT].getPolyVoltage(c);
-            frame.ch2.level_cv  = inputs[CH2_LEVEL_INPUT] .getPolyVoltage(c);
+			engines[c].Process(frame);
 
-            engine_[c].Process(frame);
+			outputs[CH1_SIGNAL_OUTPUT].setVoltage(frame.ch1.signal_out, c);
+			outputs[CH2_SIGNAL_OUTPUT].setVoltage(frame.ch2.signal_out, c);
 
-            outputs[CH1_SIGNAL_OUTPUT].setVoltage(frame.ch1.signal_out, c);
-            outputs[CH2_SIGNAL_OUTPUT].setVoltage(frame.ch2.signal_out, c);
+			if (frame.lights_updated) {
+				brightnesses[CH1_LIGHT_1_G][c] = frame.ch1.led_green[0];
+				brightnesses[CH1_LIGHT_2_G][c] = frame.ch1.led_green[1];
+				brightnesses[CH1_LIGHT_3_G][c] = frame.ch1.led_green[2];
+				brightnesses[CH1_LIGHT_4_G][c] = frame.ch1.led_green[3];
+				brightnesses[CH1_LIGHT_1_R][c] = frame.ch1.led_red[0];
+				brightnesses[CH1_LIGHT_2_R][c] = frame.ch1.led_red[1];
+				brightnesses[CH1_LIGHT_3_R][c] = frame.ch1.led_red[2];
+				brightnesses[CH1_LIGHT_4_R][c] = frame.ch1.led_red[3];
+				brightnesses[CH2_LIGHT_1_G][c] = frame.ch2.led_green[0];
+				brightnesses[CH2_LIGHT_2_G][c] = frame.ch2.led_green[1];
+				brightnesses[CH2_LIGHT_3_G][c] = frame.ch2.led_green[2];
+				brightnesses[CH2_LIGHT_4_G][c] = frame.ch2.led_green[3];
+				brightnesses[CH2_LIGHT_1_R][c] = frame.ch2.led_red[0];
+				brightnesses[CH2_LIGHT_2_R][c] = frame.ch2.led_red[1];
+				brightnesses[CH2_LIGHT_3_R][c] = frame.ch2.led_red[2];
+				brightnesses[CH2_LIGHT_4_R][c] = frame.ch2.led_red[3];
+			}
 
-            if (frame.lights_updated)
-            {
-                brightness_[CH1_LIGHT_1_G][c] = frame.ch1.led_green[0];
-                brightness_[CH1_LIGHT_2_G][c] = frame.ch1.led_green[1];
-                brightness_[CH1_LIGHT_3_G][c] = frame.ch1.led_green[2];
-                brightness_[CH1_LIGHT_4_G][c] = frame.ch1.led_green[3];
-                brightness_[CH1_LIGHT_1_R][c] = frame.ch1.led_red[0];
-                brightness_[CH1_LIGHT_2_R][c] = frame.ch1.led_red[1];
-                brightness_[CH1_LIGHT_3_R][c] = frame.ch1.led_red[2];
-                brightness_[CH1_LIGHT_4_R][c] = frame.ch1.led_red[3];
-                brightness_[CH2_LIGHT_1_G][c] = frame.ch2.led_green[0];
-                brightness_[CH2_LIGHT_2_G][c] = frame.ch2.led_green[1];
-                brightness_[CH2_LIGHT_3_G][c] = frame.ch2.led_green[2];
-                brightness_[CH2_LIGHT_4_G][c] = frame.ch2.led_green[3];
-                brightness_[CH2_LIGHT_1_R][c] = frame.ch2.led_red[0];
-                brightness_[CH2_LIGHT_2_R][c] = frame.ch2.led_red[1];
-                brightness_[CH2_LIGHT_3_R][c] = frame.ch2.led_red[2];
-                brightness_[CH2_LIGHT_4_R][c] = frame.ch2.led_red[3];
-            }
+			lights_updated |= frame.lights_updated;
+		}
 
-            lights_updated |= frame.lights_updated;
-        }
+		outputs[CH1_SIGNAL_OUTPUT].setChannels(numChannels);
+		outputs[CH2_SIGNAL_OUTPUT].setChannels(numChannels);
 
-        outputs[CH1_SIGNAL_OUTPUT].setChannels(num_channels);
-        outputs[CH2_SIGNAL_OUTPUT].setChannels(num_channels);
+		if (lights_updated) {
+			// Drive lights according to maximum brightness across engines
+			for (int i = 0; i < NUM_LIGHTS; i++) {
+				float brightness = 0.f;
 
-        if (lights_updated)
-        {
-            // Drive lights according to maximum brightness across engines
-            for (int i = 0; i < NUM_LIGHTS; i++)
-            {
-                float brightness = 0.f;
+				for (int c = 0; c < numChannels; c++) {
+					brightness = std::max(brightnesses[i][c], brightness);
+				}
 
-                for (int c = 0; c < num_channels; c++)
-                {
-                    brightness = std::max(brightness_[i][c], brightness);
-                }
-
-                lights[i].setBrightness(brightness);
-            }
-        }
-    }
+				lights[i].setBrightness(brightness);
+			}
+		}
+	}
 };
 
-struct StreamsWidget : ModuleWidget
-{
-    StreamsWidget(Streams* module)
-    {
-        setModule(module);
-        setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Streams.svg")));
+struct StreamsWidget : ModuleWidget {
+	StreamsWidget(Streams* module) {
+		setModule(module);
+		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Streams.svg")));
 
-        addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-        addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-        addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(11.065, 128.75 - 107.695)), module, Streams::CH1_SHAPE_PARAM));
-        addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(11.065, 128.75 -  84.196)), module, Streams::CH1_MOD_PARAM));
-        addParam(createParamCentered<Rogan1PSRed>  (mm2px(Vec(11.065, 128.75 -  60.706)), module, Streams::CH1_LEVEL_MOD_PARAM));
-        addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(49.785, 128.75 - 107.695)), module, Streams::CH2_SHAPE_PARAM));
-        addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(49.785, 128.75 -  84.196)), module, Streams::CH2_MOD_PARAM));
-        addParam(createParamCentered<Rogan1PSGreen>(mm2px(Vec(49.785, 128.75 -  60.706)), module, Streams::CH2_LEVEL_MOD_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(11.065, 128.75 - 107.695)), module, Streams::CH1_SHAPE_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(11.065, 128.75 -  84.196)), module, Streams::CH1_MOD_PARAM));
+		addParam(createParamCentered<Rogan1PSRed> (mm2px(Vec(11.065, 128.75 -  60.706)), module, Streams::CH1_LEVEL_MOD_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(49.785, 128.75 - 107.695)), module, Streams::CH2_SHAPE_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(49.785, 128.75 -  84.196)), module, Streams::CH2_MOD_PARAM));
+		addParam(createParamCentered<Rogan1PSGreen>(mm2px(Vec(49.785, 128.75 -  60.706)), module, Streams::CH2_LEVEL_MOD_PARAM));
 
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(30.425, 128.75 -  68.006)), module, Streams::CH1_RESPONSE_PARAM));
-        addParam(createParamCentered<Trimpot>(mm2px(Vec(30.425, 128.75 -  53.406)), module, Streams::CH2_RESPONSE_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(30.425, 128.75 -  68.006)), module, Streams::CH1_RESPONSE_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(30.425, 128.75 -  53.406)), module, Streams::CH2_RESPONSE_PARAM));
 
-        addParam(createParamCentered<TL1105>(mm2px(Vec(24.715, 128.75 - 113.726)), module, Streams::CH1_FUNCTION_BUTTON_PARAM));
-        addParam(createParamCentered<TL1105>(mm2px(Vec(36.135, 128.75 - 113.726)), module, Streams::CH2_FUNCTION_BUTTON_PARAM));
-        addParam(createParamCentered<TL1105>(mm2px(Vec(30.425, 128.75 -  81.976)), module, Streams::METERING_BUTTON_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(24.715, 128.75 - 113.726)), module, Streams::CH1_FUNCTION_BUTTON_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(36.135, 128.75 - 113.726)), module, Streams::CH2_FUNCTION_BUTTON_PARAM));
+		addParam(createParamCentered<TL1105>(mm2px(Vec(30.425, 128.75 -  81.976)), module, Streams::METERING_BUTTON_PARAM));
 
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec( 8.506, 128.75 - 32.136)), module, Streams::CH1_EXCITE_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.116, 128.75 - 32.136)), module, Streams::CH1_SIGNAL_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec( 8.506, 128.75 - 17.526)), module, Streams::CH1_LEVEL_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(52.335, 128.75 - 32.136)), module, Streams::CH2_EXCITE_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(37.726, 128.75 - 32.136)), module, Streams::CH2_SIGNAL_INPUT));
-        addInput(createInputCentered<PJ301MPort>(mm2px(Vec(52.335, 128.75 - 17.526)), module, Streams::CH2_LEVEL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.506, 128.75 - 32.136)), module, Streams::CH1_EXCITE_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(23.116, 128.75 - 32.136)), module, Streams::CH1_SIGNAL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.506, 128.75 - 17.526)), module, Streams::CH1_LEVEL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(52.335, 128.75 - 32.136)), module, Streams::CH2_EXCITE_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(37.726, 128.75 - 32.136)), module, Streams::CH2_SIGNAL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(52.335, 128.75 - 17.526)), module, Streams::CH2_LEVEL_INPUT));
 
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.116, 128.75 - 17.526)), module, Streams::CH1_SIGNAL_OUTPUT));
-        addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(37.726, 128.75 - 17.526)), module, Streams::CH2_SIGNAL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.116, 128.75 - 17.526)), module, Streams::CH1_SIGNAL_OUTPUT));
+		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(37.726, 128.75 - 17.526)), module, Streams::CH2_SIGNAL_OUTPUT));
 
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 - 106.746)), module, Streams::CH1_LIGHT_1_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 - 101.026)), module, Streams::CH1_LIGHT_2_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 -  95.305)), module, Streams::CH1_LIGHT_3_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 -  89.585)), module, Streams::CH1_LIGHT_4_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 - 106.746)), module, Streams::CH2_LIGHT_1_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 - 101.026)), module, Streams::CH2_LIGHT_2_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 -  95.305)), module, Streams::CH2_LIGHT_3_G));
-        addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 -  89.585)), module, Streams::CH2_LIGHT_4_G));
-    }
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 - 106.746)), module, Streams::CH1_LIGHT_1_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 - 101.026)), module, Streams::CH1_LIGHT_2_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 -  95.305)), module, Streams::CH1_LIGHT_3_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 -  89.585)), module, Streams::CH1_LIGHT_4_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 - 106.746)), module, Streams::CH2_LIGHT_1_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 - 101.026)), module, Streams::CH2_LIGHT_2_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 -  95.305)), module, Streams::CH2_LIGHT_3_G));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 -  89.585)), module, Streams::CH2_LIGHT_4_G));
+	}
 
-    void appendContextMenu(Menu* menu) override
-    {
-        Streams* module = dynamic_cast<Streams*>(this->module);
+	void appendContextMenu(Menu* menu) override {
+		Streams* module = dynamic_cast<Streams*>(this->module);
 
-        struct LinkItem : MenuItem
-        {
-            Streams* module;
-            void onAction(const event::Action & e) override
-            {
-                module->ToggleLink();
-            }
-        };
+		struct LinkItem : MenuItem {
+			Streams* module;
+			void onAction(const event::Action& e) override {
+				module->toggleLink();
+			}
+		};
 
-        struct ChannelModeItem : MenuItem
-        {
-            Streams* module;
-            int channel;
-            int mode;
-            void onAction(const event::Action& e) override
-            {
-                module->SetChannelMode(channel, mode);
-            }
-        };
+		struct ChannelModeItem : MenuItem {
+			Streams* module;
+			int channel;
+			int mode;
+			void onAction(const event::Action& e) override {
+				module->setChannelMode(channel, mode);
+			}
+		};
 
-        struct MonitorModeItem : MenuItem
-        {
-            Streams* module;
-            int mode;
-            void onAction(const event::Action& e) override
-            {
-                module->SetMonitorMode(mode);
-            }
-        };
+		struct MonitorModeItem : MenuItem {
+			Streams* module;
+			int mode;
+			void onAction(const event::Action& e) override {
+				module->setMonitorMode(mode);
+			}
+		};
 
-        menu->addChild(new MenuSeparator);
-        LinkItem* link_item = createMenuItem<LinkItem>(
-            "Link channels", CHECKMARK(module->linked()));
-        link_item->module = module;
-        menu->addChild(link_item);
+		menu->addChild(new MenuSeparator);
+		LinkItem* linkItem = createMenuItem<LinkItem>(
+		                        "Link channels", CHECKMARK(module->linked()));
+		linkItem->module = module;
+		menu->addChild(linkItem);
 
-        menu->addChild(new MenuSeparator);
-        menu->addChild(createMenuLabel("Channel 1"));
-        for (int i = 0; i < streams::kNumChannelModes; i++)
-        {
-            auto mode_item = createMenuItem<ChannelModeItem>(
-                streams::kChannelModeTable[i].label, CHECKMARK(
-                    module->function(0) == streams::kChannelModeTable[i].function &&
-                    module->alternate(0) == streams::kChannelModeTable[i].alternate));
-            mode_item->module = module;
-            mode_item->channel = 0;
-            mode_item->mode = i;
-            menu->addChild(mode_item);
-        }
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Channel 1"));
+		for (int i = 0; i < streams::kNumChannelModes; i++) {
+			auto modeItem = createMenuItem<ChannelModeItem>(
+			                   streams::kChannelModeTable[i].label, CHECKMARK(
+			                     module->function(0) == streams::kChannelModeTable[i].function &&
+			                     module->alternate(0) == streams::kChannelModeTable[i].alternate));
+			modeItem->module = module;
+			modeItem->channel = 0;
+			modeItem->mode = i;
+			menu->addChild(modeItem);
+		}
 
-        menu->addChild(new MenuSeparator);
-        menu->addChild(createMenuLabel("Channel 2"));
-        for (int i = 0; i < streams::kNumChannelModes; i++)
-        {
-            auto mode_item = createMenuItem<ChannelModeItem>(
-                streams::kChannelModeTable[i].label, CHECKMARK(
-                    module->function(1) == streams::kChannelModeTable[i].function &&
-                    module->alternate(1) == streams::kChannelModeTable[i].alternate));
-            mode_item->module = module;
-            mode_item->channel = 1;
-            mode_item->mode = i;
-            menu->addChild(mode_item);
-        }
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Channel 2"));
+		for (int i = 0; i < streams::kNumChannelModes; i++) {
+			auto modeItem = createMenuItem<ChannelModeItem>(
+			                   streams::kChannelModeTable[i].label, CHECKMARK(
+			                     module->function(1) == streams::kChannelModeTable[i].function &&
+			                     module->alternate(1) == streams::kChannelModeTable[i].alternate));
+			modeItem->module = module;
+			modeItem->channel = 1;
+			modeItem->mode = i;
+			menu->addChild(modeItem);
+		}
 
-        menu->addChild(new MenuSeparator);
-        menu->addChild(createMenuLabel("Meter"));
-        for (int i = 0; i < streams::kNumMonitorModes; i++)
-        {
-            auto mode_item = createMenuItem<MonitorModeItem>(
-                streams::kMonitorModeTable[i].label, CHECKMARK(
-                    module->monitor_mode() == streams::kMonitorModeTable[i].mode));
-            mode_item->module = module;
-            mode_item->mode = i;
-            menu->addChild(mode_item);
-        }
-    }
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Meter"));
+		for (int i = 0; i < streams::kNumMonitorModes; i++) {
+			auto modeItem = createMenuItem<MonitorModeItem>(
+			                   streams::kMonitorModeTable[i].label, CHECKMARK(
+			                     module->monitorMode() == streams::kMonitorModeTable[i].mode));
+			modeItem->module = module;
+			modeItem->mode = i;
+			menu->addChild(modeItem);
+		}
+	}
 };
 
 Model* modelStreams = createModel<Streams, StreamsWidget>("Streams");

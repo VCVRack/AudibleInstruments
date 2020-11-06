@@ -17,7 +17,7 @@
 #pragma once
 
 #include <cmath>
-#include "rack.hpp"
+#include <rack.hpp>
 #include "resampler.hpp"
 #include "analog_engine.hpp"
 #include "digital_engine.hpp"
