@@ -1,3 +1,6 @@
+### 1.5.0 (2020-11-07)
+- Add Streams via fundraiser.
+
 ### 1.4.0 (2020-10-22)
 - Add "Ominous voice" (easter egg) mode to Elements.
 - Make Elements polyphonic.
@@ -7,14 +10,14 @@
 - Make Branches polyphonic.
 
 ### 1.3.0 (2020-05-29)
-- Add EQ Filter.
+- Add EQ Filter via fundraiser.
 
 ### 1.2.1 (2020-04-23)
 - Multiples
 	- Make polyphonic.
 
 ### 1.2.0 (2020-04-20)
-- Add Liquid Filter
+- Add Liquid Filter via fundraiser.
 
 ### 1.1.0 (2020-04-16)
 - Macro Oscillator
