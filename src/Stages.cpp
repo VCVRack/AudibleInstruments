@@ -232,7 +232,10 @@ struct Stages : Module {
 		float primaries[NUM_CHANNELS];
 		float secondaries[NUM_CHANNELS];
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			primaries[i] = clamp(params[LEVEL_PARAMS + i].getValue() + inputs[LEVEL_INPUTS + i].getVoltage() / 8.f, 0.f, 1.f);
+			if (configurations[i].loop)
+				primaries[i] = clamp(params[LEVEL_PARAMS + i].getValue() + inputs[LEVEL_INPUTS + i].getVoltage() / 8.f, 0.f, 1.f + 6.f / 8.f); // For tracking up to C7
+			else
+				primaries[i] = clamp(params[LEVEL_PARAMS + i].getValue() + inputs[LEVEL_INPUTS + i].getVoltage() / 8.f, 0.f, 1.f);
 			secondaries[i] = params[SHAPE_PARAMS + i].getValue();
 		}
 
