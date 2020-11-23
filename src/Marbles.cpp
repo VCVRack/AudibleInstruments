@@ -126,6 +126,20 @@ static const marbles::Scale preset_scales[6] = {
 	},
 };
 
+static const marbles::Ratio y_divider_ratios[] = {
+	{ 1, 64 },
+	{ 1, 48 },
+	{ 1, 32 },
+	{ 1, 24 },
+	{ 1, 16 },
+	{ 1, 12 },
+	{ 1, 8 },
+	{ 1, 6 },
+	{ 1, 4 },
+	{ 1, 3 },
+	{ 1, 2 },
+	{ 1, 1 },
+};
 
 struct Marbles : Module {
 	enum ParamIds {
@@ -144,6 +158,12 @@ struct Marbles : Module {
 		EXTERNAL_PARAM,
 		T_JITTER_PARAM,
 		X_STEPS_PARAM,
+		Y_RATE_PARAM,
+		Y_SPREAD_PARAM,
+		Y_BIAS_PARAM,
+		Y_STEPS_PARAM,
+		GATE_BIAS_PARAM,
+		GATE_JITTER_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -210,6 +230,7 @@ struct Marbles : Module {
 	int x_scale;
 	int y_divider_index;
 	int x_clock_source_internal;
+	int edit_mode;
 
 	// Buffers
 	stmlib::GateFlags t_clocks[BLOCK_SIZE] = {};
@@ -241,6 +262,14 @@ struct Marbles : Module {
 		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness amount");
 		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5, "Smoothness");
 
+		configParam(Y_RATE_PARAM, 0.0, 1.0, 4.5 / LENGTHOF(y_divider_ratios), "Clock divide");
+		configParam(Y_SPREAD_PARAM, 0.0, 1.0, 0.5, "Probability distribution");
+		configParam(Y_BIAS_PARAM, 0.0, 1.0, 0.5, "Voltage offset");
+		configParam(Y_STEPS_PARAM, 0.0, 1.0, 0.0, "Smoothness");
+
+		configParam(GATE_BIAS_PARAM, 0.0, 1.0, 0.5, "Gate length");
+		configParam(GATE_JITTER_PARAM, 0.0, 1.0, 0.0, "Gate length randomness");
+
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);
 		note_filter.Init();
@@ -257,8 +286,9 @@ struct Marbles : Module {
 		x_range = 1;
 		external = false;
 		x_scale = 0;
-		y_divider_index = 8;
+		y_divider_index = 4;
 		x_clock_source_internal = 0;
+		edit_mode = 0;
 	}
 
 	void onRandomize() override {
@@ -292,6 +322,7 @@ struct Marbles : Module {
 		json_object_set_new(rootJ, "x_scale", json_integer(x_scale));
 		json_object_set_new(rootJ, "y_divider_index", json_integer(y_divider_index));
 		json_object_set_new(rootJ, "x_clock_source_internal", json_integer(x_clock_source_internal));
+		json_object_set_new(rootJ, "edit_mode", json_integer(edit_mode));
 
 		return rootJ;
 	}
@@ -336,6 +367,10 @@ struct Marbles : Module {
 		json_t* x_clock_source_internalJ = json_object_get(rootJ, "x_clock_source_internal");
 		if (x_clock_source_internalJ)
 			x_clock_source_internal = json_integer_value(x_clock_source_internalJ);
+
+		json_t* edit_modeJ = json_object_get(rootJ, "edit_mode");
+		if (edit_modeJ)
+			edit_mode = json_boolean_value(edit_modeJ);
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -450,9 +485,8 @@ struct Marbles : Module {
 		t_generator.set_jitter(t_jitter);
 		t_generator.set_deja_vu(t_deja_vu ? deja_vu : 0.f);
 		t_generator.set_length(deja_vu_length);
-		// TODO
-		t_generator.set_pulse_width_mean(0.f);
-		t_generator.set_pulse_width_std(0.f);
+		t_generator.set_pulse_width_mean(params[GATE_BIAS_PARAM].getValue());
+		t_generator.set_pulse_width_std(params[GATE_JITTER_PARAM].getValue());
 
 		t_generator.Process(t_external_clock, t_clocks, ramps, gates, BLOCK_SIZE);
 
@@ -485,30 +519,18 @@ struct Marbles : Module {
 
 		marbles::GroupSettings y;
 		y.control_mode = marbles::CONTROL_MODE_IDENTICAL;
-		// TODO
-		y.voltage_range = (marbles::VoltageRange) x_range;
+		y.voltage_range = marbles::VOLTAGE_RANGE_FULL;
 		y.register_mode = false;
 		y.register_value = 0.0f;
-		// TODO
-		y.spread = x_spread;
-		y.bias = x_bias;
-		y.steps = x_steps;
+		y.spread = params[Y_SPREAD_PARAM].getValue();
+		y.bias = params[Y_BIAS_PARAM].getValue();
+		y.steps = params[Y_STEPS_PARAM].getValue();
 		y.deja_vu = 0.0f;
 		y.length = 1;
-		static const marbles::Ratio y_divider_ratios[] = {
-			{ 1, 64 },
-			{ 1, 48 },
-			{ 1, 32 },
-			{ 1, 24 },
-			{ 1, 16 },
-			{ 1, 12 },
-			{ 1, 8 },
-			{ 1, 6 },
-			{ 1, 4 },
-			{ 1, 3 },
-			{ 1, 2 },
-			{ 1, 1 },
-		};
+
+		unsigned int index = (unsigned int) (params[Y_RATE_PARAM].getValue() * LENGTHOF(y_divider_ratios));
+		if (index < LENGTHOF(y_divider_ratios))
+			y_divider_index = index;
 		y.ratio = y_divider_ratios[y_divider_index];
 		y.scale_index = x_scale;
 
@@ -526,6 +548,14 @@ struct CKD6Light : BASE {
 
 
 struct MarblesWidget : ModuleWidget {
+	ParamWidget* yRateParam;
+	ParamWidget* ySpreadParam;
+	ParamWidget* yBiasParam;
+	ParamWidget* yStepsParam;
+
+	ParamWidget* gateBiasParam;
+	ParamWidget* gateJitterParam;
+
 	MarblesWidget(Marbles* module) {
 		setModule(module);
 		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Marbles.svg")));
@@ -550,6 +580,32 @@ struct MarblesWidget : ModuleWidget {
 		addParam(createParamCentered<TL1105>(mm2px(Vec(45.694, 67.294)), module, Marbles::EXTERNAL_PARAM));
 		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(31.544, 73.694)), module, Marbles::T_JITTER_PARAM));
 		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(59.845, 73.694)), module, Marbles::X_STEPS_PARAM));
+
+		// Knobs for Y generator edit mode
+		yRateParam = createParamCentered<Rogan3PSGreen>(mm2px(Vec(23.467, 35.264)), module, Marbles::Y_RATE_PARAM);
+		addParam(yRateParam);
+		ySpreadParam = createParamCentered<Rogan3PSGreen>(mm2px(Vec(67.945, 35.243)), module, Marbles::Y_SPREAD_PARAM);
+		addParam(ySpreadParam);
+		yBiasParam = createParamCentered<Rogan2PSGreen>(mm2px(Vec(81.844, 58.394)), module, Marbles::Y_BIAS_PARAM);
+		addParam(yBiasParam);
+		yStepsParam = createParamCentered<Rogan2PSGreen>(mm2px(Vec(59.845, 73.694)), module, Marbles::Y_STEPS_PARAM);
+		addParam(yStepsParam);
+
+		// Make colored knobs not visible in module browser
+		yRateParam->visible = false;
+		ySpreadParam->visible = false;
+		yBiasParam->visible = false;
+		yStepsParam->visible = false;
+
+		// Knobs for gate edit mode
+		gateBiasParam = createParamCentered<Rogan2PSRed>(mm2px(Vec(9.545, 58.394)), module, Marbles::GATE_BIAS_PARAM);
+		addParam(gateBiasParam);
+		gateJitterParam = createParamCentered<Rogan2PSRed>(mm2px(Vec(31.544, 73.694)), module, Marbles::GATE_JITTER_PARAM);
+		addParam(gateJitterParam);
+
+		// Make colored knobs not visible in module browser
+		gateBiasParam->visible = false;
+		gateJitterParam->visible = false;
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.545, 81.944)), module, Marbles::T_BIAS_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(81.844, 81.944)), module, Marbles::X_BIAS_INPUT));
@@ -583,6 +639,22 @@ struct MarblesWidget : ModuleWidget {
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(54.244, 104.794)), module, Marbles::X1_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(66.294, 104.794)), module, Marbles::X2_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(78.344, 104.794)), module, Marbles::X3_LIGHT));
+	}
+
+	void step() override {
+		Marbles *module = dynamic_cast<Marbles *>(this->module);
+
+		if (module) {
+			yRateParam->visible = (module->edit_mode == 1);
+			ySpreadParam->visible = (module->edit_mode == 1);
+			yBiasParam->visible = (module->edit_mode == 1);
+			yStepsParam->visible = (module->edit_mode == 1);
+
+			gateBiasParam->visible = (module->edit_mode == 2);
+			gateJitterParam->visible = (module->edit_mode == 2);
+		}
+
+		ModuleWidget::step();
 	}
 
 	void appendContextMenu(Menu* menu) override {
@@ -641,6 +713,7 @@ struct MarblesWidget : ModuleWidget {
 			int index;
 			void onAction(const event::Action& e) override {
 				module->y_divider_index = index;
+				module->params[module->Y_RATE_PARAM].setValue(index / LENGTHOF(y_divider_ratios));
 			}
 		};
 
@@ -676,6 +749,25 @@ struct MarblesWidget : ModuleWidget {
 		YDividerItem* yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
 		yDividerItem->module = module;
 		menu->addChild(yDividerItem);
+
+		struct MarblesEditModeItem : MenuItem {
+			Marbles *module;
+			int editMode;
+			void onAction(const event::Action& e) override {
+				module->edit_mode = editMode;
+			}
+			void step() override {
+				rightText = (module->edit_mode == editMode) ? "✔" : "";
+				MenuItem::step();
+			}
+		};
+
+		menu->addChild(new MenuSeparator);
+		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Edit Mode"));
+
+		menu->addChild(construct<MarblesEditModeItem>(&MenuItem::text, "Default", &MarblesEditModeItem::module, module, &MarblesEditModeItem::editMode, 0));
+		menu->addChild(construct<MarblesEditModeItem>(&MenuItem::text, "Y generator", &MarblesEditModeItem::module, module, &MarblesEditModeItem::editMode, 1));
+		menu->addChild(construct<MarblesEditModeItem>(&MenuItem::text, "Gate", &MarblesEditModeItem::module, module, &MarblesEditModeItem::editMode, 2));
 	}
 };
 
