@@ -528,7 +528,7 @@ struct Marbles : Module {
 		y.deja_vu = 0.0f;
 		y.length = 1;
 
-		uint index = (uint) (params[Y_RATE_PARAM].getValue() * LENGTHOF(y_divider_ratios));
+		unsigned int index = (unsigned int) (params[Y_RATE_PARAM].getValue() * LENGTHOF(y_divider_ratios));
 		if (index < LENGTHOF(y_divider_ratios))
 			y_divider_index = index;
 		y.ratio = y_divider_ratios[y_divider_index];
