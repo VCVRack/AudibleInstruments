@@ -31,6 +31,19 @@ struct Warps : Module {
 		NUM_LIGHTS = ALGORITHM_LIGHT + 3
 	};
 
+    // from warps/ui.cc
+    const unsigned char algorithm_palette[10][3] = {
+        { 0, 192, 64 },
+        { 64, 255, 0 },
+        { 255, 255, 0 },
+        { 255, 64, 0 },
+        { 255, 0, 0 },
+        { 255, 0, 64 },
+        { 255, 0, 255 },
+        { 0, 0, 255 },
+        { 0, 255, 192 },
+        { 0, 255, 192 },
+    };
 
 	int frame = 0;
 	warps::Modulator modulator;
@@ -68,12 +81,14 @@ struct Warps : Module {
 			p->modulation_algorithm = clamp(params[ALGORITHM_PARAM].getValue() / 8.0f + inputs[ALGORITHM_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 
 			{
-				// TODO
-				// Use the correct light color
-				NVGcolor algorithmColor = nvgHSL(p->modulation_algorithm, 0.3, 0.4);
-				lights[ALGORITHM_LIGHT + 0].setBrightness(algorithmColor.r);
-				lights[ALGORITHM_LIGHT + 1].setBrightness(algorithmColor.g);
-				lights[ALGORITHM_LIGHT + 2].setBrightness(algorithmColor.b);
+                float zone = 8.0f * p->modulation_algorithm;
+                MAKE_INTEGRAL_FRACTIONAL(zone);
+                int zone_fractional_i = static_cast<int>(zone_fractional * 256.0f);
+                for (int i=0; i< 3; i++) {
+                    int a = algorithm_palette[zone_integral][i];
+                    int b = algorithm_palette[zone_integral + 1][i];
+                    lights[ALGORITHM_LIGHT + i].setBrightness(static_cast<float>(a + ((b - a) * zone_fractional_i >> 8)) / 255.0f);
+                }
 			}
 
 			p->modulation_parameter = clamp(params[TIMBRE_PARAM].getValue() + inputs[TIMBRE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
