@@ -63,8 +63,8 @@ struct Warps : Module {
 		if (++frame >= 60) {
 			frame = 0;
 
-			p->channel_drive[0] = clamp(params[LEVEL1_PARAM].getValue() + inputs[LEVEL1_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
-			p->channel_drive[1] = clamp(params[LEVEL2_PARAM].getValue() + inputs[LEVEL2_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+			p->channel_drive[0] = clamp(params[LEVEL1_PARAM].getValue() * inputs[LEVEL1_INPUT].getNormalVoltage(5.0f) / 5.0f, 0.0f, 1.0f);
+			p->channel_drive[1] = clamp(params[LEVEL2_PARAM].getValue() * inputs[LEVEL2_INPUT].getNormalVoltage(5.0f) / 5.0f, 0.0f, 1.0f);
 			p->modulation_algorithm = clamp(params[ALGORITHM_PARAM].getValue() / 8.0f + inputs[ALGORITHM_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 
 			{
