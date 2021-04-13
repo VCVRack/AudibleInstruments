@@ -187,7 +187,7 @@ struct Shelves : Module {
 struct ShelvesWidget : ModuleWidget {
 	ShelvesWidget(Shelves* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Shelves.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Shelves.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

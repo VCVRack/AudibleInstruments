@@ -79,7 +79,7 @@ struct Blinds : Module {
 struct BlindsWidget : ModuleWidget {
 	BlindsWidget(Blinds* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Blinds.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Blinds.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(150, 0)));

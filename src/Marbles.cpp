@@ -528,7 +528,7 @@ struct CKD6Light : BASE {
 struct MarblesWidget : ModuleWidget {
 	MarblesWidget(Marbles* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Marbles.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Marbles.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

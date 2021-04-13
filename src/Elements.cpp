@@ -304,7 +304,7 @@ struct ElementsModalItem : MenuItem {
 struct ElementsWidget : ModuleWidget {
 	ElementsWidget(Elements* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Elements.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Elements.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(480, 0)));

@@ -250,7 +250,7 @@ struct Rings : Module {
 struct RingsWidget : ModuleWidget {
 	RingsWidget(Rings* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Rings.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Rings.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(180, 0)));

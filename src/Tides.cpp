@@ -202,13 +202,13 @@ struct TidesWidget : ModuleWidget {
 		box.size = Vec(15 * 14, 380);
 		{
 			tidesPanel = new SvgPanel();
-			tidesPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Tides.svg")));
+			tidesPanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/Tides.svg")));
 			tidesPanel->box.size = box.size;
 			addChild(tidesPanel);
 		}
 		{
 			sheepPanel = new SvgPanel();
-			sheepPanel->setBackground(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Sheep.svg")));
+			sheepPanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/Sheep.svg")));
 			sheepPanel->box.size = box.size;
 			addChild(sheepPanel);
 		}

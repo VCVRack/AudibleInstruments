@@ -86,7 +86,7 @@ struct Links : Module {
 struct LinksWidget : ModuleWidget {
 	LinksWidget(Links* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Links.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Links.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));

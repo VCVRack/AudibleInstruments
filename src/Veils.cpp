@@ -78,7 +78,7 @@ struct Veils : Module {
 struct VeilsWidget : ModuleWidget {
 	VeilsWidget(Veils* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Veils.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Veils.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(150, 0)));

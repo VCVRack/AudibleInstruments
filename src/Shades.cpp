@@ -68,7 +68,7 @@ struct Shades : Module {
 struct ShadesWidget : ModuleWidget {
 	ShadesWidget(Shades* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Shades.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Shades.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));

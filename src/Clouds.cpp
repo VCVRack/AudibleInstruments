@@ -315,7 +315,7 @@ struct CloudsWidget : ModuleWidget {
 
 	CloudsWidget(Clouds* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Clouds.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Clouds.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(240, 0)));

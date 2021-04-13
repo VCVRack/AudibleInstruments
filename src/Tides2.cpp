@@ -260,7 +260,7 @@ struct Tides2 : Module {
 struct Tides2Widget : ModuleWidget {
 	Tides2Widget(Tides2* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Tides2.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Tides2.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));

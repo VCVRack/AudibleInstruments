@@ -133,7 +133,7 @@ struct Branches : Module {
 struct BranchesWidget : ModuleWidget {
 	BranchesWidget(Branches* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Branches.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Branches.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));

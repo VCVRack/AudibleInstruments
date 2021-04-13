@@ -70,7 +70,7 @@ struct Kinks : Module {
 struct KinksWidget : ModuleWidget {
 	KinksWidget(Kinks* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Kinks.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Kinks.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));

@@ -299,7 +299,7 @@ struct BraidsLowCpuItem : MenuItem {
 struct BraidsWidget : ModuleWidget {
 	BraidsWidget(Braids* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Braids.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Braids.svg")));
 
 		{
 			BraidsDisplay* display = new BraidsDisplay();

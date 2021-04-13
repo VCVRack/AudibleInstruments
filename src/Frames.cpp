@@ -281,8 +281,8 @@ struct Frames : Module {
 
 struct CKSSRot : SVGSwitch {
 	CKSSRot() {
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/CKSS_rot_0.svg")));
-		addFrame(APP->window->loadSvg(asset::plugin(pluginInstance, "res/CKSS_rot_1.svg")));
+		addFrame(Svg::load(asset::plugin(pluginInstance, "res/CKSS_rot_0.svg")));
+		addFrame(Svg::load(asset::plugin(pluginInstance, "res/CKSS_rot_1.svg")));
 	}
 };
 
@@ -290,7 +290,7 @@ struct CKSSRot : SVGSwitch {
 struct FramesWidget : ModuleWidget {
 	FramesWidget(Frames* module) {
 		setModule(module);
-		setPanel(APP->window->loadSvg(asset::plugin(pluginInstance, "res/Frames.svg")));
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Frames.svg")));
 
 		addChild(createWidget<ScrewSilver>(Vec(15, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 0)));
