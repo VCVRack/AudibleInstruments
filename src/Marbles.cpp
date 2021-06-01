@@ -382,8 +382,9 @@ struct Marbles : Module {
 		lights[T_DEJA_VU_LIGHT].setBrightness(t_deja_vu);
 		lights[X_DEJA_VU_LIGHT].setBrightness(x_deja_vu);
 
-		lights[T_MODE_LIGHTS + 0].setBrightness(t_mode == 0 || t_mode == 1);
-		lights[T_MODE_LIGHTS + 1].setBrightness(t_mode == 1 || t_mode == 2);
+		int t_mode3 = t_mode % 3;
+		lights[T_MODE_LIGHTS + 0].setBrightness(t_mode3 == 0 || t_mode3 == 1);
+		lights[T_MODE_LIGHTS + 1].setBrightness(t_mode3 == 1 || t_mode3 == 2);
 
 		lights[X_MODE_LIGHTS + 0].setBrightness(x_mode == 0 || x_mode == 1);
 		lights[X_MODE_LIGHTS + 1].setBrightness(x_mode == 1 || x_mode == 2);
@@ -525,6 +526,38 @@ struct CKD6Light : BASE {
 };
 
 
+MenuItem* createIndexMenu(int* ptr, std::string name, std::vector<std::string> labels) {
+	struct IndexItem : MenuItem {
+		int* ptr;
+		int index;
+		void onAction(const event::Action& e) override {
+			*ptr = index;
+		}
+	};
+	struct Item : MenuItem {
+		int* ptr;
+		std::vector<std::string> labels;
+		Menu* createChildMenu() override {
+			Menu* menu = new Menu();
+			for (int i = 0; i < (int) labels.size(); i++) {
+				IndexItem* item = createMenuItem<IndexItem>(labels[i], CHECKMARK(*ptr == i));
+				item->ptr = ptr;
+				item->index = i;
+				menu->addChild(item);
+			}
+			return menu;
+		}
+	};
+
+	int index = *ptr;
+	std::string label = (0 <= index && index < (int) labels.size()) ? labels[index] : "";
+	Item* item = createMenuItem<Item>(name, label);
+	item->ptr = ptr;
+	item->labels = labels;
+	return item;
+}
+
+
 struct MarblesWidget : ModuleWidget {
 	MarblesWidget(Marbles* module) {
 		setModule(module);
@@ -588,94 +621,66 @@ struct MarblesWidget : ModuleWidget {
 	void appendContextMenu(Menu* menu) override {
 		Marbles* module = dynamic_cast<Marbles*>(this->module);
 
-		struct ScaleItem : MenuItem {
-			Marbles* module;
-			int scale;
-			void onAction(const event::Action& e) override {
-				module->x_scale = scale;
-			}
-		};
-
 		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Scales"));
-		const std::string scaleLabels[] = {
+
+		menu->addChild(createIndexMenu(&module->t_mode, "t mode", {
+			"Complementary Bernoulli",
+			"Clusters",
+			"Drums",
+			"Independent Bernoulli",
+			"Divider",
+			"Three states",
+			"Markov",
+		}));
+
+		menu->addChild(createIndexMenu(&module->t_range, "t range", {
+			"1/4x",
+			"1x",
+			"4x",
+		}));
+
+		menu->addChild(createIndexMenu(&module->x_mode, "X mode", {
+			"Identical",
+			"Bump",
+			"Tilt",
+		}));
+
+		menu->addChild(createIndexMenu(&module->x_range, "X range", {
+			"Narrow",
+			"Positive",
+			"Full",
+		}));
+
+		menu->addChild(createIndexMenu(&module->x_scale, "Scales", {
 			"Major",
 			"Minor",
 			"Pentatonic",
 			"Pelog",
 			"Raag Bhairav That",
 			"Raag Shri",
-		};
-		for (int i = 0; i < (int) LENGTHOF(scaleLabels); i++) {
-			ScaleItem* item = createMenuItem<ScaleItem>(scaleLabels[i], CHECKMARK(module->x_scale == i));
-			item->module = module;
-			item->scale = i;
-			menu->addChild(item);
-		}
+		}));
 
-		struct XClockSourceInternal : MenuItem {
-			Marbles* module;
-			int source;
-			void onAction(const event::Action& e) override {
-				module->x_clock_source_internal = source;
-			}
-		};
-
-		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Internal X clock source"));
-		const std::string sourceLabels[] = {
+		menu->addChild(createIndexMenu(&module->x_clock_source_internal, "Internal X clock source", {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
 			"T₁ → X₁, X₂, X₃",
 			"T₂ → X₁, X₂, X₃",
 			"T₃ → X₁, X₂, X₃",
-		};
-		for (int i = 0; i < (int) LENGTHOF(sourceLabels); i++) {
-			XClockSourceInternal* item = createMenuItem<XClockSourceInternal>(sourceLabels[i], CHECKMARK(module->x_clock_source_internal == i));
-			item->module = module;
-			item->source = i;
-			menu->addChild(item);
-		}
+		}));
 
-		struct YDividerIndexItem : MenuItem {
-			Marbles* module;
-			int index;
-			void onAction(const event::Action& e) override {
-				module->y_divider_index = index;
-			}
-		};
-
-		struct YDividerItem : MenuItem {
-			Marbles* module;
-			Menu* createChildMenu() override {
-				Menu* menu = new Menu();
-				const std::string yDividerRatioLabels[] = {
-					"1/64",
-					"1/48",
-					"1/32",
-					"1/24",
-					"1/16",
-					"1/12",
-					"1/8",
-					"1/6",
-					"1/4",
-					"1/3",
-					"1/2",
-					"1",
-				};
-				for (int i = 0; i < (int) LENGTHOF(yDividerRatioLabels); i++) {
-					YDividerIndexItem* item = createMenuItem<YDividerIndexItem>(yDividerRatioLabels[i], CHECKMARK(module->y_divider_index == i));
-					item->module = module;
-					item->index = i;
-					menu->addChild(item);
-				}
-				return menu;
-			}
-		};
-
-		menu->addChild(new MenuSeparator);
-		YDividerItem* yDividerItem = createMenuItem<YDividerItem>("Y divider ratio");
-		yDividerItem->module = module;
-		menu->addChild(yDividerItem);
+		menu->addChild(createIndexMenu(&module->y_divider_index, "Y divider ratio", {
+			"1/64",
+			"1/48",
+			"1/32",
+			"1/24",
+			"1/16",
+			"1/12",
+			"1/8",
+			"1/6",
+			"1/4",
+			"1/3",
+			"1/2",
+			"1",
+		}));
 	}
 };
 
