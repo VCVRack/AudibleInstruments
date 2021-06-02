@@ -526,38 +526,6 @@ struct CKD6Light : BASE {
 };
 
 
-MenuItem* createIndexMenu(int* ptr, std::string name, std::vector<std::string> labels) {
-	struct IndexItem : MenuItem {
-		int* ptr;
-		int index;
-		void onAction(const event::Action& e) override {
-			*ptr = index;
-		}
-	};
-	struct Item : MenuItem {
-		int* ptr;
-		std::vector<std::string> labels;
-		Menu* createChildMenu() override {
-			Menu* menu = new Menu();
-			for (int i = 0; i < (int) labels.size(); i++) {
-				IndexItem* item = createMenuItem<IndexItem>(labels[i], CHECKMARK(*ptr == i));
-				item->ptr = ptr;
-				item->index = i;
-				menu->addChild(item);
-			}
-			return menu;
-		}
-	};
-
-	int index = *ptr;
-	std::string label = (0 <= index && index < (int) labels.size()) ? labels[index] : "";
-	Item* item = createMenuItem<Item>(name, label);
-	item->ptr = ptr;
-	item->labels = labels;
-	return item;
-}
-
-
 struct MarblesWidget : ModuleWidget {
 	MarblesWidget(Marbles* module) {
 		setModule(module);
@@ -623,7 +591,7 @@ struct MarblesWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createIndexMenu(&module->t_mode, "t mode", {
+		menu->addChild(createIndexMenuItem(&module->t_mode, "t mode", {
 			"Complementary Bernoulli",
 			"Clusters",
 			"Drums",
@@ -633,25 +601,25 @@ struct MarblesWidget : ModuleWidget {
 			"Markov",
 		}));
 
-		menu->addChild(createIndexMenu(&module->t_range, "t range", {
+		menu->addChild(createIndexMenuItem(&module->t_range, "t range", {
 			"1/4x",
 			"1x",
 			"4x",
 		}));
 
-		menu->addChild(createIndexMenu(&module->x_mode, "X mode", {
+		menu->addChild(createIndexMenuItem(&module->x_mode, "X mode", {
 			"Identical",
 			"Bump",
 			"Tilt",
 		}));
 
-		menu->addChild(createIndexMenu(&module->x_range, "X range", {
+		menu->addChild(createIndexMenuItem(&module->x_range, "X range", {
 			"Narrow",
 			"Positive",
 			"Full",
 		}));
 
-		menu->addChild(createIndexMenu(&module->x_scale, "Scales", {
+		menu->addChild(createIndexMenuItem(&module->x_scale, "Scales", {
 			"Major",
 			"Minor",
 			"Pentatonic",
@@ -660,14 +628,14 @@ struct MarblesWidget : ModuleWidget {
 			"Raag Shri",
 		}));
 
-		menu->addChild(createIndexMenu(&module->x_clock_source_internal, "Internal X clock source", {
+		menu->addChild(createIndexMenuItem(&module->x_clock_source_internal, "Internal X clock source", {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
 			"T₁ → X₁, X₂, X₃",
 			"T₂ → X₁, X₂, X₃",
 			"T₃ → X₁, X₂, X₃",
 		}));
 
-		menu->addChild(createIndexMenu(&module->y_divider_index, "Y divider ratio", {
+		menu->addChild(createIndexMenuItem(&module->y_divider_index, "Y divider ratio", {
 			"1/64",
 			"1/48",
 			"1/32",
