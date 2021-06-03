@@ -335,15 +335,23 @@ struct BraidsWidget : ModuleWidget {
 	}
 
 	void appendContextMenu(Menu* menu) override {
-		Braids* braids = dynamic_cast<Braids*>(module);
-		assert(braids);
+		Braids* module = dynamic_cast<Braids*>(this->module);
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Options"));
-		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "META", &BraidsSettingItem::setting, &braids->settings.meta_modulation));
-		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "DRFT", &BraidsSettingItem::setting, &braids->settings.vco_drift, &BraidsSettingItem::onValue, 4));
-		menu->addChild(construct<BraidsSettingItem>(&MenuItem::text, "SIGN", &BraidsSettingItem::setting, &braids->settings.signature, &BraidsSettingItem::onValue, 4));
-		menu->addChild(construct<BraidsLowCpuItem>(&MenuItem::text, "Low CPU", &BraidsLowCpuItem::braids, braids));
+
+		menu->addChild(createBoolPtrMenuItem("FM CV selects model (META)", &module->settings.meta_modulation));
+
+		menu->addChild(createBoolMenuItem("Pitch drift (DRFT)",
+			[=]() {return module->settings.vco_drift;},
+			[=](bool val) {module->settings.vco_drift = val ? 4 : 0;}
+		));
+
+		menu->addChild(createBoolMenuItem("Waveform imperfections (SIGN)",
+			[=]() {return module->settings.signature;},
+			[=](bool val) {module->settings.signature = val ? 4 : 0;}
+		));
+
+		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", &module->lowCpu));
 	}
 };
 

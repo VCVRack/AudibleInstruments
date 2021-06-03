@@ -235,16 +235,7 @@ struct ShelvesWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		struct PreGainItem : MenuItem {
-			Shelves* module;
-			void onAction(const event::Action& e) override {
-				module->preGain ^= true;
-			}
-		};
-
-		PreGainItem* preGainItem = createMenuItem<PreGainItem>("Pad input by -6dB", CHECKMARK(module->preGain));
-		preGainItem->module = module;
-		menu->addChild(preGainItem);
+		menu->addChild(createBoolPtrMenuItem("Pad input by -6dB", &module->preGain));
 	}
 };
 
