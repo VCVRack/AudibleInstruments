@@ -591,7 +591,7 @@ struct MarblesWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createIndexMenuItem(&module->t_mode, "t mode", {
+		menu->addChild(createIndexPtrSubmenuItem("t mode", {
 			"Complementary Bernoulli",
 			"Clusters",
 			"Drums",
@@ -599,43 +599,43 @@ struct MarblesWidget : ModuleWidget {
 			"Divider",
 			"Three states",
 			"Markov",
-		}));
+		}, &module->t_mode));
 
-		menu->addChild(createIndexMenuItem(&module->t_range, "t range", {
+		menu->addChild(createIndexPtrSubmenuItem("t range", {
 			"1/4x",
 			"1x",
 			"4x",
-		}));
+		}, &module->t_range));
 
-		menu->addChild(createIndexMenuItem(&module->x_mode, "X mode", {
+		menu->addChild(createIndexPtrSubmenuItem("X mode", {
 			"Identical",
 			"Bump",
 			"Tilt",
-		}));
+		}, &module->x_mode));
 
-		menu->addChild(createIndexMenuItem(&module->x_range, "X range", {
+		menu->addChild(createIndexPtrSubmenuItem("X range", {
 			"Narrow",
 			"Positive",
 			"Full",
-		}));
+		}, &module->x_range));
 
-		menu->addChild(createIndexMenuItem(&module->x_scale, "Scales", {
+		menu->addChild(createIndexPtrSubmenuItem("Scales", {
 			"Major",
 			"Minor",
 			"Pentatonic",
 			"Pelog",
 			"Raag Bhairav That",
 			"Raag Shri",
-		}));
+		}, &module->x_scale));
 
-		menu->addChild(createIndexMenuItem(&module->x_clock_source_internal, "Internal X clock source", {
+		menu->addChild(createIndexPtrSubmenuItem("Internal X clock source", {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
 			"T₁ → X₁, X₂, X₃",
 			"T₂ → X₁, X₂, X₃",
 			"T₃ → X₁, X₂, X₃",
-		}));
+		}, &module->x_clock_source_internal));
 
-		menu->addChild(createIndexMenuItem(&module->y_divider_index, "Y divider ratio", {
+		menu->addChild(createIndexPtrSubmenuItem("Y divider ratio", {
 			"1/64",
 			"1/48",
 			"1/32",
@@ -648,7 +648,7 @@ struct MarblesWidget : ModuleWidget {
 			"1/3",
 			"1/2",
 			"1",
-		}));
+		}, &module->y_divider_index));
 	}
 };
 

@@ -158,26 +158,19 @@ struct BranchesWidget : ModuleWidget {
 	}
 
 	void appendContextMenu(Menu* menu) override {
-		Branches* branches = dynamic_cast<Branches*>(module);
-		assert(branches);
-
-		struct BranchesModeItem : MenuItem {
-			Branches* branches;
-			int i;
-			void onAction(const event::Action& e) override {
-				branches->modes[i] ^= 1;
-			}
-			void step() override {
-				rightText = branches->modes[i] ? "Latch" : "Toggle";
-				MenuItem::step();
-			}
-		};
+		Branches* module = dynamic_cast<Branches*>(this->module);
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channels"));
-		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 1 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::i, 0));
-		menu->addChild(construct<BranchesModeItem>(&MenuItem::text, "Channel 2 mode", &BranchesModeItem::branches, branches, &BranchesModeItem::i, 1));
+		menu->addChild(createIndexPtrSubmenuItem("Channel 1 mode", {
+			"Latch",
+			"Toggle",
+		}, &module->modes[0]));
+
+		menu->addChild(createIndexPtrSubmenuItem("Channel 2 mode", {
+			"Latch",
+			"Toggle",
+		}, &module->modes[1]));
 	}
 };
 

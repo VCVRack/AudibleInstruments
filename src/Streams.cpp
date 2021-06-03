@@ -193,13 +193,24 @@ struct Streams : Module {
 		}
 	}
 
-	void toggleLink() {
+	void setLinked(bool linked) {
 		streams::UiSettings settings = engines[0].ui_settings();
-		settings.linked ^= 1;
+		settings.linked = linked;
 
 		for (int c = 0; c < PORT_MAX_CHANNELS; c++) {
 			engines[c].ApplySettings(settings);
 		}
+	}
+
+	int getChannelMode(int channel) {
+		streams::UiSettings settings = engines[0].ui_settings();
+		// Search channel mode index in table
+		for (int i = 0; i < streams::kNumChannelModes; i++) {
+			if (settings.function[channel] == streams::kChannelModeTable[i].function
+				&& settings.alternate[channel] == streams::kChannelModeTable[i].alternate)
+				return i;
+		}
+		return -1;
 	}
 
 	void setChannelMode(int channel, int mode_id) {
@@ -326,6 +337,7 @@ struct Streams : Module {
 	}
 };
 
+
 struct StreamsWidget : ModuleWidget {
 	StreamsWidget(Streams* module) {
 		setModule(module);
@@ -373,72 +385,32 @@ struct StreamsWidget : ModuleWidget {
 	void appendContextMenu(Menu* menu) override {
 		Streams* module = dynamic_cast<Streams*>(this->module);
 
-		struct LinkItem : MenuItem {
-			Streams* module;
-			void onAction(const event::Action& e) override {
-				module->toggleLink();
-			}
-		};
-
-		struct ChannelModeItem : MenuItem {
-			Streams* module;
-			int channel;
-			int mode;
-			void onAction(const event::Action& e) override {
-				module->setChannelMode(channel, mode);
-			}
-		};
-
-		struct MonitorModeItem : MenuItem {
-			Streams* module;
-			int mode;
-			void onAction(const event::Action& e) override {
-				module->setMonitorMode(mode);
-			}
-		};
-
 		menu->addChild(new MenuSeparator);
-		LinkItem* linkItem = createMenuItem<LinkItem>(
-		                        "Link channels", CHECKMARK(module->linked()));
-		linkItem->module = module;
-		menu->addChild(linkItem);
 
-		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Channel 1"));
+		menu->addChild(createBoolMenuItem("Link channels",
+			[=]() {return module->linked();},
+			[=](bool val) {module->setLinked(val);}
+		));
+
+		std::vector<std::string> modeLabels;
 		for (int i = 0; i < streams::kNumChannelModes; i++) {
-			auto modeItem = createMenuItem<ChannelModeItem>(
-			                   streams::kChannelModeTable[i].label, CHECKMARK(
-			                     module->function(0) == streams::kChannelModeTable[i].function &&
-			                     module->alternate(0) == streams::kChannelModeTable[i].alternate));
-			modeItem->module = module;
-			modeItem->channel = 0;
-			modeItem->mode = i;
-			menu->addChild(modeItem);
+			modeLabels.push_back(streams::kChannelModeTable[i].label);
+		}
+		for (int c = 0; c < 2; c++) {
+			menu->addChild(createIndexSubmenuItem(string::f("Channel %d mode", c + 1), modeLabels,
+				[=]() {return module->getChannelMode(c);},
+				[=](int index) {module->setChannelMode(c, index);}
+			));
 		}
 
-		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Channel 2"));
-		for (int i = 0; i < streams::kNumChannelModes; i++) {
-			auto modeItem = createMenuItem<ChannelModeItem>(
-			                   streams::kChannelModeTable[i].label, CHECKMARK(
-			                     module->function(1) == streams::kChannelModeTable[i].function &&
-			                     module->alternate(1) == streams::kChannelModeTable[i].alternate));
-			modeItem->module = module;
-			modeItem->channel = 1;
-			modeItem->mode = i;
-			menu->addChild(modeItem);
-		}
-
-		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Meter"));
+		std::vector<std::string> meterLabels;
 		for (int i = 0; i < streams::kNumMonitorModes; i++) {
-			auto modeItem = createMenuItem<MonitorModeItem>(
-			                   streams::kMonitorModeTable[i].label, CHECKMARK(
-			                     module->monitorMode() == streams::kMonitorModeTable[i].mode));
-			modeItem->module = module;
-			modeItem->mode = i;
-			menu->addChild(modeItem);
+			meterLabels.push_back(streams::kMonitorModeTable[i].label);
 		}
+		menu->addChild(createIndexSubmenuItem("Meter", meterLabels,
+			[=]() {return module->monitorMode();},
+			[=](int index) {module->setMonitorMode(index);}
+		));
 	}
 };
 
