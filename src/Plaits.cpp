@@ -321,43 +321,23 @@ struct PlaitsWidget : ModuleWidget {
 	void appendContextMenu(Menu* menu) override {
 		Plaits* module = dynamic_cast<Plaits*>(this->module);
 
-		struct PlaitsLowCpuItem : MenuItem {
-			Plaits* module;
-			void onAction(const event::Action& e) override {
-				module->lowCpu ^= true;
-			}
-		};
-
-		struct PlaitsLpgModeItem : MenuItem {
-			PlaitsWidget* moduleWidget;
-			void onAction(const event::Action& e) override {
-				moduleWidget->setLpgMode(!moduleWidget->getLpgMode());
-			}
-		};
-
-		struct PlaitsModelItem : MenuItem {
-			Plaits* module;
-			int model;
-			void onAction(const event::Action& e) override {
-				module->patch.engine = model;
-			}
-		};
-
 		menu->addChild(new MenuSeparator);
-		PlaitsLowCpuItem* lowCpuItem = createMenuItem<PlaitsLowCpuItem>("Low CPU", CHECKMARK(module->lowCpu));
-		lowCpuItem->module = module;
-		menu->addChild(lowCpuItem);
-		PlaitsLpgModeItem* lpgItem = createMenuItem<PlaitsLpgModeItem>("Edit LPG response/decay", CHECKMARK(getLpgMode()));
-		lpgItem->moduleWidget = this;
-		menu->addChild(lpgItem);
+
+		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", &module->lowCpu));
+
+		menu->addChild(createBoolMenuItem("Edit LPG response/decay",
+			[=]() {return this->getLpgMode();},
+			[=](bool val) {this->setLpgMode(val);}
+		));
 
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Models"));
+
 		for (int i = 0; i < 16; i++) {
-			PlaitsModelItem* modelItem = createMenuItem<PlaitsModelItem>(modelLabels[i], CHECKMARK(module->patch.engine == i));
-			modelItem->module = module;
-			modelItem->model = i;
-			menu->addChild(modelItem);
+			menu->addChild(createCheckMenuItem(modelLabels[i],
+				[=]() {return module->patch.engine == i;},
+				[=]() {module->patch.engine = i;}
+			));
 		}
 	}
 
