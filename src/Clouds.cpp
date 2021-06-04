@@ -268,45 +268,6 @@ struct FreezeLight : YellowLight {
 };
 
 
-struct CloudsBlendItem : MenuItem {
-	Clouds* module;
-	int blendMode;
-	void onAction(const event::Action& e) override {
-		module->blendMode = blendMode;
-	}
-	void step() override {
-		rightText = (module->blendMode == blendMode) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
-struct CloudsPlaybackItem : MenuItem {
-	Clouds* module;
-	clouds::PlaybackMode playback;
-	void onAction(const event::Action& e) override {
-		module->playback = playback;
-	}
-	void step() override {
-		rightText = (module->playback == playback) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
-struct CloudsQualityItem : MenuItem {
-	Clouds* module;
-	int quality;
-	void onAction(const event::Action& e) override {
-		module->quality = quality;
-	}
-	void step() override {
-		rightText = (module->quality == quality) ? "✔" : "";
-		MenuItem::step();
-	}
-};
-
-
 struct CloudsWidget : ModuleWidget {
 	ParamWidget* blendParam;
 	ParamWidget* spreadParam;
@@ -381,25 +342,52 @@ struct CloudsWidget : ModuleWidget {
 		assert(module);
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Blend knob"));
-		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Wet/dry", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 0));
-		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Spread", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 1));
-		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Feedback", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 2));
-		menu->addChild(construct<CloudsBlendItem>(&MenuItem::text, "Reverb", &CloudsBlendItem::module, module, &CloudsBlendItem::blendMode, 3));
+		menu->addChild(createMenuLabel("Blend knob"));
+
+		static const std::vector<std::string> blendLabels = {
+			"Wet/dry",
+			"Spread",
+			"Feedback",
+			"Reverb",
+		};
+		for (int i = 0; i < (int) blendLabels.size(); i++) {
+			menu->addChild(createCheckMenuItem(blendLabels[i],
+				[=]() {return module->blendMode == i;},
+				[=]() {module->blendMode = i;}
+			));
+		}
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Alternative mode"));
-		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Granular", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_GRANULAR));
-		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Pitch-shifter/time-stretcher", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_STRETCH));
-		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Looping delay", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_LOOPING_DELAY));
-		menu->addChild(construct<CloudsPlaybackItem>(&MenuItem::text, "Spectral madness", &CloudsPlaybackItem::module, module, &CloudsPlaybackItem::playback, clouds::PLAYBACK_MODE_SPECTRAL));
+		menu->addChild(createMenuLabel("Alternate mode"));
+
+		static const std::vector<std::string> playbackLabels = {
+			"Granular",
+			"Pitch-shifter/time-stretcher",
+			"Looping delay",
+			"Spectral madness",
+		};
+		for (int i = 0; i < (int) playbackLabels.size(); i++) {
+			menu->addChild(createCheckMenuItem(playbackLabels[i],
+				[=]() {return module->playback == i;},
+				[=]() {module->playback = (clouds::PlaybackMode) i;}
+			));
+		}
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Quality"));
-		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "1s 32kHz 16-bit stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 0));
-		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "2s 32kHz 16-bit mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 1));
-		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "4s 16kHz 8-bit µ-law stereo", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 2));
-		menu->addChild(construct<CloudsQualityItem>(&MenuItem::text, "8s 16kHz 8-bit µ-law mono", &CloudsQualityItem::module, module, &CloudsQualityItem::quality, 3));
+		menu->addChild(createMenuLabel("Quality"));
+
+		static const std::vector<std::string> qualityLabels = {
+			"1s 32kHz 16-bit stereo",
+			"2s 32kHz 16-bit mono",
+			"4s 16kHz 8-bit µ-law stereo",
+			"8s 16kHz 8-bit µ-law mono",
+		};
+		for (int i = 0; i < (int) qualityLabels.size(); i++) {
+			menu->addChild(createCheckMenuItem(qualityLabels[i],
+				[=]() {return module->quality == i;},
+				[=]() {module->quality = i;}
+			));
+		}
 	}
 };
 

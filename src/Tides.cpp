@@ -250,31 +250,22 @@ struct TidesWidget : ModuleWidget {
 	}
 
 	void step() override {
-		Tides* tides = dynamic_cast<Tides*>(module);
+		Tides* module = dynamic_cast<Tides*>(this->module);
 
-		if (tides) {
-			tidesPanel->visible = !tides->sheep;
-			sheepPanel->visible = tides->sheep;
+		if (module) {
+			tidesPanel->visible = !module->sheep;
+			sheepPanel->visible = module->sheep;
 		}
 
 		ModuleWidget::step();
 	}
 
-
 	void appendContextMenu(Menu* menu) override {
 		Tides* module = dynamic_cast<Tides*>(this->module);
 
-		struct SheepItem : MenuItem {
-			Tides* module;
-			void onAction(const event::Action& e) override {
-				module->sheep ^= true;
-			}
-		};
-
 		menu->addChild(new MenuSeparator);
-		SheepItem* sheepItem = createMenuItem<SheepItem>("Sheep", CHECKMARK(module->sheep));
-		sheepItem->module = module;
-		menu->addChild(sheepItem);
+
+		menu->addChild(createBoolPtrMenuItem("Wavetable firmware (Sheep)", &module->sheep));
 	}
 };
 
