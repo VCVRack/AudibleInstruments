@@ -290,43 +290,34 @@ struct RingsWidget : ModuleWidget {
 	}
 
 	void appendContextMenu(Menu* menu) override {
-		Rings* rings = dynamic_cast<Rings*>(module);
-		assert(rings);
-
-		struct RingsModelItem : MenuItem {
-			Rings* rings;
-			rings::ResonatorModel model;
-			void onAction(const event::Action& e) override {
-				rings->resonatorModel = model;
-			}
-			void step() override {
-				rightText = (rings->resonatorModel == model) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
-
-		struct RingsEasterEggItem : MenuItem {
-			Rings* rings;
-			void onAction(const event::Action& e) override {
-				rings->easterEgg = !rings->easterEgg;
-			}
-			void step() override {
-				rightText = (rings->easterEgg) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
+		Rings* module = dynamic_cast<Rings*>(this->module);
+		assert(module);
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Resonator"));
-		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Modal resonator", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_MODAL));
-		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING));
-		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Modulated/inharmonic string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING));
-		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "FM voice", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_FM_VOICE));
-		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Quantized sympathetic strings", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_SYMPATHETIC_STRING_QUANTIZED));
-		menu->addChild(construct<RingsModelItem>(&MenuItem::text, "Reverb string", &RingsModelItem::rings, rings, &RingsModelItem::model, rings::RESONATOR_MODEL_STRING_AND_REVERB));
+
+		menu->addChild(createMenuLabel("Resonator"));
+
+		static const std::vector<std::string> modelLabels = {
+			"Modal resonator",
+			"Sympathetic strings",
+			"Modulated/inharmonic string",
+			"FM voice",
+			"Quantized sympathetic strings",
+			"Reverb string",
+		};
+		for (int i = 0; i < 6; i++) {
+			menu->addChild(createCheckMenuItem(modelLabels[i],
+				[=]() {return module->resonatorModel == i;},
+				[=]() {module->resonatorModel = (rings::ResonatorModel) i;}
+			));
+		}
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<RingsEasterEggItem>(&MenuItem::text, "Disastrous Peace", &RingsEasterEggItem::rings, rings));
+
+		menu->addChild(createBoolMenuItem("Disastrous Peace",
+			[=]() {return module->easterEgg;},
+			[=](bool val) {module->easterEgg = val;}
+		));
 	}
 };
 

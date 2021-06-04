@@ -288,19 +288,6 @@ struct Elements : Module {
 };
 
 
-struct ElementsModalItem : MenuItem {
-	Elements* elements;
-	int model;
-	void onAction(const event::Action& e) override {
-		elements->setModel(model);
-	}
-	void step() override {
-		rightText = CHECKMARK(elements->getModel() == model);
-		MenuItem::step();
-	}
-};
-
-
 struct ElementsWidget : ModuleWidget {
 	ElementsWidget(Elements* module) {
 		setModule(module);
@@ -380,15 +367,25 @@ struct ElementsWidget : ModuleWidget {
 	}
 
 	void appendContextMenu(Menu* menu) override {
-		Elements* elements = dynamic_cast<Elements*>(module);
-		assert(elements);
+		Elements* module = dynamic_cast<Elements*>(this->module);
+		assert(module);
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Alternative models"));
-		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Original", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 0));
-		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Non-linear string", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 1));
-		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Chords", &ElementsModalItem::elements, elements, &ElementsModalItem::model, 2));
-		menu->addChild(construct<ElementsModalItem>(&MenuItem::text, "Ominous voice", &ElementsModalItem::elements, elements, &ElementsModalItem::model, -1));
+
+		menu->addChild(createMenuLabel("Models"));
+
+		static const std::vector<std::string> modelLabels = {
+			"Original",
+			"Non-linear string",
+			"Chords",
+			"Ominous voice",
+		};
+		for (int i = 0; i < 4; i++) {
+			menu->addChild(createCheckMenuItem(modelLabels[i],
+				[=]() {return module->getModel() == i;},
+				[=]() {module->setModel(i);}
+			));
+		}
 	}
 };
 
