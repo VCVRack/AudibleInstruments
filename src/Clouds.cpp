@@ -293,10 +293,13 @@ struct CloudsWidget : ModuleWidget {
 		blendParam = createParam<Rogan1PSWhite>(Vec(213, 180), module, Clouds::BLEND_PARAM);
 		addParam(blendParam);
 		spreadParam = createParam<Rogan1PSRed>(Vec(213, 180), module, Clouds::SPREAD_PARAM);
+		spreadParam->hide();
 		addParam(spreadParam);
 		feedbackParam = createParam<Rogan1PSGreen>(Vec(213, 180), module, Clouds::FEEDBACK_PARAM);
+		feedbackParam->hide();
 		addParam(feedbackParam);
 		reverbParam = createParam<Rogan1PSBlue>(Vec(213, 180), module, Clouds::REVERB_PARAM);
+		reverbParam->hide();
 		addParam(reverbParam);
 
 		addParam(createParam<CKD6>(Vec(12, 43), module, Clouds::FREEZE_PARAM));
