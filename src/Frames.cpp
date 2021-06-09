@@ -331,90 +331,102 @@ struct FramesWidget : ModuleWidget {
 	}
 
 	void appendContextMenu(Menu* menu) override {
-		Frames* frames = dynamic_cast<Frames*>(module);
-		assert(frames);
+		Frames* module = dynamic_cast<Frames*>(this->module);
+		assert(module);
 
 		struct FramesCurveItem : MenuItem {
-			Frames* frames;
+			Frames* module;
 			uint8_t channel;
 			frames::EasingCurve curve;
 			void onAction(const event::Action& e) override {
-				frames->keyframer.mutable_settings(channel)->easing_curve = curve;
+				module->keyframer.mutable_settings(channel)->easing_curve = curve;
 			}
 			void step() override {
-				rightText = (frames->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
+				rightText = (module->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
 				MenuItem::step();
 			}
 		};
 
 		struct FramesResponseItem : MenuItem {
-			Frames* frames;
+			Frames* module;
 			uint8_t channel;
 			uint8_t response;
 			void onAction(const event::Action& e) override {
-				frames->keyframer.mutable_settings(channel)->response = response;
+				module->keyframer.mutable_settings(channel)->response = response;
 			}
 			void step() override {
-				rightText = (frames->keyframer.mutable_settings(channel)->response == response) ? "✔" : "";
+				rightText = (module->keyframer.mutable_settings(channel)->response == response) ? "✔" : "";
 				MenuItem::step();
 			}
 		};
 
 		struct FramesChannelSettingsItem : MenuItem {
-			Frames* frames;
+			Frames* module;
 			uint8_t channel;
 			Menu* createChildMenu() override {
 				Menu* menu = new Menu();
 
-				menu->addChild(construct<MenuLabel>(&MenuLabel::text, string::f("Channel %d", channel + 1)));
+				menu->addChild(createMenuLabel("Interpolation curve"));
+
+				static const std::vector<std::string> curveLabels = {
+					"Step",
+					"Linear",
+					"Accelerating",
+					"Decelerating",
+					"Departure/arrival",
+					"Bouncing",
+				};
+				for (int i = 0; i < (int) curveLabels.size(); i++) {
+					menu->addChild(createCheckMenuItem(curveLabels[i],
+						[=]() {return module->keyframer.mutable_settings(channel)->easing_curve == i;},
+						[=]() {module->keyframer.mutable_settings(channel)->easing_curve = (frames::EasingCurve) i;}
+					));
+				}
+
 				menu->addChild(new MenuSeparator);
 
-				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Interpolation Curve"));
-				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Step", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_STEP));
-				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Linear", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_LINEAR));
-				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Accelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_IN_QUARTIC));
-				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Decelerating", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_OUT_QUARTIC));
-				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Smooth Departure/Arrival", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_SINE));
-				menu->addChild(construct<FramesCurveItem>(&MenuItem::text, "Bouncing", &FramesCurveItem::frames, frames, &FramesCurveItem::channel, channel, &FramesCurveItem::curve, frames::EASING_CURVE_BOUNCE));
-				menu->addChild(new MenuSeparator);
-				menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Response Curve"));
-				menu->addChild(construct<FramesResponseItem>(&MenuItem::text, "Linear", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 0));
-				menu->addChild(construct<FramesResponseItem>(&MenuItem::text, "Exponential", &FramesResponseItem::frames, frames, &FramesResponseItem::channel, channel, &FramesResponseItem::response, 255));
+				menu->addChild(createMenuLabel("Response curve"));
+
+				menu->addChild(createCheckMenuItem("Linear",
+					[=]() {return module->keyframer.mutable_settings(channel)->response == 0;},
+					[=]() {module->keyframer.mutable_settings(channel)->response = 0;}
+				));
+				menu->addChild(createCheckMenuItem("Exponential",
+					[=]() {return module->keyframer.mutable_settings(channel)->response == 255;},
+					[=]() {module->keyframer.mutable_settings(channel)->response = 255;}
+				));
 
 				return menu;
 			}
 		};
 
-		struct FramesClearItem : MenuItem {
-			Frames* frames;
-			void onAction(const event::Action& e) override {
-				frames->keyframer.Clear();
-			}
-		};
-
-		struct FramesModeItem : MenuItem {
-			Frames* frames;
-			bool poly_lfo_mode;
-			void onAction(const event::Action& e) override {
-				frames->poly_lfo_mode = poly_lfo_mode;
-			}
-			void step() override {
-				rightText = (frames->poly_lfo_mode == poly_lfo_mode) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
-
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Channel Settings"));
+		menu->addChild(createMenuLabel("Channel settings"));
+
 		for (int i = 0; i < 4; i++) {
-			menu->addChild(construct<FramesChannelSettingsItem>(&MenuItem::text, string::f("Channel %d", i + 1), &FramesChannelSettingsItem::frames, frames, &FramesChannelSettingsItem::channel, i));
+			FramesChannelSettingsItem* item = createMenuItem<FramesChannelSettingsItem>(string::f("Channel %d", i + 1));
+			item->module = module;
+			item->channel = i;
+			menu->addChild(item);
 		}
-		menu->addChild(construct<FramesClearItem>(&MenuItem::text, "Clear Keyframes", &FramesClearItem::frames, frames));
+
+		menu->addChild(createMenuItem("Clear keyframes", "",
+			[=]() {module->keyframer.Clear();}
+		));
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Mode"));
-		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Keyframer", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, false));
-		menu->addChild(construct<FramesModeItem>(&MenuItem::text, "Poly LFO", &FramesModeItem::frames, frames, &FramesModeItem::poly_lfo_mode, true));
+		menu->addChild(createMenuLabel("Alternate modes"));
+
+		static const std::vector<std::string> modeLabels = {
+			"Keyframer",
+			"Poly LFO",
+		};
+		for (int i = 0; i < (int) modeLabels.size(); i++) {
+			menu->addChild(createCheckMenuItem(modeLabels[i],
+				[=]() {return module->poly_lfo_mode == i;},
+				[=]() {module->poly_lfo_mode = i;}
+			));
+		}
 	}
 };
 
