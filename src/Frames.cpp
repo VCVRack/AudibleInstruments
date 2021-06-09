@@ -334,32 +334,6 @@ struct FramesWidget : ModuleWidget {
 		Frames* module = dynamic_cast<Frames*>(this->module);
 		assert(module);
 
-		struct FramesCurveItem : MenuItem {
-			Frames* module;
-			uint8_t channel;
-			frames::EasingCurve curve;
-			void onAction(const event::Action& e) override {
-				module->keyframer.mutable_settings(channel)->easing_curve = curve;
-			}
-			void step() override {
-				rightText = (module->keyframer.mutable_settings(channel)->easing_curve == curve) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
-
-		struct FramesResponseItem : MenuItem {
-			Frames* module;
-			uint8_t channel;
-			uint8_t response;
-			void onAction(const event::Action& e) override {
-				module->keyframer.mutable_settings(channel)->response = response;
-			}
-			void step() override {
-				rightText = (module->keyframer.mutable_settings(channel)->response == response) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
-
 		struct FramesChannelSettingsItem : MenuItem {
 			Frames* module;
 			uint8_t channel;
