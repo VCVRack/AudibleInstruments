@@ -70,7 +70,7 @@ struct Warps : Module {
 			{
 				// TODO
 				// Use the correct light color
-				NVGcolor algorithmColor = nvgHSL(p->modulation_algorithm, 0.3, 0.4);
+				NVGcolor algorithmColor = nvgHSL(p->modulation_algorithm, 1.0, 0.5);
 				lights[ALGORITHM_LIGHT + 0].setBrightness(algorithmColor.r);
 				lights[ALGORITHM_LIGHT + 1].setBrightness(algorithmColor.g);
 				lights[ALGORITHM_LIGHT + 2].setBrightness(algorithmColor.b);
@@ -120,13 +120,6 @@ struct Warps : Module {
 };
 
 
-struct AlgorithmLight : RedGreenBlueLight {
-	AlgorithmLight() {
-		box.size = Vec(71, 71);
-	}
-};
-
-
 struct WarpsWidget : ModuleWidget {
 	WarpsWidget(Warps* module) {
 		setModule(module);
@@ -137,8 +130,7 @@ struct WarpsWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(15, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(120, 365)));
 
-		addParam(createParam<Rogan6PSWhite>(Vec(29, 52), module, Warps::ALGORITHM_PARAM));
-
+		addParam(createParamCentered<Rogan6PSWhite>(Vec(73.556641, 96.560532), module, Warps::ALGORITHM_PARAM));
 		addParam(createParam<Rogan1PSWhite>(Vec(94, 173), module, Warps::TIMBRE_PARAM));
 		addParam(createParam<TL1105>(Vec(16, 182), module, Warps::STATE_PARAM));
 		addParam(createParam<Trimpot>(Vec(14, 213), module, Warps::LEVEL1_PARAM));
@@ -155,8 +147,7 @@ struct WarpsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
-
-		addChild(createLight<AlgorithmLight>(Vec(40, 63), module, Warps::ALGORITHM_LIGHT));
+		addChild(createLightCentered<Rogan6PSLight<RedGreenBlueLight>>(Vec(73.556641, 96.560532), module, Warps::ALGORITHM_LIGHT));
 	}
 };
 

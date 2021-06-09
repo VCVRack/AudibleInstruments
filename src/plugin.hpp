@@ -26,3 +26,11 @@ extern Model* modelMarbles;
 extern Model* modelRipples;
 extern Model* modelShelves;
 extern Model* modelStreams;
+
+
+template <typename Base>
+struct Rogan6PSLight : Base {
+	Rogan6PSLight() {
+		this->box.size = mm2px(Vec(23.04, 23.04));
+	}
+};

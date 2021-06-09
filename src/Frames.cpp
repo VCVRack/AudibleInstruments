@@ -195,8 +195,8 @@ struct Frames : Module {
 			colors = keyframer.color();
 		}
 		for (int i = 0; i < 3; i++) {
-			float c = colors[i] / 255.0;
-			c = 1.0 - (1.0 - c) * 1.25;
+			float c = colors[i] / 255.f;
+			// c = 1.f - (1.f - c) * 1.25f;
 			lights[FRAME_LIGHT + i].setBrightness(c);
 		}
 	}
@@ -301,7 +301,7 @@ struct FramesWidget : ModuleWidget {
 		addParam(createParam<Rogan1PSWhite>(Vec(81, 52), module, Frames::GAIN2_PARAM));
 		addParam(createParam<Rogan1PSWhite>(Vec(149, 52), module, Frames::GAIN3_PARAM));
 		addParam(createParam<Rogan1PSWhite>(Vec(216, 52), module, Frames::GAIN4_PARAM));
-		addParam(createParam<Rogan6PSWhite>(Vec(89, 115), module, Frames::FRAME_PARAM));
+		addParam(createParamCentered<Rogan6PSWhite>(Vec(133.556641, 159.560532), module, Frames::FRAME_PARAM));
 		addParam(createParam<Rogan1PSGreen>(Vec(208, 141), module, Frames::MODULATION_PARAM));
 		addParam(createParam<CKD6>(Vec(19, 123), module, Frames::ADD_PARAM));
 		addParam(createParam<CKD6>(Vec(19, 172), module, Frames::DEL_PARAM));
@@ -327,12 +327,7 @@ struct FramesWidget : ModuleWidget {
 		addChild(createLight<SmallLight<GreenLight>>(Vec(232, 101), module, Frames::GAIN1_LIGHT + 3));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(61, 155), module, Frames::EDIT_LIGHT));
 
-		struct FrameLight : RedGreenBlueLight {
-			FrameLight() {
-				box.size = Vec(71, 71);
-			}
-		};
-		addChild(createLight<FrameLight>(Vec(100, 126), module, Frames::FRAME_LIGHT));
+		addChild(createLightCentered<Rogan6PSLight<RedGreenBlueLight>>(Vec(133.556641, 159.560532), module, Frames::FRAME_LIGHT));
 	}
 
 	void appendContextMenu(Menu* menu) override {
