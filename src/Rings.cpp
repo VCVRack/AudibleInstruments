@@ -65,18 +65,30 @@ struct Rings : Module {
 
 	Rings() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(POLYPHONY_PARAM, 0.0, 1.0, 0.0, "Polyphony");
-		configParam(RESONATOR_PARAM, 0.0, 1.0, 0.0, "Resonator type");
-		configParam(FREQUENCY_PARAM, 0.0, 60.0, 30.0, "Coarse frequency adjustment");
-		configParam(STRUCTURE_PARAM, 0.0, 1.0, 0.5, "Harmonic structure");
+		configButton(POLYPHONY_PARAM, "Polyphony");
+		configButton(RESONATOR_PARAM, "Resonator type");
+		configParam(FREQUENCY_PARAM, 0.0, 60.0, 30.0, "Frequency");
+		configParam(STRUCTURE_PARAM, 0.0, 1.0, 0.5, "Structure");
 		configParam(BRIGHTNESS_PARAM, 0.0, 1.0, 0.5, "Brightness");
-		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5, "Decay time");
-		configParam(POSITION_PARAM, 0.0, 1.0, 0.5, "Excitation position");
-		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0, "Brightness attenuverter");
-		configParam(FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0, "Frequency attenuverter");
-		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0, "Damping attenuverter");
-		configParam(STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0, "Structure attenuverter");
-		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0, "Position attenuverter");
+		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5, "Damping");
+		configParam(POSITION_PARAM, 0.0, 1.0, 0.5, "Position");
+		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0, "Brightness CV");
+		configParam(FREQUENCY_MOD_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
+		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0, "Damping CV");
+		configParam(STRUCTURE_MOD_PARAM, -1.0, 1.0, 0.0, "Structure CV");
+		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0, "Position CV");
+
+		configInput(BRIGHTNESS_MOD_INPUT, "Brightness");
+		configInput(FREQUENCY_MOD_INPUT, "Frequency");
+		configInput(DAMPING_MOD_INPUT, "Damping");
+		configInput(STRUCTURE_MOD_INPUT, "Structure");
+		configInput(POSITION_MOD_INPUT, "Position");
+		configInput(STRUM_INPUT, "Strum");
+		configInput(PITCH_INPUT, "Pitch (1V/oct)");
+		configInput(IN_INPUT, "Audio");
+
+		configOutput(ODD_OUTPUT, "Odd");
+		configOutput(EVEN_OUTPUT, "Even");
 
 		strummer.Init(0.01, 44100.0 / 24);
 		part.Init(reverb_buffer);

@@ -225,21 +225,39 @@ struct Marbles : Module {
 
 	Marbles() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(T_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "t deja vu");
-		configParam(X_DEJA_VU_PARAM, 0.0, 1.0, 0.0, "X deja vu");
+		configButton(T_DEJA_VU_PARAM, "T deja vu");
+		configButton(X_DEJA_VU_PARAM, "X deja vu");
 		configParam(DEJA_VU_PARAM, 0.0, 1.0, 0.5, "Deja vu probability");
 		configParam(T_RATE_PARAM, -1.0, 1.0, 0.0, "Clock rate");
 		configParam(X_SPREAD_PARAM, 0.0, 1.0, 0.5, "Probability distribution");
-		configParam(T_MODE_PARAM, 0.0, 1.0, 0.0, "t mode");
-		configParam(X_MODE_PARAM, 0.0, 1.0, 0.0, "X mode");
+		configButton(T_MODE_PARAM, "T mode");
+		configButton(X_MODE_PARAM, "X mode");
 		configParam(DEJA_VU_LENGTH_PARAM, 0.0, 1.0, 0.0, "Loop length");
 		configParam(T_BIAS_PARAM, 0.0, 1.0, 0.5, "Gate bias");
 		configParam(X_BIAS_PARAM, 0.0, 1.0, 0.5, "Distribution bias");
-		configParam(T_RANGE_PARAM, 0.0, 1.0, 0.0, "Clock range mode");
-		configParam(X_RANGE_PARAM, 0.0, 1.0, 0.0, "Output voltage range mode");
-		configParam(EXTERNAL_PARAM, 0.0, 1.0, 0.0, "External processing mode");
+		configButton(T_RANGE_PARAM, "Clock range mode");
+		configButton(X_RANGE_PARAM, "Output voltage range mode");
+		configButton(EXTERNAL_PARAM, "External processing mode");
 		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness amount");
 		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5, "Smoothness");
+
+		configInput(T_BIAS_INPUT, "T bias");
+		configInput(X_BIAS_INPUT, "X bias");
+		configInput(T_CLOCK_INPUT, "T clock");
+		configInput(T_RATE_INPUT, "T rate");
+		configInput(T_JITTER_INPUT, "T jitter");
+		configInput(DEJA_VU_INPUT, "Deja vu");
+		configInput(X_STEPS_INPUT, "X steps");
+		configInput(X_SPREAD_INPUT, "X spread");
+		configInput(X_CLOCK_INPUT, "X clock");
+
+		configOutput(T1_OUTPUT, "T₁");
+		configOutput(T2_OUTPUT, "T₂");
+		configOutput(T3_OUTPUT, "T₃");
+		configOutput(Y_OUTPUT, "Y");
+		configOutput(X1_OUTPUT, "X₁");
+		configOutput(X2_OUTPUT, "X₂");
+		configOutput(X3_OUTPUT, "X₃");
 
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);
@@ -591,7 +609,7 @@ struct MarblesWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createIndexPtrSubmenuItem("t mode", {
+		menu->addChild(createIndexPtrSubmenuItem("T mode", {
 			"Complementary Bernoulli",
 			"Clusters",
 			"Drums",
@@ -601,7 +619,7 @@ struct MarblesWidget : ModuleWidget {
 			"Markov",
 		}, &module->t_mode));
 
-		menu->addChild(createIndexPtrSubmenuItem("t range", {
+		menu->addChild(createIndexPtrSubmenuItem("T range", {
 			"1/4x",
 			"1x",
 			"4x",

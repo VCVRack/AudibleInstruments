@@ -32,12 +32,12 @@ struct Shades : Module {
 
 	Shades() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(GAIN1_PARAM, 0.0, 1.0, 0.5, "Gain 1");
-		configParam(GAIN2_PARAM, 0.0, 1.0, 0.5, "Gain 2");
-		configParam(GAIN3_PARAM, 0.0, 1.0, 0.5, "Gain 3");
-		configParam(MODE1_PARAM, 0.0, 1.0, 1.0, "Attenuverter/Attenuator mode 1");
-		configParam(MODE2_PARAM, 0.0, 1.0, 1.0, "Attenuverter/Attenuator mode 2");
-		configParam(MODE3_PARAM, 0.0, 1.0, 1.0, "Attenuverter/Attenuator mode 3");
+		for (int c = 0; c < 3; c++) {
+			configParam(GAIN1_PARAM + c, 0.0, 1.0, 0.5, string::f("Channel %d gain", c + 1));
+			configSwitch(MODE1_PARAM + c, 0.0, 1.0, 1.0, string::f("Channel %d mode", c + 1), {"Attenuator", "Attenuverter"});
+			configInput(IN1_INPUT + c, string::f("Channel %d", c + 1));
+			configOutput(OUT1_OUTPUT + c, string::f("Channel %d", c + 1));
+		}
 	}
 
 	void process(const ProcessArgs& args) override {

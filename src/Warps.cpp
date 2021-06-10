@@ -40,11 +40,21 @@ struct Warps : Module {
 
 	Warps() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(ALGORITHM_PARAM, 0.0, 8.0, 0.0, "Modulation algorithm");
-		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Modulation timbre");
-		configParam(STATE_PARAM, 0.0, 1.0, 0.0, "Internal oscillator state");
-		configParam(LEVEL1_PARAM, 0.0, 1.0, 1.0, "External oscillator amplitude/internal oscillator frequency");
-		configParam(LEVEL2_PARAM, 0.0, 1.0, 1.0, "Modulator amplitude");
+		configParam(ALGORITHM_PARAM, 0.0, 8.0, 0.0, "Algorithm");
+		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre", "%", 0, 100);
+		configButton(STATE_PARAM, "Internal oscillator mode");
+		configParam(LEVEL1_PARAM, 0.0, 1.0, 1.0, "External oscillator amplitude / internal oscillator frequency", "%", 0, 100);
+		configParam(LEVEL2_PARAM, 0.0, 1.0, 1.0, "Modulator amplitude", "%", 0, 100);
+
+		configInput(LEVEL1_INPUT, "Level 1");
+		configInput(LEVEL2_INPUT, "Level 2");
+		configInput(ALGORITHM_INPUT, "Algorithm");
+		configInput(TIMBRE_INPUT, "Timbre");
+		configInput(CARRIER_INPUT, "Carrier");
+		configInput(MODULATOR_INPUT, "Modulator");
+
+		configOutput(MODULATOR_OUTPUT, "Modulator");
+		configOutput(AUX_OUTPUT, "Auxiliary");
 
 		memset(&modulator, 0, sizeof(modulator));
 		modulator.Init(96000.0f);

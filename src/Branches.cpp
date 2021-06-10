@@ -35,10 +35,14 @@ struct Branches : Module {
 
 	Branches() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(THRESHOLD1_PARAM, 0.0, 1.0, 0.5, "Channel 1 probability", "%", 0, 100);
-		configParam(MODE1_PARAM, 0.0, 1.0, 0.0, "Channel 1 mode");
-		configParam(THRESHOLD2_PARAM, 0.0, 1.0, 0.5, "Channel 2 probability", "%", 0, 100);
-		configParam(MODE2_PARAM, 0.0, 1.0, 0.0, "Channel 2 mode");
+		for (int c = 0; c < 2; c++) {
+			configParam(THRESHOLD1_PARAM + c, 0.0, 1.0, 0.5, string::f("Channel %d probability", c + 1), "%", 0, 100);
+			configParam(MODE1_PARAM + c, 0.0, 1.0, 0.0, string::f("Channel %d mode", c + 1));
+			configInput(IN1_INPUT + c, string::f("Channel %d", c + 1));
+			configInput(P1_INPUT + c, string::f("Channel %d probability", c + 1));
+			configOutput(OUT1A_OUTPUT + c, string::f("Channel %d A", c + 1));
+			configOutput(OUT1B_OUTPUT + c, string::f("Channel %d B", c + 1));
+		}
 	}
 
 	void process(const ProcessArgs& args) override {

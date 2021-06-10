@@ -155,24 +155,14 @@ struct Stages : Module {
 
 	Stages() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(SHAPE_PARAMS + 0, 0.0, 1.0, 0.5, "Shape 1");
-		configParam(SHAPE_PARAMS + 1, 0.0, 1.0, 0.5, "Shape 2");
-		configParam(SHAPE_PARAMS + 2, 0.0, 1.0, 0.5, "Shape 3");
-		configParam(SHAPE_PARAMS + 3, 0.0, 1.0, 0.5, "Shape 4");
-		configParam(SHAPE_PARAMS + 4, 0.0, 1.0, 0.5, "Shape 5");
-		configParam(SHAPE_PARAMS + 5, 0.0, 1.0, 0.5, "Shape 6");
-		configParam(TYPE_PARAMS + 0, 0.0, 1.0, 0.0, "Type 1");
-		configParam(TYPE_PARAMS + 1, 0.0, 1.0, 0.0, "Type 2");
-		configParam(TYPE_PARAMS + 2, 0.0, 1.0, 0.0, "Type 3");
-		configParam(TYPE_PARAMS + 3, 0.0, 1.0, 0.0, "Type 4");
-		configParam(TYPE_PARAMS + 4, 0.0, 1.0, 0.0, "Type 5");
-		configParam(TYPE_PARAMS + 5, 0.0, 1.0, 0.0, "Type 6");
-		configParam(LEVEL_PARAMS + 0, 0.0, 1.0, 0.5, "Level 1");
-		configParam(LEVEL_PARAMS + 1, 0.0, 1.0, 0.5, "Level 2");
-		configParam(LEVEL_PARAMS + 2, 0.0, 1.0, 0.5, "Level 3");
-		configParam(LEVEL_PARAMS + 3, 0.0, 1.0, 0.5, "Level 4");
-		configParam(LEVEL_PARAMS + 4, 0.0, 1.0, 0.5, "Level 5");
-		configParam(LEVEL_PARAMS + 5, 0.0, 1.0, 0.5, "Level 6");
+		for (int c = 0; c < NUM_CHANNELS; c++) {
+			configParam(SHAPE_PARAMS + c, 0.0, 1.0, 0.5, string::f("Stage %d shape", c + 1), "%", 0, 100);
+			configButton(TYPE_PARAMS + c, string::f("Stage %d type", c + 1));
+			configParam(LEVEL_PARAMS + c, 0.0, 1.0, 0.5, string::f("Stage %d level", c + 1), "%", 0, 100);
+			configInput(LEVEL_INPUTS + c, string::f("Stage %d level", c + 1));
+			configInput(GATE_INPUTS + c, string::f("Stage %d gate", c + 1));
+			configOutput(ENVELOPE_OUTPUTS + c, string::f("Stage %d envelope", c + 1));
+		}
 
 		onReset();
 	}

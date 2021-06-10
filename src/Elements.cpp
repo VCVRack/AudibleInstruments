@@ -97,17 +97,37 @@ struct Elements : Module {
 		configParam(DAMPING_PARAM, 0.0, 1.0, 0.5, "Energy dissipation speed");
 		configParam(POSITION_PARAM, 0.0, 1.0, 0.5, "Excitation position");
 		configParam(SPACE_PARAM, 0.0, 2.0, 0.0, "Reverb space");
-		configParam(BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0, "Bow timbre attenuverter");
-		configParam(FLOW_MOD_PARAM, -1.0, 1.0, 0.0, "Air flow noise attenuverter");
-		configParam(BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0, "Blow timbre attenuverter");
-		configParam(MALLET_MOD_PARAM, -1.0, 1.0, 0.0, "Percussive noise attenuverter");
-		configParam(STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0, "Strike timbre attenuverter");
-		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0, "Energy dissipation speed attenuverter");
-		configParam(GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0, "Resonator geometry attenuverter");
-		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0, "Excitation position attenuverter");
-		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0, "Brightness attenuverter");
-		configParam(SPACE_MOD_PARAM, -2.0, 2.0, 0.0, "Reverb space attenuverter");
-		configParam(PLAY_PARAM, 0.0, 1.0, 0.0, "Play");
+		configParam(BOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0, "Bow timbre CV");
+		configParam(FLOW_MOD_PARAM, -1.0, 1.0, 0.0, "Air flow noise CV");
+		configParam(BLOW_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0, "Blow timbre CV");
+		configParam(MALLET_MOD_PARAM, -1.0, 1.0, 0.0, "Percussive noise CV");
+		configParam(STRIKE_TIMBRE_MOD_PARAM, -1.0, 1.0, 0.0, "Strike timbre CV");
+		configParam(DAMPING_MOD_PARAM, -1.0, 1.0, 0.0, "Energy dissipation speed CV");
+		configParam(GEOMETRY_MOD_PARAM, -1.0, 1.0, 0.0, "Resonator geometry CV");
+		configParam(POSITION_MOD_PARAM, -1.0, 1.0, 0.0, "Excitation position CV");
+		configParam(BRIGHTNESS_MOD_PARAM, -1.0, 1.0, 0.0, "Brightness CV");
+		configParam(SPACE_MOD_PARAM, -2.0, 2.0, 0.0, "Reverb space CV");
+		configButton(PLAY_PARAM, "Play");
+
+		configInput(NOTE_INPUT, "Pitch (1V/oct)");
+		configInput(FM_INPUT, "FM");
+		configInput(GATE_INPUT, "Gate");
+		configInput(STRENGTH_INPUT, "Strength");
+		configInput(BLOW_INPUT, "External blow");
+		configInput(STRIKE_INPUT, "External strike");
+		configInput(BOW_TIMBRE_MOD_INPUT, "Bow timbre");
+		configInput(FLOW_MOD_INPUT, "Air flow noise");
+		configInput(BLOW_TIMBRE_MOD_INPUT, "Blow timbre");
+		configInput(MALLET_MOD_INPUT, "Percussive noise");
+		configInput(STRIKE_TIMBRE_MOD_INPUT, "Strike timbre");
+		configInput(DAMPING_MOD_INPUT, "Energy dissipation speed");
+		configInput(GEOMETRY_MOD_INPUT, "Resonator geometry");
+		configInput(POSITION_MOD_INPUT, "Excitation position");
+		configInput(BRIGHTNESS_MOD_INPUT, "Brightness");
+		configInput(SPACE_MOD_INPUT, "Reverb space");
+
+		configOutput(AUX_OUTPUT, "Left");
+		configOutput(MAIN_OUTPUT, "Right");
 
 		for (int c = 0; c < 16; c++) {
 			parts[c] = new elements::Part();

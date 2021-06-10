@@ -51,15 +51,29 @@ struct Frames : Module {
 
 	Frames() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(GAIN1_PARAM, 0.0, 1.0, 0.0, "Gain 1");
-		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0, "Gain 2");
-		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0, "Gain 3");
-		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0, "Gain 4");
+		configParam(GAIN1_PARAM, 0.0, 1.0, 0.0, "Channel 1 gain");
+		configParam(GAIN2_PARAM, 0.0, 1.0, 0.0, "Channel 2 gain");
+		configParam(GAIN3_PARAM, 0.0, 1.0, 0.0, "Channel 3 gain");
+		configParam(GAIN4_PARAM, 0.0, 1.0, 0.0, "Channel 4 gain");
 		configParam(FRAME_PARAM, 0.0, 1.0, 0.0, "Frame");
 		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Animation attenuverter");
-		configParam(ADD_PARAM, 0.0, 1.0, 0.0, "Add keyframe");
-		configParam(DEL_PARAM, 0.0, 1.0, 0.0, "Delete keyframe");
-		configParam(OFFSET_PARAM, 0.0, 1.0, 0.0, "+10V offset");
+		configButton(ADD_PARAM, "Add keyframe");
+		configButton(DEL_PARAM, "Delete keyframe");
+		configSwitch(OFFSET_PARAM, 0.0, 1.0, 0.0, "Offset", {"+0V", "+10V"});
+
+		configInput(ALL_INPUT, "All");
+		configInput(IN1_INPUT, "Channel 1");
+		configInput(IN2_INPUT, "Channel 2");
+		configInput(IN3_INPUT, "Channel 3");
+		configInput(IN4_INPUT, "Channel 4");
+		configInput(FRAME_INPUT, "Frame");
+
+		configOutput(MIX_OUTPUT, "Mix");
+		configOutput(OUT1_OUTPUT, "Channel 1");
+		configOutput(OUT2_OUTPUT, "Channel 2");
+		configOutput(OUT3_OUTPUT, "Channel 3");
+		configOutput(OUT4_OUTPUT, "Channel 4");
+		configOutput(FRAME_STEP_OUTPUT, "Frame step");
 
 		memset(&keyframer, 0, sizeof(keyframer));
 		keyframer.Init();

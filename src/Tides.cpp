@@ -52,13 +52,28 @@ struct Tides : Module {
 
 	Tides() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output mode");
-		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency range");
+		configButton(MODE_PARAM, "Output mode");
+		configButton(RANGE_PARAM, "Frequency range");
 		configParam(FREQUENCY_PARAM, -48.0, 48.0, 0.0, "Main frequency");
 		configParam(FM_PARAM, -12.0, 12.0, 0.0, "FM input attenuverter");
 		configParam(SHAPE_PARAM, -1.0, 1.0, 0.0, "Shape");
 		configParam(SLOPE_PARAM, -1.0, 1.0, 0.0, "Slope");
 		configParam(SMOOTHNESS_PARAM, -1.0, 1.0, 0.0, "Smoothness");
+
+		configInput(SHAPE_INPUT, "Shape");
+		configInput(SLOPE_INPUT, "Slope");
+		configInput(SMOOTHNESS_INPUT, "Smoothness");
+		configInput(TRIG_INPUT, "Trigger");
+		configInput(FREEZE_INPUT, "Freeze");
+		configInput(PITCH_INPUT, "Pitch (1V/oct)");
+		configInput(FM_INPUT, "FM");
+		configInput(LEVEL_INPUT, "Level");
+		configInput(CLOCK_INPUT, "Clock");
+
+		configOutput(HIGH_OUTPUT, "High tide");
+		configOutput(LOW_OUTPUT, "Low tide");
+		configOutput(UNI_OUTPUT, "Unipolar");
+		configOutput(BI_OUTPUT, "Bipolar");
 
 		memset(&generator, 0, sizeof(generator));
 		generator.Init();

@@ -114,18 +114,28 @@ struct Streams : Module {
 	Streams() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configParam(CH1_SHAPE_PARAM,     0.f, 1.f, 0.5f, "Ch 1 shape");
-		configParam(CH1_MOD_PARAM,       0.f, 1.f, 0.5f, "Ch 1 mod");
-		configParam(CH1_LEVEL_MOD_PARAM, 0.f, 1.f, 0.5f, "Ch 1 level mod");
-		configParam(CH2_SHAPE_PARAM,     0.f, 1.f, 0.5f, "Ch 2 shape");
-		configParam(CH2_MOD_PARAM,       0.f, 1.f, 0.5f, "Ch 2 mod");
-		configParam(CH2_LEVEL_MOD_PARAM, 0.f, 1.f, 0.5f, "Ch 2 level mod");
-		configParam(CH1_RESPONSE_PARAM,  0.f, 1.f, 0.5f, "Ch 1 response");
-		configParam(CH2_RESPONSE_PARAM,  0.f, 1.f, 0.5f, "Ch 2 response");
+		configParam(CH1_SHAPE_PARAM,     0.f, 1.f, 0.5f, "Channel 1 shape", "%", 0, 100);
+		configParam(CH1_MOD_PARAM,       0.f, 1.f, 0.5f, "Channel 1 mod", "%", 0, 100);
+		configParam(CH1_LEVEL_MOD_PARAM, 0.f, 1.f, 0.5f, "Channel 1 level mod", "%", 0, 100);
+		configParam(CH2_SHAPE_PARAM,     0.f, 1.f, 0.5f, "Channel 2 shape", "%", 0, 100);
+		configParam(CH2_MOD_PARAM,       0.f, 1.f, 0.5f, "Channel 2 mod", "%", 0, 100);
+		configParam(CH2_LEVEL_MOD_PARAM, 0.f, 1.f, 0.5f, "Channel 2 level mod", "%", 0, 100);
+		configParam(CH1_RESPONSE_PARAM, 0.f, 1.f, 0.5f, "Channel 1 response", "%", 0, 100);
+		configParam(CH2_RESPONSE_PARAM, 0.f, 1.f, 0.5f, "Channel 2 response", "%", 0, 100);
 
-		configParam(CH1_FUNCTION_BUTTON_PARAM,  0.f, 1.f, 0.f, "Ch 1 function");
-		configParam(CH2_FUNCTION_BUTTON_PARAM,  0.f, 1.f, 0.f, "Ch 2 function");
-		configParam(METERING_BUTTON_PARAM,      0.f, 1.f, 0.f, "Meter");
+		configButton(CH1_FUNCTION_BUTTON_PARAM, "Channel 1 function");
+		configButton(CH2_FUNCTION_BUTTON_PARAM, "Channel 2 function");
+		configButton(METERING_BUTTON_PARAM, "Meter");
+
+		configInput(CH1_EXCITE_INPUT, "Channel 1 excite");
+		configInput(CH1_SIGNAL_INPUT, "Channel 1");
+		configInput(CH1_LEVEL_INPUT, "Channel 1 level");
+		configInput(CH2_EXCITE_INPUT, "Channel 2 excite");
+		configInput(CH2_SIGNAL_INPUT, "Channel 2");
+		configInput(CH2_LEVEL_INPUT, "Channel 2 level");
+
+		configOutput(CH1_SIGNAL_OUTPUT, "Channel 1");
+		configOutput(CH2_SIGNAL_OUTPUT, "Channel 2");
 
 		onReset();
 	}

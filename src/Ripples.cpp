@@ -36,6 +36,17 @@ struct Ripples : Module {
 		configParam(FREQ_PARAM, std::log2(ripples::kFreqKnobMin), std::log2(ripples::kFreqKnobMax), std::log2(ripples::kFreqKnobMax), "Frequency", " Hz", 2.f);
 		configParam(FM_PARAM, -1.f, 1.f, 0.f, "Frequency modulation", "%", 0, 100);
 
+		configInput(RES_INPUT, "Resonance");
+		configInput(FREQ_INPUT, "Frequency");
+		configInput(FM_INPUT, "FM");
+		configInput(IN_INPUT, "Audio");
+		configInput(GAIN_INPUT, "Gain");
+
+		configOutput(BP2_OUTPUT, "Band-pass 2-pole (12 dB/oct)");
+		configOutput(LP2_OUTPUT, "Low-pass 2-pole (12 dB/oct)");
+		configOutput(LP4_OUTPUT, "Low-pass 4-pole (24 dB/oct)");
+		configOutput(LP4VCA_OUTPUT, "Low-pass 4-pole (24 dB/oct) VCA");
+
 		onSampleRateChange();
 	}
 

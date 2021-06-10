@@ -101,19 +101,35 @@ struct Tides2 : Module {
 
 	Tides2() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(RANGE_PARAM, 0.0, 1.0, 0.0, "Frequency range");
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Output mode");
-		configParam(FREQUENCY_PARAM, -48, 48, 0.0, "Frequency");
-		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5, "Shape");
-		configParam(RAMP_PARAM, 0.0, 1.0, 0.0, "Ramp mode");
-		configParam(SMOOTHNESS_PARAM, 0.0, 1.0, 0.5, "Waveshape transformation");
-		configParam(SLOPE_PARAM, 0.0, 1.0, 0.5, "Ascending/descending ratio");
-		configParam(SHIFT_PARAM, 0.0, 1.0, 0.5, "Output polarization and shifting");
-		configParam(SLOPE_CV_PARAM, -1.0, 1.0, 0.0, "Slope CV");
-		configParam(FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
-		configParam(SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0, "Smoothness CV");
-		configParam(SHAPE_CV_PARAM, -1.0, 1.0, 0.0, "Shape CV");
-		configParam(SHIFT_CV_PARAM, -1.0, 1.0, 0.0, "Shift CV");
+		configButton(RANGE_PARAM, "Frequency range");
+		configButton(MODE_PARAM, "Output mode");
+		configParam(FREQUENCY_PARAM, -48, 48, 0.0, "Frequency", " semitones");
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5, "Shape", "%", 0, 100);
+		configButton(RAMP_PARAM, "Ramp mode");
+		configParam(SMOOTHNESS_PARAM, 0.0, 1.0, 0.5, "Smoothness", "%", 0, 100);
+		getParamQuantity(SMOOTHNESS_PARAM)->description = "Waveshape transformation";
+		configParam(SLOPE_PARAM, 0.0, 1.0, 0.5, "Slope", "%", 0, 100);
+		getParamQuantity(SLOPE_PARAM)->description = "Ascending/descending ratio";
+		configParam(SHIFT_PARAM, 0.0, 1.0, 0.5, "Shift", "%", 0, 100);
+		getParamQuantity(SHIFT_PARAM)->description = "Output polarization and shifting";
+		configParam(SLOPE_CV_PARAM, -1.0, 1.0, 0.0, "Slope CV", "%", 0, 100);
+		configParam(FREQUENCY_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV", "%", 0, 100);
+		configParam(SMOOTHNESS_CV_PARAM, -1.0, 1.0, 0.0, "Smoothness CV", "%", 0, 100);
+		configParam(SHAPE_CV_PARAM, -1.0, 1.0, 0.0, "Shape CV", "%", 0, 100);
+		configParam(SHIFT_CV_PARAM, -1.0, 1.0, 0.0, "Shift CV", "%", 0, 100);
+
+		configInput(SLOPE_INPUT, "Slope");
+		configInput(FREQUENCY_INPUT, "Frequency");
+		configInput(V_OCT_INPUT, "Pitch (1V/oct)");
+		configInput(SMOOTHNESS_INPUT, "Smoothness");
+		configInput(SHAPE_INPUT, "Shape");
+		configInput(SHIFT_INPUT, "Shift");
+		configInput(TRIG_INPUT, "Trigger");
+		configInput(CLOCK_INPUT, "Clock");
+
+		for (int c = 0; c < 4; c++) {
+			configOutput(OUT_OUTPUTS + c, string::f("Channel %d", c + 1));
+		}
 
 		poly_slope_generator.Init();
 		ratio_index_quantizer.Init();

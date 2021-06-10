@@ -77,9 +77,21 @@ struct Clouds : Module {
 		configParam(SPREAD_PARAM, 0.0, 1.0, 0.0, "Stereo spread");
 		configParam(FEEDBACK_PARAM, 0.0, 1.0, 0.0, "Feedback amount");
 		configParam(REVERB_PARAM, 0.0, 1.0, 0.0, "Reverb amount");
-		configParam(FREEZE_PARAM, 0.0, 1.0, 0.0, "Freeze");
-		configParam(MODE_PARAM, 0.0, 1.0, 0.0, "Mode");
-		configParam(LOAD_PARAM, 0.0, 1.0, 0.0, "Load/save");
+		configButton(FREEZE_PARAM, "Freeze");
+		configButton(MODE_PARAM, "Mode");
+		configButton(LOAD_PARAM, "Load/save");
+		configInput(FREEZE_INPUT, "Freeze");
+		configInput(TRIG_INPUT, "Trigger");
+		configInput(POSITION_INPUT, "Position");
+		configInput(SIZE_INPUT, "Size");
+		configInput(PITCH_INPUT, "Pitch (1V/oct)");
+		configInput(BLEND_INPUT, "Blend");
+		configInput(IN_L_INPUT, "Left");
+		configInput(IN_R_INPUT, "Right");
+		configInput(DENSITY_INPUT, "Density");
+		configInput(TEXTURE_INPUT, "Texture");
+		configOutput(OUT_L_OUTPUT, "Left");
+		configOutput(OUT_R_OUTPUT, "Right");
 
 		const int memLen = 118784;
 		const int ccmLen = 65536 - 128;

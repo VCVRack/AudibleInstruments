@@ -76,6 +76,28 @@ struct Shelves : Module {
 		configParam(P1_Q_PARAM, qMin, qMax, qInit, "Parametric 1 quality", "", 2.f);
 		configParam(P2_Q_PARAM, qMin, qMax, qInit, "Parametric 2 quality", "", 2.f);
 
+		configInput(HS_FREQ_INPUT, "High-shelf frequency");
+		configInput(HS_GAIN_INPUT, "High-shelf gain");
+		configInput(P1_FREQ_INPUT, "Parametric 1 frequency");
+		configInput(P1_GAIN_INPUT, "Parametric 1 gain");
+		configInput(P1_Q_INPUT, "Parametric 1 quality");
+		configInput(P2_FREQ_INPUT, "Parametric 2 frequency");
+		configInput(P2_GAIN_INPUT, "Parametric 2 gain");
+		configInput(P2_Q_INPUT, "Parametric 2 quality");
+		configInput(LS_FREQ_INPUT, "Low-shelf frequency");
+		configInput(LS_GAIN_INPUT, "Low-shelf gain");
+		configInput(FREQ_INPUT, "All frequency");
+		configInput(GAIN_INPUT, "All gain");
+		configInput(IN_INPUT, "Audio");
+
+		configOutput(P1_HP_OUTPUT, "Parametric 1 high-pass");
+		configOutput(P1_BP_OUTPUT, "Parametric 1 band-pass");
+		configOutput(P1_LP_OUTPUT, "Parametric 1 low-pass");
+		configOutput(P2_HP_OUTPUT, "Parametric 2 high-pass");
+		configOutput(P2_BP_OUTPUT, "Parametric 2 band-pass");
+		configOutput(P2_LP_OUTPUT, "Parametric 2 low-pass");
+		configOutput(OUT_OUTPUT, "Audio");
+
 		onReset();
 	}
 

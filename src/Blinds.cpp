@@ -45,14 +45,13 @@ struct Blinds : Module {
 
 	Blinds() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(GAIN1_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 1");
-		configParam(GAIN2_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 2");
-		configParam(GAIN3_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 3");
-		configParam(GAIN4_PARAM, -1.0, 1.0, 0.0, "Polarity and gain 4");
-		configParam(MOD1_PARAM, -1.0, 1.0, 0.0, "Modulation 1");
-		configParam(MOD2_PARAM, -1.0, 1.0, 0.0, "Modulation 2");
-		configParam(MOD3_PARAM, -1.0, 1.0, 0.0, "Modulation 3");
-		configParam(MOD4_PARAM, -1.0, 1.0, 0.0, "Modulation 4");
+		for (int c = 0; c < 4; c++) {
+			configParam(GAIN1_PARAM + c, -1.0, 1.0, 0.0, string::f("Channel %d gain", c + 1), "%", 0, 100);
+			configParam(MOD1_PARAM + c, -1.0, 1.0, 0.0, string::f("Channel %d CV amount", c + 1));
+			configInput(IN1_INPUT + c, string::f("Channel %d", c + 1));
+			configInput(CV1_INPUT + c, string::f("Channel %d CV", c + 1));
+			configOutput(OUT1_OUTPUT + c, string::f("Channel %d", c + 1));
+		}
 	}
 
 	void process(const ProcessArgs& args) override {

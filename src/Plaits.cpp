@@ -58,8 +58,8 @@ struct Plaits : Module {
 
 	Plaits() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(MODEL1_PARAM, 0.0, 1.0, 0.0, "Model selection 1");
-		configParam(MODEL2_PARAM, 0.0, 1.0, 0.0, "Model selection 2");
+		configButton(MODEL1_PARAM, "Pitched models");
+		configButton(MODEL2_PARAM, "Noise/percussive models");
 		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Frequency", " semitones", 0.f, 12.f);
 		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5, "Harmonics", "%", 0.f, 100.f);
 		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre", "%", 0.f, 100.f);
@@ -69,6 +69,18 @@ struct Plaits : Module {
 		configParam(TIMBRE_CV_PARAM, -1.0, 1.0, 0.0, "Timbre CV");
 		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
 		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0, "Morph CV");
+
+		configInput(ENGINE_INPUT, "Model");
+		configInput(TIMBRE_INPUT, "Timbre");
+		configInput(FREQ_INPUT, "FM");
+		configInput(MORPH_INPUT, "Morph");
+		configInput(HARMONICS_INPUT, "Harmonics");
+		configInput(TRIGGER_INPUT, "Trigger");
+		configInput(LEVEL_INPUT, "Level");
+		configInput(NOTE_INPUT, "Pitch (1V/oct)");
+
+		configOutput(OUT_OUTPUT, "Main");
+		configOutput(AUX_OUTPUT, "Auxiliary");
 
 		for (int i = 0; i < 16; i++) {
 			stmlib::BufferAllocator allocator(shared_buffer[i], sizeof(shared_buffer[i]));

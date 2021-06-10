@@ -47,6 +47,12 @@ struct Braids : Module {
 		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre", "%", 0.f, 100.f);
 		configParam(MODULATION_PARAM, -1.0, 1.0, 0.0, "Modulation");
 		configParam(COLOR_PARAM, 0.0, 1.0, 0.5, "Color", "%", 0.f, 100.f);
+		configInput(TRIG_INPUT, "Trigger");
+		configInput(PITCH_INPUT, "Pitch (1V/oct)");
+		configInput(FM_INPUT, "FM");
+		configInput(TIMBRE_INPUT, "Timbre");
+		configInput(COLOR_INPUT, "Color");
+		configOutput(OUT_OUTPUT, "Audio");
 
 		memset(&osc, 0, sizeof(osc));
 		osc.Init();

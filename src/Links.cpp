@@ -32,6 +32,18 @@ struct Links : Module {
 
 	Links() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+		configInput(A1_INPUT, "A1");
+		configInput(B1_INPUT, "B1");
+		configInput(B2_INPUT, "B2");
+		configInput(C1_INPUT, "C1");
+		configInput(C2_INPUT, "C2");
+		configInput(C3_INPUT, "C3");
+		configOutput(A1_OUTPUT, "A1");
+		configOutput(A2_OUTPUT, "A2");
+		configOutput(A3_OUTPUT, "A3");
+		configOutput(B1_OUTPUT, "B1");
+		configOutput(B2_OUTPUT, "B2");
+		configOutput(C1_OUTPUT, "C1");
 	}
 
 	void process(const ProcessArgs& args) override {

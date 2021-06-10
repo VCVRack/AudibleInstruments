@@ -35,6 +35,20 @@ struct Kinks : Module {
 
 	Kinks() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+
+		configInput(SIGN_INPUT, "Sign");
+		configInput(LOGIC_A_INPUT, "Logic A");
+		configInput(LOGIC_B_INPUT, "Logic B");
+		configInput(SH_INPUT, "Sample & hold");
+		configInput(TRIG_INPUT, "S&H trigger");
+
+		configOutput(INVERT_OUTPUT, "Invert");
+		configOutput(HALF_RECTIFY_OUTPUT, "Half rectified");
+		configOutput(FULL_RECTIFY_OUTPUT, "Full rectified");
+		configOutput(MAX_OUTPUT, "Maximum");
+		configOutput(MIN_OUTPUT, "Minimum");
+		configOutput(NOISE_OUTPUT, "Noise");
+		configOutput(SH_OUTPUT, "Sample & hold");
 	}
 
 	void process(const ProcessArgs& args) override {
