@@ -1,3 +1,7 @@
+### 2.0.0 (in development)
+- Add port labels.
+- Rearrange context menus for clarity and consistency.
+
 ### 1.5.0 (2020-11-07)
 - Add Streams via fundraiser.
 
