@@ -331,21 +331,21 @@ struct BraidsWidget : ModuleWidget {
 
 		std::vector<std::string> shapeLabels;
 		for (const ShapeInfo& s : SHAPE_INFOS) {
-			shapeLabels.push_back(s.label + " (" + s.code + ")");
+			shapeLabels.push_back(s.code + ": " + s.label);
 		}
 		menu->addChild(createIndexSubmenuItem("Model", shapeLabels,
 			[=]() {return module->getShapeParam();},
 			[=](int i) {module->setShapeParam(i);}
 		));
 
-		menu->addChild(createBoolPtrMenuItem("FM CV selects model (META)", &module->settings.meta_modulation));
+		menu->addChild(createBoolPtrMenuItem("META: FM CV selects model", &module->settings.meta_modulation));
 
-		menu->addChild(createBoolMenuItem("Pitch drift (DRFT)",
+		menu->addChild(createBoolMenuItem("DRFT: Pitch drift",
 			[=]() {return module->settings.vco_drift;},
 			[=](bool val) {module->settings.vco_drift = val ? 4 : 0;}
 		));
 
-		menu->addChild(createBoolMenuItem("Waveform imperfections (SIGN)",
+		menu->addChild(createBoolMenuItem("SIGN: Waveform imperfections",
 			[=]() {return module->settings.signature;},
 			[=](bool val) {module->settings.signature = val ? 4 : 0;}
 		));
