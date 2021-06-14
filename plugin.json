@@ -11,6 +11,7 @@
   "sourceUrl": "https://github.com/VCVRack/AudibleInstruments",
   "changelogUrl": "https://github.com/VCVRack/AudibleInstruments/blob/v1/CHANGELOG.md",
   "donateUrl": "",
+  "description": "Based on Mutable Instruments Eurorack modules",
   "modules": [
     {
       "slug": "Braids",
