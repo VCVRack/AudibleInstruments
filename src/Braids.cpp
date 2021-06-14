@@ -275,11 +275,11 @@ struct BraidsDisplay : TransparentWidget {
 
 		// Text
 		nvgGlobalAlpha(args.vg, 1.0);
-		nvgFontSize(args.vg, 48);
+		nvgFontSize(args.vg, 38);
 		nvgFontFaceId(args.vg, font->handle);
 		nvgTextLetterSpacing(args.vg, 2.5);
 
-		Vec textPos = Vec(11, 47);
+		Vec textPos = Vec(9, 48);
 		NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
 		nvgFillColor(args.vg, nvgTransRGBA(textColor, 16));
 		// Background of all segments
