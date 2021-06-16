@@ -348,54 +348,43 @@ struct FramesWidget : ModuleWidget {
 		Frames* module = dynamic_cast<Frames*>(this->module);
 		assert(module);
 
-		struct FramesChannelSettingsItem : MenuItem {
-			Frames* module;
-			uint8_t channel;
-			Menu* createChildMenu() override {
-				Menu* menu = new Menu();
-
-				menu->addChild(createMenuLabel("Interpolation curve"));
-
-				static const std::vector<std::string> curveLabels = {
-					"Step",
-					"Linear",
-					"Accelerating",
-					"Decelerating",
-					"Departure/arrival",
-					"Bouncing",
-				};
-				for (int i = 0; i < (int) curveLabels.size(); i++) {
-					menu->addChild(createCheckMenuItem(curveLabels[i],
-						[=]() {return module->keyframer.mutable_settings(channel)->easing_curve == i;},
-						[=]() {module->keyframer.mutable_settings(channel)->easing_curve = (frames::EasingCurve) i;}
-					));
-				}
-
-				menu->addChild(new MenuSeparator);
-
-				menu->addChild(createMenuLabel("Response curve"));
-
-				menu->addChild(createCheckMenuItem("Linear",
-					[=]() {return module->keyframer.mutable_settings(channel)->response == 0;},
-					[=]() {module->keyframer.mutable_settings(channel)->response = 0;}
-				));
-				menu->addChild(createCheckMenuItem("Exponential",
-					[=]() {return module->keyframer.mutable_settings(channel)->response == 255;},
-					[=]() {module->keyframer.mutable_settings(channel)->response = 255;}
-				));
-
-				return menu;
-			}
-		};
-
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Channel settings"));
 
-		for (int i = 0; i < 4; i++) {
-			FramesChannelSettingsItem* item = createMenuItem<FramesChannelSettingsItem>(string::f("Channel %d", i + 1));
-			item->module = module;
-			item->channel = i;
-			menu->addChild(item);
+		for (int c = 0; c < 4; c++) {
+			menu->addChild(createSubmenuItem(string::f("Channel %d", c + 1),
+				[=](Menu* menu) {
+					menu->addChild(createMenuLabel("Interpolation curve"));
+
+					static const std::vector<std::string> curveLabels = {
+						"Step",
+						"Linear",
+						"Accelerating",
+						"Decelerating",
+						"Departure/arrival",
+						"Bouncing",
+					};
+					for (int i = 0; i < (int) curveLabels.size(); i++) {
+						menu->addChild(createCheckMenuItem(curveLabels[i],
+							[=]() {return module->keyframer.mutable_settings(c)->easing_curve == i;},
+							[=]() {module->keyframer.mutable_settings(c)->easing_curve = (frames::EasingCurve) i;}
+						));
+					}
+
+					menu->addChild(new MenuSeparator);
+
+					menu->addChild(createMenuLabel("Response curve"));
+
+					menu->addChild(createCheckMenuItem("Linear",
+						[=]() {return module->keyframer.mutable_settings(c)->response == 0;},
+						[=]() {module->keyframer.mutable_settings(c)->response = 0;}
+					));
+					menu->addChild(createCheckMenuItem("Exponential",
+						[=]() {return module->keyframer.mutable_settings(c)->response == 255;},
+						[=]() {module->keyframer.mutable_settings(c)->response = 255;}
+					));
+				}
+			));
 		}
 
 		menu->addChild(createMenuItem("Clear keyframes", "",

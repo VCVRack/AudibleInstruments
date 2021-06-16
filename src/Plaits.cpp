@@ -343,9 +343,19 @@ struct PlaitsWidget : ModuleWidget {
 		));
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Models"));
+		menu->addChild(createMenuLabel("Pitched models"));
 
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 8; i++) {
+			menu->addChild(createCheckMenuItem(modelLabels[i],
+				[=]() {return module->patch.engine == i;},
+				[=]() {module->patch.engine = i;}
+			));
+		}
+
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createMenuLabel("Noise/percussive models"));
+
+		for (int i = 8; i < 16; i++) {
 			menu->addChild(createCheckMenuItem(modelLabels[i],
 				[=]() {return module->patch.engine == i;},
 				[=]() {module->patch.engine = i;}
