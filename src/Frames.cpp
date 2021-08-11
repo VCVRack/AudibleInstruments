@@ -352,7 +352,7 @@ struct FramesWidget : ModuleWidget {
 		menu->addChild(createMenuLabel("Channel settings"));
 
 		for (int c = 0; c < 4; c++) {
-			menu->addChild(createSubmenuItem(string::f("Channel %d", c + 1),
+			menu->addChild(createSubmenuItem(string::f("Channel %d", c + 1), "",
 				[=](Menu* menu) {
 					menu->addChild(createMenuLabel("Interpolation curve"));
 
