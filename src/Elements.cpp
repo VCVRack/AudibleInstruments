@@ -129,6 +129,9 @@ struct Elements : Module {
 		configOutput(AUX_OUTPUT, "Left");
 		configOutput(MAIN_OUTPUT, "Right");
 
+		configBypass(BLOW_INPUT, AUX_OUTPUT);
+		configBypass(STRIKE_INPUT, MAIN_OUTPUT);
+
 		for (int c = 0; c < 16; c++) {
 			parts[c] = new elements::Part();
 			// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.

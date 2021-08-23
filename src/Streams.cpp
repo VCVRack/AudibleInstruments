@@ -137,6 +137,9 @@ struct Streams : Module {
 		configOutput(CH1_SIGNAL_OUTPUT, "Channel 1");
 		configOutput(CH2_SIGNAL_OUTPUT, "Channel 2");
 
+		configBypass(CH1_SIGNAL_INPUT, CH1_SIGNAL_OUTPUT);
+		configBypass(CH2_SIGNAL_INPUT, CH2_SIGNAL_OUTPUT);
+
 		onReset();
 	}
 

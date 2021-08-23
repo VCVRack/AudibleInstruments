@@ -90,6 +90,9 @@ struct Rings : Module {
 		configOutput(ODD_OUTPUT, "Odd");
 		configOutput(EVEN_OUTPUT, "Even");
 
+		configBypass(IN_INPUT, ODD_OUTPUT);
+		configBypass(IN_INPUT, EVEN_OUTPUT);
+
 		strummer.Init(0.01, 44100.0 / 24);
 		part.Init(reverb_buffer);
 		string_synth.Init(reverb_buffer);

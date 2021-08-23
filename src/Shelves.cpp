@@ -98,6 +98,8 @@ struct Shelves : Module {
 		configOutput(P2_LP_OUTPUT, "Parametric 2 low-pass");
 		configOutput(OUT_OUTPUT, "Audio");
 
+		configBypass(IN_INPUT, OUT_OUTPUT);
+
 		onReset();
 	}
 

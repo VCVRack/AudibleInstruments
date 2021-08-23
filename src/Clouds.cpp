@@ -93,6 +93,9 @@ struct Clouds : Module {
 		configOutput(OUT_L_OUTPUT, "Left");
 		configOutput(OUT_R_OUTPUT, "Right");
 
+		configBypass(IN_L_INPUT, OUT_L_OUTPUT);
+		configBypass(IN_R_INPUT, OUT_R_OUTPUT);
+
 		const int memLen = 118784;
 		const int ccmLen = 65536 - 128;
 		block_mem = new uint8_t[memLen]();

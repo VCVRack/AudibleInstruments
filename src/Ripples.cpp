@@ -47,6 +47,11 @@ struct Ripples : Module {
 		configOutput(LP4_OUTPUT, "Low-pass 4-pole (24 dB/oct)");
 		configOutput(LP4VCA_OUTPUT, "Low-pass 4-pole (24 dB/oct) VCA");
 
+		configBypass(IN_INPUT, BP2_OUTPUT);
+		configBypass(IN_INPUT, LP2_OUTPUT);
+		configBypass(IN_INPUT, LP4_OUTPUT);
+		configBypass(IN_INPUT, LP4VCA_OUTPUT);
+
 		onSampleRateChange();
 	}
 
