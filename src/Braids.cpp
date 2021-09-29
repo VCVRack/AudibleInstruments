@@ -274,7 +274,7 @@ struct BraidsDisplay : TransparentWidget {
 		nvgStroke(args.vg);
 
 		// Text
-		nvgGlobalAlpha(args.vg, 1.0);
+		nvgGlobalTint(args.vg, color::WHITE);
 		nvgFontSize(args.vg, 38);
 		nvgFontFaceId(args.vg, font->handle);
 		nvgTextLetterSpacing(args.vg, 2.5);
