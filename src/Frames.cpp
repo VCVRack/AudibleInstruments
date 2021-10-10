@@ -365,7 +365,7 @@ struct FramesWidget : ModuleWidget {
 						"Bouncing",
 					};
 					for (int i = 0; i < (int) curveLabels.size(); i++) {
-						menu->addChild(createCheckMenuItem(curveLabels[i],
+						menu->addChild(createCheckMenuItem(curveLabels[i], "",
 							[=]() {return module->keyframer.mutable_settings(c)->easing_curve == i;},
 							[=]() {module->keyframer.mutable_settings(c)->easing_curve = (frames::EasingCurve) i;}
 						));
@@ -375,11 +375,11 @@ struct FramesWidget : ModuleWidget {
 
 					menu->addChild(createMenuLabel("Response curve"));
 
-					menu->addChild(createCheckMenuItem("Linear",
+					menu->addChild(createCheckMenuItem("Linear", "",
 						[=]() {return module->keyframer.mutable_settings(c)->response == 0;},
 						[=]() {module->keyframer.mutable_settings(c)->response = 0;}
 					));
-					menu->addChild(createCheckMenuItem("Exponential",
+					menu->addChild(createCheckMenuItem("Exponential", "",
 						[=]() {return module->keyframer.mutable_settings(c)->response == 255;},
 						[=]() {module->keyframer.mutable_settings(c)->response = 255;}
 					));
@@ -399,7 +399,7 @@ struct FramesWidget : ModuleWidget {
 			"Poly LFO",
 		};
 		for (int i = 0; i < (int) modeLabels.size(); i++) {
-			menu->addChild(createCheckMenuItem(modeLabels[i],
+			menu->addChild(createCheckMenuItem(modeLabels[i], "",
 				[=]() {return module->poly_lfo_mode == i;},
 				[=]() {module->poly_lfo_mode = i;}
 			));

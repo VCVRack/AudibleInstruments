@@ -369,7 +369,7 @@ struct CloudsWidget : ModuleWidget {
 			"Reverb",
 		};
 		for (int i = 0; i < (int) blendLabels.size(); i++) {
-			menu->addChild(createCheckMenuItem(blendLabels[i],
+			menu->addChild(createCheckMenuItem(blendLabels[i], "",
 				[=]() {return module->blendMode == i;},
 				[=]() {module->blendMode = i;}
 			));
@@ -385,7 +385,7 @@ struct CloudsWidget : ModuleWidget {
 			"Spectral madness",
 		};
 		for (int i = 0; i < (int) playbackLabels.size(); i++) {
-			menu->addChild(createCheckMenuItem(playbackLabels[i],
+			menu->addChild(createCheckMenuItem(playbackLabels[i], "",
 				[=]() {return module->playback == i;},
 				[=]() {module->playback = (clouds::PlaybackMode) i;}
 			));
@@ -401,7 +401,7 @@ struct CloudsWidget : ModuleWidget {
 			"8s 16kHz 8-bit µ-law mono",
 		};
 		for (int i = 0; i < (int) qualityLabels.size(); i++) {
-			menu->addChild(createCheckMenuItem(qualityLabels[i],
+			menu->addChild(createCheckMenuItem(qualityLabels[i], "",
 				[=]() {return module->quality == i;},
 				[=]() {module->quality = i;}
 			));

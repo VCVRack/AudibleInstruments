@@ -400,7 +400,7 @@ struct StreamsWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createBoolMenuItem("Link channels",
+		menu->addChild(createBoolMenuItem("Link channels", "",
 			[=]() {return module->linked();},
 			[=](bool val) {module->setLinked(val);}
 		));

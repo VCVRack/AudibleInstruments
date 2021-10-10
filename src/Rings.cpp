@@ -321,7 +321,7 @@ struct RingsWidget : ModuleWidget {
 			"Reverb string",
 		};
 		for (int i = 0; i < 6; i++) {
-			menu->addChild(createCheckMenuItem(modelLabels[i],
+			menu->addChild(createCheckMenuItem(modelLabels[i], "",
 				[=]() {return module->resonatorModel == i;},
 				[=]() {module->resonatorModel = (rings::ResonatorModel) i;}
 			));
@@ -329,7 +329,7 @@ struct RingsWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createBoolMenuItem("Disastrous Peace",
+		menu->addChild(createBoolMenuItem("Disastrous Peace", "",
 			[=]() {return module->easterEgg;},
 			[=](bool val) {module->easterEgg = val;}
 		));

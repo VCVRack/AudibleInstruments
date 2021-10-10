@@ -335,9 +335,9 @@ struct PlaitsWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", &module->lowCpu));
+		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", "", &module->lowCpu));
 
-		menu->addChild(createBoolMenuItem("Edit LPG response/decay",
+		menu->addChild(createBoolMenuItem("Edit LPG response/decay", "",
 			[=]() {return this->getLpgMode();},
 			[=](bool val) {this->setLpgMode(val);}
 		));
@@ -346,7 +346,7 @@ struct PlaitsWidget : ModuleWidget {
 		menu->addChild(createMenuLabel("Pitched models"));
 
 		for (int i = 0; i < 8; i++) {
-			menu->addChild(createCheckMenuItem(modelLabels[i],
+			menu->addChild(createCheckMenuItem(modelLabels[i], "",
 				[=]() {return module->patch.engine == i;},
 				[=]() {module->patch.engine = i;}
 			));
@@ -356,7 +356,7 @@ struct PlaitsWidget : ModuleWidget {
 		menu->addChild(createMenuLabel("Noise/percussive models"));
 
 		for (int i = 8; i < 16; i++) {
-			menu->addChild(createCheckMenuItem(modelLabels[i],
+			menu->addChild(createCheckMenuItem(modelLabels[i], "",
 				[=]() {return module->patch.engine == i;},
 				[=]() {module->patch.engine = i;}
 			));

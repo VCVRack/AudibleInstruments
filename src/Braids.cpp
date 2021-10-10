@@ -338,19 +338,19 @@ struct BraidsWidget : ModuleWidget {
 			[=](int i) {module->setShapeParam(i);}
 		));
 
-		menu->addChild(createBoolPtrMenuItem("META: FM CV selects model", &module->settings.meta_modulation));
+		menu->addChild(createBoolPtrMenuItem("META: FM CV selects model", "", &module->settings.meta_modulation));
 
-		menu->addChild(createBoolMenuItem("DRFT: Pitch drift",
+		menu->addChild(createBoolMenuItem("DRFT: Pitch drift", "",
 			[=]() {return module->settings.vco_drift;},
 			[=](bool val) {module->settings.vco_drift = val ? 4 : 0;}
 		));
 
-		menu->addChild(createBoolMenuItem("SIGN: Waveform imperfections",
+		menu->addChild(createBoolMenuItem("SIGN: Waveform imperfections", "",
 			[=]() {return module->settings.signature;},
 			[=](bool val) {module->settings.signature = val ? 4 : 0;}
 		));
 
-		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", &module->lowCpu));
+		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", "", &module->lowCpu));
 	}
 };
 

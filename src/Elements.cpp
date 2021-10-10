@@ -404,7 +404,7 @@ struct ElementsWidget : ModuleWidget {
 			"Ominous voice",
 		};
 		for (int i = 0; i < 4; i++) {
-			menu->addChild(createCheckMenuItem(modelLabels[i],
+			menu->addChild(createCheckMenuItem(modelLabels[i], "",
 				[=]() {return module->getModel() == i;},
 				[=]() {module->setModel(i);}
 			));

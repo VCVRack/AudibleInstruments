@@ -259,7 +259,7 @@ struct ShelvesWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createBoolPtrMenuItem("Pad input by -6dB", &module->preGain));
+		menu->addChild(createBoolPtrMenuItem("Pad input by -6dB", "", &module->preGain));
 	}
 };
 

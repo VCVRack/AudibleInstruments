@@ -280,7 +280,7 @@ struct TidesWidget : ModuleWidget {
 
 		menu->addChild(new MenuSeparator);
 
-		menu->addChild(createBoolPtrMenuItem("Wavetable firmware (Sheep)", &module->sheep));
+		menu->addChild(createBoolPtrMenuItem("Wavetable firmware (Sheep)", "", &module->sheep));
 	}
 };
 
