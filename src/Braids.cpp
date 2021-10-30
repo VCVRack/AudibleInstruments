@@ -40,7 +40,7 @@ struct Braids : Module {
 
 	Braids() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
-		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0, "Model");
+		configParam(SHAPE_PARAM, 0.0, 1.0, 0.0, "Model", "", 0.0, braids::MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META);
 		configParam(FINE_PARAM, -1.0, 1.0, 0.0, "Fine frequency", " semitones");
 		configParam(COARSE_PARAM, -5.0, 3.0, -1.0, "Coarse frequency", " semitones", 0.f, 12.f, 12.f);
 		configParam(FM_PARAM, -1.0, 1.0, 0.0, "FM");
