@@ -253,10 +253,9 @@ static const std::vector<ShapeInfo> SHAPE_INFOS = {
 
 struct BraidsDisplay : TransparentWidget {
 	Braids* module;
-	std::shared_ptr<Font> font;
 
 	BraidsDisplay() {
-		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
+
 	}
 
 	void draw(const DrawArgs& args) override {
@@ -285,7 +284,11 @@ struct BraidsDisplay : TransparentWidget {
 		// Background of all segments
 		nvgText(args.vg, textPos.x, textPos.y, "~~~~", NULL);
 		nvgFillColor(args.vg, textColor);
-		nvgText(args.vg, textPos.x, textPos.y, SHAPE_INFOS[shape].code.c_str(), NULL);
+
+		std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
+		if(font){
+			nvgText(args.vg, textPos.x, textPos.y, SHAPE_INFOS[shape].code.c_str(), NULL);
+		}
 	}
 };
 
