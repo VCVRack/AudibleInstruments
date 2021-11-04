@@ -273,20 +273,20 @@ struct BraidsDisplay : TransparentWidget {
 		nvgStroke(args.vg);
 
 		// Text
-		nvgGlobalTint(args.vg, color::WHITE);
-		nvgFontSize(args.vg, 38);
-		nvgFontFaceId(args.vg, font->handle);
-		nvgTextLetterSpacing(args.vg, 2.5);
-
-		Vec textPos = Vec(9, 48);
-		NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
-		nvgFillColor(args.vg, nvgTransRGBA(textColor, 16));
-		// Background of all segments
-		nvgText(args.vg, textPos.x, textPos.y, "~~~~", NULL);
-		nvgFillColor(args.vg, textColor);
-
 		std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
 		if(font){
+			nvgGlobalTint(args.vg, color::WHITE);
+			nvgFontSize(args.vg, 38);
+			nvgFontFaceId(args.vg, font->handle);
+			nvgTextLetterSpacing(args.vg, 2.5);
+
+			Vec textPos = Vec(9, 48);
+			NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
+			nvgFillColor(args.vg, nvgTransRGBA(textColor, 16));
+			// Background of all segments
+			nvgText(args.vg, textPos.x, textPos.y, "~~~~", NULL);
+			nvgFillColor(args.vg, textColor);
+
 			nvgText(args.vg, textPos.x, textPos.y, SHAPE_INFOS[shape].code.c_str(), NULL);
 		}
 	}
