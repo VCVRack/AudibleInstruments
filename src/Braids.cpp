@@ -253,15 +253,8 @@ static const std::vector<ShapeInfo> SHAPE_INFOS = {
 
 struct BraidsDisplay : TransparentWidget {
 	Braids* module;
-	std::shared_ptr<Font> font;
-
-	BraidsDisplay() {
-		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
-	}
 
 	void draw(const DrawArgs& args) override {
-		int shape = module ? module->settings.shape : 0;
-
 		// Background
 		NVGcolor backgroundColor = nvgRGB(0x38, 0x38, 0x38);
 		NVGcolor borderColor = nvgRGB(0x10, 0x10, 0x10);
@@ -273,19 +266,29 @@ struct BraidsDisplay : TransparentWidget {
 		nvgStrokeColor(args.vg, borderColor);
 		nvgStroke(args.vg);
 
-		// Text
-		nvgGlobalTint(args.vg, color::WHITE);
-		nvgFontSize(args.vg, 38);
-		nvgFontFaceId(args.vg, font->handle);
-		nvgTextLetterSpacing(args.vg, 2.5);
+		Widget::draw(args);
+	}
 
-		Vec textPos = Vec(9, 48);
-		NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
-		nvgFillColor(args.vg, nvgTransRGBA(textColor, 16));
-		// Background of all segments
-		nvgText(args.vg, textPos.x, textPos.y, "~~~~", NULL);
-		nvgFillColor(args.vg, textColor);
-		nvgText(args.vg, textPos.x, textPos.y, SHAPE_INFOS[shape].code.c_str(), NULL);
+	void drawLayer(const DrawArgs& args, int layer) override {
+		if (layer == 1) {
+			// Text
+			int shape = module ? module->settings.shape : 0;
+			std::shared_ptr<Font> font = APP->window->loadFont(asset::plugin(pluginInstance, "res/hdad-segment14-1.002/Segment14.ttf"));
+			if (font) {
+				nvgFontSize(args.vg, 38);
+				nvgFontFaceId(args.vg, font->handle);
+				nvgTextLetterSpacing(args.vg, 2.5);
+
+				Vec textPos = Vec(9, 48);
+				NVGcolor textColor = nvgRGB(0xaf, 0xd2, 0x2c);
+				nvgFillColor(args.vg, nvgTransRGBA(textColor, 16));
+				// Background of all segments
+				nvgText(args.vg, textPos.x, textPos.y, "~~~~", NULL);
+				nvgFillColor(args.vg, textColor);
+				nvgText(args.vg, textPos.x, textPos.y, SHAPE_INFOS[shape].code.c_str(), NULL);
+			}
+		}
+		Widget::drawLayer(args, layer);
 	}
 };
 
