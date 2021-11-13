@@ -275,7 +275,7 @@ struct Streams : Module {
 
 		// Reuse the same frame object for multiple engines because the params
 		// aren't touched.
-		streams::StreamsEngine::Frame frame;
+		streams::StreamsEngine::Frame frame = {};
 
 		frame.ch1.shape_knob          = params[CH1_SHAPE_PARAM]    .getValue();
 		frame.ch1.mod_knob            = params[CH1_MOD_PARAM]      .getValue();
