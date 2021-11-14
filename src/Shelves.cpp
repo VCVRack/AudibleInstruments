@@ -119,7 +119,7 @@ struct Shelves : Module {
 		int channels = std::max(inputs[IN_INPUT].getChannels(), 1);
 
 		// Reuse the same frame object for multiple engines because the params aren't touched.
-		shelves::ShelvesEngine::Frame frame;
+		shelves::ShelvesEngine::Frame frame = {};
 		frame.pre_gain = preGain;
 
 		frame.hs_freq_knob = rescale(params[HS_FREQ_PARAM].getValue(), freqMin, freqMax, 0.f, 1.f);
