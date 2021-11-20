@@ -295,6 +295,7 @@ struct Frames : Module {
 
 struct CKSSRot : SVGSwitch {
 	CKSSRot() {
+		shadow->opacity = 0.0;
 		addFrame(Svg::load(asset::plugin(pluginInstance, "res/CKSS_rot_0.svg")));
 		addFrame(Svg::load(asset::plugin(pluginInstance, "res/CKSS_rot_1.svg")));
 	}
