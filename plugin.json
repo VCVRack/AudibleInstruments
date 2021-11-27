@@ -1,16 +1,15 @@
 {
   "slug": "AudibleInstruments",
+  "name": "Audible Instruments",
   "version": "2.0.0",
   "license": "GPL-3.0-or-later",
-  "name": "Audible Instruments",
   "author": "VCV",
-  "authorEmail": "contact@vcvrack.com",
+  "authorEmail": "support@vcvrack.com",
   "authorUrl": "https://vcvrack.com/",
   "pluginUrl": "https://vcvrack.com/AudibleInstruments",
   "manualUrl": "https://vcvrack.com/AudibleInstruments#manual",
   "sourceUrl": "https://github.com/VCVRack/AudibleInstruments",
   "changelogUrl": "https://github.com/VCVRack/AudibleInstruments/blob/v1/CHANGELOG.md",
-  "donateUrl": "",
   "description": "Based on Mutable Instruments Eurorack modules",
   "modules": [
     {
