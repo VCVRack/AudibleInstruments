@@ -225,6 +225,7 @@ struct TidesWidget : ModuleWidget {
 			sheepPanel = new SvgPanel();
 			sheepPanel->setBackground(Svg::load(asset::plugin(pluginInstance, "res/Sheep.svg")));
 			sheepPanel->box.size = box.size;
+			sheepPanel->hide();
 			addChild(sheepPanel);
 		}
 
@@ -268,8 +269,8 @@ struct TidesWidget : ModuleWidget {
 		Tides* module = dynamic_cast<Tides*>(this->module);
 
 		if (module) {
-			tidesPanel->visible = !module->sheep;
-			sheepPanel->visible = module->sheep;
+			tidesPanel->setVisible(!module->sheep);
+			sheepPanel->setVisible(module->sheep);
 		}
 
 		ModuleWidget::step();
