@@ -256,11 +256,16 @@
     },
     {
       "slug": "Peaks",
-      "name": "Peaks",
+      "name": "Percussive Synth",
+      "manualUrl": "https://mutable-instruments.net/modules/peaks/manual/",
+      "modularGridUrl": "https://www.modulargrid.net/e/mutable-instruments-peaks",
       "description": "Based on Mutable Instruments Peaks",
       "tags": [
+        "Drum",
+        "Envelope generator",
         "Oscillator",
         "LFO",
+        "Sequencer",
         "Hardware clone"
       ]
     }

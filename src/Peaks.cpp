@@ -1,13 +1,5 @@
 #include "plugin.hpp"
-
-//#include "dsp/digital.hpp"
-//#include "dsp/samplerate.hpp"
-//#include "dsp/ringbuffer.hpp"
-
 #include "peaks/processors.h"
-
-//#include "AudibleInstruments.hpp"
-
 
 enum SwitchIndex {
 	SWITCH_TWIN_MODE,
