@@ -1,13 +1,12 @@
-#include <string>
-#include <chrono>
+#include "plugin.hpp"
 
-#include "dsp/digital.hpp"
-#include "dsp/samplerate.hpp"
-#include "dsp/ringbuffer.hpp"
+//#include "dsp/digital.hpp"
+//#include "dsp/samplerate.hpp"
+//#include "dsp/ringbuffer.hpp"
 
 #include "peaks/processors.h"
 
-#include "AudibleInstruments.hpp"
+//#include "AudibleInstruments.hpp"
 
 
 enum SwitchIndex {
@@ -109,12 +108,12 @@ struct Peaks : Module {
 	int16_t output[kBlockSize];
 	int16_t brightness[kNumChannels] = {0, 0};
 
-	SchmittTrigger switches_[2];
+	dsp::SchmittTrigger switches_[2];
 
 	peaks::GateFlags gate_flags[2] = {0, 0};
 
-	SampleRateConverter<2> outputSrc;
-	DoubleRingBuffer<Frame<2>, 256> outputBuffer;
+	dsp::SampleRateConverter<2> outputSrc;
+	dsp::DoubleRingBuffer<dsp::Frame<2>, 256> outputBuffer;
 
 	bool initNumberStation = false;
 
@@ -134,7 +133,19 @@ struct Peaks : Module {
 	size_t render_block_ = kNumBlocks / 2;
 
 
-	Peaks() : Module(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS) {
+	Peaks() {
+
+		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
+
+		configParam(KNOB_1_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
+		configParam(KNOB_2_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
+		configParam(KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
+		configParam(KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
+		configButton(BUTTON_1_PARAM, "Mode");
+		configButton(BUTTON_2_PARAM, "Mode");
+		configButton(TRIG_1_PARAM, "Trigger 1");
+		configButton(TRIG_2_PARAM, "Trigger 2");
+
 		settings_.edit_mode = EDIT_MODE_TWIN;
 		settings_.function[0] = FUNCTION_ENVELOPE;
 		settings_.function[1] = FUNCTION_ENVELOPE;
@@ -184,7 +195,7 @@ struct Peaks : Module {
 		setFunction(1, function_[1]);
 	}
 
-	json_t* toJson() override {
+	json_t* dataToJson() override {
 
 		saveState();
 
@@ -206,7 +217,7 @@ struct Peaks : Module {
 		return rootJ;
 	}
 
-	void fromJson(json_t* rootJ) override {
+	void dataFromJson(json_t* rootJ) override {
 		json_t* editModeJ = json_object_get(rootJ, "edit_mode");
 		if (editModeJ) {
 			settings_.edit_mode = static_cast<EditMode>(json_integer_value(editModeJ));
@@ -240,7 +251,7 @@ struct Peaks : Module {
 		init();
 	}
 
-	void step() override {
+	void process(const ProcessArgs& args) override {
 		poll();
 		pollPots();
 
@@ -259,21 +270,21 @@ struct Peaks : Module {
 			}
 
 			uint32_t external_gate_inputs = 0;
-			external_gate_inputs |= (inputs[GATE_1_INPUT].value ? 1 : 0);
-			external_gate_inputs |= (inputs[GATE_2_INPUT].value ? 2 : 0);
+			external_gate_inputs |= (inputs[GATE_1_INPUT].getVoltage() ? 1 : 0);
+			external_gate_inputs |= (inputs[GATE_2_INPUT].getVoltage() ? 2 : 0);
 
 			uint32_t buttons = 0;
-			buttons |= (params[TRIG_1_PARAM].value ? 1 : 0);
-			buttons |= (params[TRIG_2_PARAM].value ? 2 : 0);
+			buttons |= (params[TRIG_1_PARAM].getValue() ? 1 : 0);
+			buttons |= (params[TRIG_2_PARAM].getValue() ? 2 : 0);
 
 			uint32_t gate_inputs = external_gate_inputs | buttons;
 
 			// Prepare sample rate conversion.
 			// Peaks is sampling at 48kHZ.
-			outputSrc.setRates(48000, engineGetSampleRate());
+			outputSrc.setRates(48000, args.sampleRate);
 			int inLen = kBlockSize;
 			int outLen = outputBuffer.capacity();
-			Frame<2> f[kBlockSize];
+			dsp::Frame<2> f[kBlockSize];
 
 			// Process an entire block of data from the IOBuffer.
 			for (size_t k = 0; k < kBlockSize; ++k) {
@@ -301,12 +312,12 @@ struct Peaks : Module {
 
 		// Update outputs.
 		if (!outputBuffer.empty()) {
-			Frame<2> f = outputBuffer.shift();
+			dsp::Frame<2> f = outputBuffer.shift();
 
 			// Peaks manual says output spec is 0..8V for envelopes and 10Vpp for audio/CV.
 			// TODO Check the output values against an actual device.
-			outputs[OUT_1_OUTPUT].value = rescale(static_cast<float>(f.samples[0]), 0.0f, 65535.f, -8.0f, 8.0f);
-			outputs[OUT_2_OUTPUT].value = rescale(static_cast<float>(f.samples[1]), 0.0f, 65535.f, -8.0f, 8.0f);
+			outputs[OUT_1_OUTPUT].setVoltage(rescale(static_cast<float>(f.samples[0]), 0.0f, 65535.f, -8.0f, 8.0f));
+			outputs[OUT_2_OUTPUT].setVoltage(rescale(static_cast<float>(f.samples[1]), 0.0f, 65535.f, -8.0f, 8.0f));
 		}
 	}
 
@@ -467,7 +478,7 @@ void Peaks::lockPots() {
 
 void Peaks::pollPots() {
 	for (uint8_t i = 0; i < kNumAdcChannels; ++i) {
-		adc_lp_[i] = (int32_t(params[KNOB_1_PARAM + i].value) + adc_lp_[i] * 7) >> 3;
+		adc_lp_[i] = (int32_t(params[KNOB_1_PARAM + i].getValue()) + adc_lp_[i] * 7) >> 3;
 		int32_t value = adc_lp_[i];
 		int32_t current_value = adc_value_[i];
 		if (value >= current_value + adc_threshold_[i] ||
@@ -530,7 +541,7 @@ long long Peaks::getSystemTimeMs() {
 
 void Peaks::poll() {
 	for (uint8_t i = 0; i < 2; ++i) {
-		if (switches_[i].process(params[BUTTON_1_PARAM + i].value)) {
+		if (switches_[i].process(params[BUTTON_1_PARAM + i].getValue())) {
 			press_time_[i] = getSystemTimeMs();
 		}
 
@@ -618,80 +629,67 @@ void Peaks::refreshLeds() {
 		b[1] = processors[1].number_station().gate() ? 255 : 0;
 	}
 
-	lights[TRIG_1_LIGHT].value = rescale(static_cast<float>(b[0]), 0.0f, 255.0f, 0.0f, 1.0f);
-	lights[TRIG_2_LIGHT].value = rescale(static_cast<float>(b[1]), 0.0f, 255.0f, 0.0f, 1.0f);
+	const float deltaTime = APP->engine->getSampleTime();
+	lights[TRIG_1_LIGHT].setSmoothBrightness(rescale(static_cast<float>(b[0]), 0.0f, 255.0f, 0.0f, 1.0f), deltaTime);
+	lights[TRIG_2_LIGHT].setSmoothBrightness(rescale(static_cast<float>(b[1]), 0.0f, 255.0f, 0.0f, 1.0f), deltaTime);
 }
 
-
 struct PeaksWidget : ModuleWidget {
-	PeaksWidget(Peaks* module) : ModuleWidget(module) {
-		setPanel(SVG::load(assetPlugin(plugin, "res/Peaks.svg")));
+	PeaksWidget(Peaks* module) {
+		setModule(module);
+		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Peaks.svg")));
 
-		addChild(Widget::create<ScrewSilver>(Vec(15, 0)));
-		addChild(Widget::create<ScrewSilver>(Vec(15, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(ParamWidget::create<TL1105>(Vec(8.5, 52), module, Peaks::BUTTON_1_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 74), module, Peaks::TWIN_MODE_LIGHT));
-		addParam(ParamWidget::create<TL1105>(Vec(8.5, 89), module, Peaks::BUTTON_2_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 111), module, Peaks::FUNC_1_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 126.75), module, Peaks::FUNC_2_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 142.5), module, Peaks::FUNC_3_LIGHT));
-		addChild(ModuleLightWidget::create<MediumLight<GreenLight>>(Vec(11.88, 158), module, Peaks::FUNC_4_LIGHT));
+		addParam(createParam<TL1105>((Vec(8.5, 52)), module, Peaks::BUTTON_1_PARAM));
+		addParam(createParam<TL1105>((Vec(8.5, 89)), module, Peaks::BUTTON_2_PARAM));
 
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 51), module, Peaks::KNOB_1_PARAM, 0.0f, 65535.0f, 16384.0f));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 115), module, Peaks::KNOB_2_PARAM, 0.0f, 65535.0f, 16384.0f));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 179), module, Peaks::KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f));
-		addParam(ParamWidget::create<Rogan1PSWhite>(Vec(61, 244), module, Peaks::KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f));
+		addParam(createParamCentered<LEDBezel>(Vec(21, 200), module, Peaks::TRIG_1_PARAM));
+		addParam(createParamCentered<LEDBezel>(Vec(21, 285), module, Peaks::TRIG_2_PARAM));
 
-		addParam(ParamWidget::create<LEDBezel>(Vec(11, 188), module, Peaks::TRIG_1_PARAM, 0.0f, 1.0f, 0.0f));
-		addParam(ParamWidget::create<LEDBezel>(Vec(11, 273), module, Peaks::TRIG_2_PARAM, 0.0f, 1.0f, 0.0f));
-		addChild(ModuleLightWidget::create<LEDBezelLight<GreenLight>>(Vec(11, 188).plus(mm2px(Vec(0.75, 0.75))), module, Peaks::TRIG_1_LIGHT));
-		addChild(ModuleLightWidget::create<LEDBezelLight<GreenLight>>(Vec(11, 273).plus(mm2px(Vec(0.75, 0.75))), module, Peaks::TRIG_2_LIGHT));
+		addChild(createLightCentered<LEDBezelLight<GreenLight>>(Vec(21, 200), module, Peaks::TRIG_1_LIGHT));
+		addChild(createLightCentered<LEDBezelLight<GreenLight>>(Vec(21, 285), module, Peaks::TRIG_2_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 74), module, Peaks::TWIN_MODE_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 111), module, Peaks::FUNC_1_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 126.75), module, Peaks::FUNC_2_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 142.5), module, Peaks::FUNC_3_LIGHT));
+		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 158), module, Peaks::FUNC_4_LIGHT));
 
-		addInput(Port::create<PJ301MPort>(Vec(10, 230), Port::INPUT, module, Peaks::GATE_1_INPUT));
-		addInput(Port::create<PJ301MPort>(Vec(10, 315), Port::INPUT, module, Peaks::GATE_2_INPUT));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 51), module, Peaks::KNOB_1_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 115), module, Peaks::KNOB_2_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 179), module, Peaks::KNOB_3_PARAM));
+		addParam(createParam<Rogan1PSWhite>(Vec(61, 244), module, Peaks::KNOB_4_PARAM));
 
-		addOutput(Port::create<PJ301MPort>(Vec(53, 315), Port::OUTPUT, module, Peaks::OUT_1_OUTPUT));
-		addOutput(Port::create<PJ301MPort>(Vec(86, 315), Port::OUTPUT, module, Peaks::OUT_2_OUTPUT));
+
+		addInput(createInput<PJ301MPort>((Vec(10, 230)), module, Peaks::GATE_1_INPUT));
+		addInput(createInput<PJ301MPort>((Vec(10, 315)), module, Peaks::GATE_2_INPUT));
+
+		addOutput(createOutput<PJ301MPort>((Vec(53., 315.)), module, Peaks::OUT_1_OUTPUT));
+		addOutput(createOutput<PJ301MPort>((Vec(86., 315.)), module, Peaks::OUT_2_OUTPUT));
 	}
 
-	Menu* createContextMenu() override {
-		Menu* menu = ModuleWidget::createContextMenu();
-		Peaks* peaks = dynamic_cast<Peaks*>(this->module);
+	void appendContextMenu(Menu* menu) override {
 
-		struct SnapModeItem : MenuItem {
-			Peaks* peaks;
-			void onAction(EventAction& e) override {
-				peaks->snap_mode_ = !peaks->snap_mode_;
-			}
-			void step() override {
-				rightText = (peaks->snap_mode_) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
+		menu->addChild(new MenuSeparator);
+		Peaks *peaks = dynamic_cast<Peaks*>(this->module);
 
-		struct NumberStationItem : MenuItem {
-			Peaks* peaks;
-			void onAction(EventAction& e) override {
-				peaks->initNumberStation = true;
-			}
-			void step() override {
-				rightText = (peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION) ? "✔" : "";
-				MenuItem::step();
-			}
-		};
 
 		menu->addChild(construct<MenuLabel>());
-		menu->addChild(construct<SnapModeItem>(&SnapModeItem::text, "Snap Mode", &SnapModeItem::peaks, peaks));
+
+		menu->addChild(createBoolPtrMenuItem("Snap mode", "", &peaks->snap_mode_));
 
 		menu->addChild(construct<MenuLabel>());
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Secret Modes"));
-		menu->addChild(construct<NumberStationItem>(&NumberStationItem::text, "Number Station", &NumberStationItem::peaks, peaks));
 
-		return menu;
+		menu->addChild(createBoolMenuItem("Number station", "",
+			[=]() {return peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION;},
+			[=](bool val) {peaks->initNumberStation = true;}
+		));
 	}
+	
 };
 
 
 
-Model* modelPeaks = Model::create<Peaks, PeaksWidget>("Audible Instruments", "Peaks", "Percussive Synthesizer", UTILITY_TAG, LFO_TAG, DRUM_TAG);
+Model* modelPeaks = createModel<Peaks, PeaksWidget>("Peaks");
