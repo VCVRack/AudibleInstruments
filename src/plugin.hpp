@@ -26,7 +26,7 @@ extern Model* modelMarbles;
 extern Model* modelRipples;
 extern Model* modelShelves;
 extern Model* modelStreams;
-
+extern Model *modelPeaks;
 
 template <typename Base>
 struct Rogan6PSLight : Base {

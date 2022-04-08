@@ -253,6 +253,16 @@
         "Low-pass gate",
         "Polyphonic"
       ]
+    },
+    {
+      "slug": "Peaks",
+      "name": "Peaks",
+      "description": "Based on Mutable Instruments Peaks",
+      "tags": [
+        "Oscillator",
+        "LFO",
+        "Hardware clone"
+      ]
     }
   ]
 }
