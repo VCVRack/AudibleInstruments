@@ -129,11 +129,11 @@ struct Peaks : Module {
 
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 
-		configParam(KNOB_1_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
-		configParam(KNOB_2_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
-		configParam(KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
-		configParam(KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1");
-		configButton(BUTTON_1_PARAM, "Mode");
+		configParam(KNOB_1_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 1", "", 0.f, 1.f / 65535.f);
+		configParam(KNOB_2_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 2", "", 0.f, 1.f / 65535.f);
+		configParam(KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 3", "", 0.f, 1.f / 65535.f);
+		configParam(KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 4", "", 0.f, 1.f / 65535.f);
+		configButton(BUTTON_1_PARAM, "Split");
 		configButton(BUTTON_2_PARAM, "Mode");
 		configButton(TRIG_1_PARAM, "Trigger 1");
 		configButton(TRIG_2_PARAM, "Trigger 2");
@@ -664,7 +664,7 @@ struct PeaksWidget : ModuleWidget {
 	void appendContextMenu(Menu* menu) override {
 
 		menu->addChild(new MenuSeparator);
-		Peaks *peaks = dynamic_cast<Peaks*>(this->module);
+		Peaks* peaks = dynamic_cast<Peaks*>(this->module);
 
 
 		menu->addChild(construct<MenuLabel>());
@@ -675,11 +675,15 @@ struct PeaksWidget : ModuleWidget {
 		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Secret Modes"));
 
 		menu->addChild(createBoolMenuItem("Number station", "",
-			[=]() {return peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION;},
-			[=](bool val) {peaks->initNumberStation = true;}
-		));
+		[ = ]() {
+			return peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION;
+		},
+		[ = ](bool val) {
+			peaks->initNumberStation = true;
+		}
+		                                 ));
 	}
-	
+
 };
 
 
