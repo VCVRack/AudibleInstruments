@@ -250,6 +250,157 @@ struct Peaks : Module {
 		setFunction(1, function_[1]);
 	}
 
+	void updateKnobDescriptions() {
+
+		if (processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION) {
+			getParamQuantity(KNOB_1_PARAM)->description = "????";
+			getParamQuantity(KNOB_2_PARAM)->description = "????";
+			getParamQuantity(KNOB_3_PARAM)->description = "????";
+			getParamQuantity(KNOB_4_PARAM)->description = "????";
+			return;
+		}
+
+		if (edit_mode_ == EDIT_MODE_SPLIT) {
+			switch (function_[0]) {
+				case FUNCTION_ENVELOPE: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 Attack";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 Decay";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 Attack";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 Decay";
+					break;
+				}
+				case FUNCTION_LFO: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 Frequency";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 Waveform";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 Frequency";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 Waveform";
+					break;
+				}
+				case FUNCTION_TAP_LFO: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 Waveform";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 Waveform variation";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 Waveform";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 Waveform variation";
+					break;
+				}
+				case FUNCTION_DRUM_GENERATOR: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 BD Tone";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 BD Decay";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 SD Tone";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 SD Snappy";
+					break;
+				}
+				case FUNCTION_MINI_SEQUENCER: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 Step 1";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 Step 2";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 Step 1";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 Step 2";
+					break;
+				}
+				case FUNCTION_PULSE_SHAPER: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 Delay";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 Number of repeats";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 Delay";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 Number of repeats";
+					break;
+				}
+				case FUNCTION_PULSE_RANDOMIZER: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 Acceptance/regeneration probability";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 Delay";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 Acceptance/regeneration probability";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 Delay";
+					break;
+				}
+				case FUNCTION_FM_DRUM_GENERATOR: {
+					getParamQuantity(KNOB_1_PARAM)->description = "Ch. 1 BD presets morphing";
+					getParamQuantity(KNOB_2_PARAM)->description = "Ch. 1 BD presets variations";
+					getParamQuantity(KNOB_3_PARAM)->description = "Ch. 2 SD presets morphing";
+					getParamQuantity(KNOB_4_PARAM)->description = "Ch. 2 SD presets variations";
+					break;
+				}
+				default: break;
+			}
+		}
+		else {
+
+			int currentFunction = -1;
+			// same for both
+			if (edit_mode_ == EDIT_MODE_TWIN) {
+				currentFunction = function_[0]; 	// == function_[1]
+			}
+			// if expert, pick the active set of labels
+			else if (edit_mode_ == EDIT_MODE_FIRST || edit_mode_ == EDIT_MODE_SECOND) {
+				currentFunction = function_[edit_mode_ - EDIT_MODE_FIRST];
+			}
+			else {
+				return;
+			}
+
+			std::string channelText = (edit_mode_ == EDIT_MODE_TWIN) ? "Ch. 1&2 " : string::f("Ch. %d ", edit_mode_ - EDIT_MODE_FIRST + 1);
+
+			switch (currentFunction) {
+				case FUNCTION_ENVELOPE: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Attack";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Decay";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "Sustain";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Release";
+					break;
+				}
+				case FUNCTION_LFO: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Frequency";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Waveform (sine, linear slope, square, steps, random)";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "Waveform variation (wavefolder for sine; ascending/triangle/descending balance for slope, pulse-width for square, number of steps, and interpolation method)";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Phase on restart";
+					break;
+				}
+				case FUNCTION_TAP_LFO: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Amplitude";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Waveform";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "Waveform variation";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Phase on restart";
+					break;
+				}
+				case FUNCTION_DRUM_GENERATOR: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Base frequency";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Frequency modulation (“Punch” for BD, “Tone” for SD)";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "High-frequency content (“Tone” for BD, “Snappy” for SD)";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Decay";
+					break;
+				}
+				case FUNCTION_MINI_SEQUENCER: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Step 1";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Step 2";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "Step 3";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Step 4";
+					break;
+				}
+				case FUNCTION_PULSE_SHAPER: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Pre-delay";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Gate duration";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "Delay";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Number of repeats";
+					break;
+				}
+				case FUNCTION_PULSE_RANDOMIZER: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Probability that an incoming trigger is processed";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "Probability that the trigger is regenerated after the delay";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "Delay time";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Jitter";
+					break;
+				}
+				case FUNCTION_FM_DRUM_GENERATOR: {
+					getParamQuantity(KNOB_1_PARAM)->description = channelText + "Frequency";
+					getParamQuantity(KNOB_2_PARAM)->description = channelText + "FM intensity";
+					getParamQuantity(KNOB_3_PARAM)->description = channelText + "FM and AM envelope decay time (the FM envelope has a shorter decay than the AM envelope, but the two values are tied to this parameter)";
+					getParamQuantity(KNOB_4_PARAM)->description = channelText + "Color. At 12 o'clock, no modification is brought to the oscillator signal. Turn right to increase the amount of noise (for snares). Turn left to increase the amount of distortion (for 909 style kicks).";
+					break;
+				}
+				default: break;
+			}
+		}
+
+	}
+
 	json_t* dataToJson() override {
 
 		saveState();
@@ -309,6 +460,7 @@ struct Peaks : Module {
 	void process(const ProcessArgs& args) override {
 		poll();
 		pollPots();
+		updateKnobDescriptions();
 
 		// Initialize "secret" number station mode.
 		if (initNumberStation) {
