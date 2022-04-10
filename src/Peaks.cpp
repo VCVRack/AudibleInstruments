@@ -124,6 +124,69 @@ struct Peaks : Module {
 	size_t io_block_ = 0;
 	size_t render_block_ = kNumBlocks / 2;
 
+	struct EditModeParam : ParamQuantity {
+		std::string getDisplayValueString() override {
+			if (module != nullptr) {
+				Peaks* modulePeaks = static_cast<Peaks*>(module);
+
+				if (paramId == BUTTON_1_PARAM) {
+					int editMode = modulePeaks->settings_.edit_mode;
+					switch (editMode) {
+						case EDIT_MODE_SPLIT: return "Split";
+						case EDIT_MODE_TWIN: return "Twin";
+						case EDIT_MODE_FIRST: return "Expert (Out 1)";
+						case EDIT_MODE_SECOND: return "Expert (Out 2)";
+						default: return "";
+					}
+				}
+				else {
+					assert(false);
+				}
+			}
+			else {
+				return "";
+			}
+		}
+	};
+
+	static std::string functionLabelFromEnum(int function) {
+		switch (function) {
+			case FUNCTION_ENVELOPE: return "Envelope";
+			case FUNCTION_LFO: return "LFO";
+			case FUNCTION_TAP_LFO: return "Tap LFO";
+			case FUNCTION_DRUM_GENERATOR: return "Drum generator";
+			case FUNCTION_MINI_SEQUENCER: return "Sequencer (easter egg)";
+			case FUNCTION_PULSE_SHAPER: return "Pulse Shaper (easter egg";
+			case FUNCTION_PULSE_RANDOMIZER: return "Pulse randomizer (easter egg)";
+			case FUNCTION_FM_DRUM_GENERATOR: return "Drum generate FM (easter egg)";
+			default: return "";
+		}
+	}
+
+	struct FunctionParam : ParamQuantity {
+		std::string getDisplayValueString() override {
+			if (module != nullptr) {
+				Peaks* modulePeaks = static_cast<Peaks*>(module);
+
+				if (paramId == BUTTON_2_PARAM) {
+					int function1 = modulePeaks->settings_.function[0];
+					int function2 = modulePeaks->settings_.function[1];
+					if (function1 == function2) {
+						return functionLabelFromEnum(function1);
+					}
+					else {
+						return "1: " + functionLabelFromEnum(function1) + ", 2: " + functionLabelFromEnum(function2);
+					}
+				}
+				else {
+					assert(false);
+				}
+			}
+			else {
+				return "";
+			}
+		}
+	};
 
 	Peaks() {
 
@@ -133,8 +196,8 @@ struct Peaks : Module {
 		configParam(KNOB_2_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 2", "", 0.f, 1.f / 65535.f);
 		configParam(KNOB_3_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 3", "", 0.f, 1.f / 65535.f);
 		configParam(KNOB_4_PARAM, 0.0f, 65535.0f, 32678.0f, "Knob 4", "", 0.f, 1.f / 65535.f);
-		configButton(BUTTON_1_PARAM, "Split");
-		configButton(BUTTON_2_PARAM, "Mode");
+		configButton<EditModeParam>(BUTTON_1_PARAM, "Edit Mode");
+		configButton<FunctionParam>(BUTTON_2_PARAM, "Function");
 		configButton(TRIG_1_PARAM, "Trigger 1");
 		configButton(TRIG_2_PARAM, "Trigger 2");
 
@@ -637,11 +700,11 @@ struct PeaksWidget : ModuleWidget {
 		addParam(createParam<TL1105>((Vec(8.5, 52)), module, Peaks::BUTTON_1_PARAM));
 		addParam(createParam<TL1105>((Vec(8.5, 89)), module, Peaks::BUTTON_2_PARAM));
 
-		addParam(createParamCentered<LEDBezel>(Vec(21, 200), module, Peaks::TRIG_1_PARAM));
-		addParam(createParamCentered<LEDBezel>(Vec(21, 285), module, Peaks::TRIG_2_PARAM));
+		addParam(createParamCentered<LEDBezel>(Vec(22, 200), module, Peaks::TRIG_1_PARAM));
+		addParam(createParamCentered<LEDBezel>(Vec(22, 285), module, Peaks::TRIG_2_PARAM));
 
-		addChild(createLightCentered<LEDBezelLight<GreenLight>>(Vec(21, 200), module, Peaks::TRIG_1_LIGHT));
-		addChild(createLightCentered<LEDBezelLight<GreenLight>>(Vec(21, 285), module, Peaks::TRIG_2_LIGHT));
+		addChild(createLightCentered<LEDBezelLight<GreenLight>>(Vec(22, 200), module, Peaks::TRIG_1_LIGHT));
+		addChild(createLightCentered<LEDBezelLight<GreenLight>>(Vec(22, 285), module, Peaks::TRIG_2_LIGHT));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 74), module, Peaks::TWIN_MODE_LIGHT));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 111), module, Peaks::FUNC_1_LIGHT));
 		addChild(createLight<MediumLight<GreenLight>>(Vec(11.88, 126.75), module, Peaks::FUNC_2_LIGHT));
