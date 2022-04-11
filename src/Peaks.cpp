@@ -102,6 +102,10 @@ struct Peaks : Module {
 
 	dsp::SchmittTrigger switches_[2];
 
+	// update descriptions/knobs every 16 samples
+	static const int cvUpdateFrequency = 16;
+	dsp::ClockDivider cvDivider;
+
 	peaks::GateFlags gate_flags[2] = {0, 0};
 
 	dsp::SampleRateConverter<2> outputSrc;
@@ -201,6 +205,9 @@ struct Peaks : Module {
 		configButton(TRIG_1_PARAM, "Trigger 1");
 		configButton(TRIG_2_PARAM, "Trigger 2");
 
+		getParamQuantity(BUTTON_1_PARAM)->description = "Long press to enter/leave Expert Mode";
+		getParamQuantity(BUTTON_2_PARAM)->description = "Long press to enable/disable Easter Egg Modes";
+
 		settings_.edit_mode = EDIT_MODE_TWIN;
 		settings_.function[0] = FUNCTION_ENVELOPE;
 		settings_.function[1] = FUNCTION_ENVELOPE;
@@ -211,6 +218,8 @@ struct Peaks : Module {
 		memset(&processors[1], 0, sizeof(processors[1]));
 		processors[0].Init(0);
 		processors[1].Init(1);
+
+		cvDivider.setDivision(cvUpdateFrequency);
 	}
 
 	void onReset() override {
@@ -458,9 +467,12 @@ struct Peaks : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		poll();
-		pollPots();
-		updateKnobDescriptions();
+		// only update knobs / lights every 16 samples
+		if (cvDivider.process()) {
+			poll();
+			pollPots();
+			updateKnobDescriptions();
+		}
 
 		// Initialize "secret" number station mode.
 		if (initNumberStation) {
@@ -778,26 +790,30 @@ void Peaks::saveState() {
 }
 
 void Peaks::refreshLeds() {
+
+	// refreshLeds() is only updated every N samples, so make sure setBrightnessSmooth methods account for this
+	const float sampleTime = APP->engine->getSampleTime() * cvUpdateFrequency;
+
 	uint8_t flash = (getSystemTimeMs() >> 7) & 7;
 	switch (edit_mode_) {
 		case EDIT_MODE_FIRST:
-			lights[TWIN_MODE_LIGHT].value = (flash == 1) ? 1.0f : 0.0f;
+			lights[TWIN_MODE_LIGHT].setBrightnessSmooth((flash == 1) ? 1.0f : 0.0f, sampleTime);
 			break;
 		case EDIT_MODE_SECOND:
-			lights[TWIN_MODE_LIGHT].value = (flash == 1 || flash == 3) ? 1.0f : 0.0f;
+			lights[TWIN_MODE_LIGHT].setBrightnessSmooth((flash == 1 || flash == 3) ? 1.0f : 0.0f, sampleTime);
 			break;
 		default:
-			lights[TWIN_MODE_LIGHT].value = (edit_mode_ & 1) ? 1.0f : 0.0f;
+			lights[TWIN_MODE_LIGHT].setBrightnessSmooth((edit_mode_ & 1) ? 1.0f : 0.0f, sampleTime);
 			break;
 	}
 	if ((getSystemTimeMs() & 256) && function() >= FUNCTION_FIRST_ALTERNATE_FUNCTION) {
 		for (size_t i = 0; i < 4; ++i) {
-			lights[FUNC_1_LIGHT + i].value = 0.0f;
+			lights[FUNC_1_LIGHT + i].setBrightnessSmooth(0.0f, sampleTime);
 		}
 	}
 	else {
 		for (size_t i = 0; i < 4; ++i) {
-			lights[FUNC_1_LIGHT + i].value = ((function() & 3) == i) ? 1.0f : 0.0f;
+			lights[FUNC_1_LIGHT + i].setBrightnessSmooth(((function() & 3) == i) ? 1.0f : 0.0f, sampleTime);
 		}
 	}
 
