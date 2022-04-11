@@ -897,26 +897,21 @@ struct PeaksWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator);
 		Peaks* peaks = dynamic_cast<Peaks*>(this->module);
 
+		menu->addChild(createBoolPtrMenuItem("Knob pickup (snap)", "", &peaks->snap_mode_));
 
-		menu->addChild(construct<MenuLabel>());
-
-		menu->addChild(createBoolPtrMenuItem("Snap mode", "", &peaks->snap_mode_));
-
-		menu->addChild(construct<MenuLabel>());
-		menu->addChild(construct<MenuLabel>(&MenuLabel::text, "Secret Modes"));
-
-		menu->addChild(createBoolMenuItem("Number station", "",
-		[ = ]() {
-			return peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION;
-		},
-		[ = ](bool val) {
-			peaks->initNumberStation = true;
+		menu->addChild(createSubmenuItem("Secret Modes", "",
+		[ = ](Menu * menu) {
+			menu->addChild(createBoolMenuItem("Number station", "",
+			[ = ]() {
+				return peaks->processors[0].function() == peaks::PROCESSOR_FUNCTION_NUMBER_STATION;
+			},
+			[ = ](bool val) {
+				peaks->initNumberStation = true;
+			}));
 		}
-		                                 ));
+		                                ));
 	}
 
 };
-
-
 
 Model* modelPeaks = createModel<Peaks, PeaksWidget>("Peaks");
