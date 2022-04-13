@@ -60,15 +60,15 @@ Based on [Ripples](https://mutable-instruments.net/modules/ripples), [Manual](ht
 Based on [Shelves](https://mutable-instruments.net/modules/shelves), [Manual](https://mutable-instruments.net/modules/shelves/manual/)
 - Virtual analog model provided by [Alright Devices](https://www.alrightdevices.com/) after successful crowdfunding.
 
+### Percussive Synth
+Based on [Peaks](https://mutable-instruments.net/modules/peaks), [Manual](https://mutable-instruments.net/modules/peaks/manual/)
+
+### Dual Dynamics Gate
+Based on [Streams](https://mutable-instruments.net/modules/streams), [Manual](https://mutable-instruments.net/modules/streams/manual/)
+- Virtual analog model provided by [Alright Devices](https://www.alrightdevices.com/) after successful crowdfunding.
+
 
 ## Not yet ported
-
-### [Peaks](https://mutable-instruments.net/modules/peaks)
-[Manual](https://mutable-instruments.net/modules/peaks/manual/)
-
-### [Streams](https://mutable-instruments.net/modules/streams)
-[Manual](https://mutable-instruments.net/modules/streams/manual/)
-- analog, but it's possible to fake the filter with schematic analysis, need to buy/borrow a unit
 
 ### [Yarns](https://mutable-instruments.net/modules/yarns)
 [Manual](https://mutable-instruments.net/modules/yarns/manual/)

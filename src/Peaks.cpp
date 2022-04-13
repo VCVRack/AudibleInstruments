@@ -95,9 +95,9 @@ struct Peaks : Module {
 	int32_t adc_threshold_[kNumAdcChannels] = {0, 0, 0, 0};
 	long long press_time_[2] = {0, 0};
 
-	peaks::Processors processors[2];
+	peaks::Processors processors[2] = {};
 
-	int16_t output[kBlockSize];
+	int16_t output[kBlockSize] = {};
 	int16_t brightness[kNumChannels] = {0, 0};
 
 	dsp::SchmittTrigger switches_[2];
@@ -214,8 +214,6 @@ struct Peaks : Module {
 		settings_.snap_mode = false;
 		std::fill(&settings_.pot_value[0], &settings_.pot_value[8], 0);
 
-		memset(&processors[0], 0, sizeof(processors[0]));
-		memset(&processors[1], 0, sizeof(processors[1]));
 		processors[0].Init(0);
 		processors[1].Init(1);
 
