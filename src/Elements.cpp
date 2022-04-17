@@ -397,16 +397,17 @@ struct ElementsWidget : ModuleWidget {
 
 		menu->addChild(createMenuLabel("Models"));
 
-		static const std::vector<std::string> modelLabels = {
-			"Original",
-			"Non-linear string",
-			"Chords",
-			"Ominous voice",
+		static const std::vector<std::pair<std::string, int>> modelLabels = {
+			std::make_pair("Original", 0),
+			std::make_pair("Non-linear string", 1),
+			std::make_pair("Chords", 2),
+			std::make_pair("Ominous voice", -1),
 		};
-		for (int i = 0; i < 4; i++) {
-			menu->addChild(createCheckMenuItem(modelLabels[i], "",
-				[=]() {return module->getModel() == i;},
-				[=]() {module->setModel(i);}
+		
+		for (auto modelLabel : modelLabels) {
+			menu->addChild(createCheckMenuItem(modelLabel.first, "",
+				[=]() {return module->getModel() == modelLabel.second;},
+				[=]() {module->setModel(modelLabel.second);}
 			));
 		}
 	}
