@@ -1,4 +1,8 @@
-### 2.0.0 (in development)
+### 2.1.0 (in development)
+- Add Percussive Synth
+- Fix Elements "Ominous voice" bug
+
+### 2.0.0 (2021-11-28)
 - Add port labels.
 - Rearrange context menus for clarity and consistency.
 
