@@ -397,16 +397,22 @@ struct ElementsWidget : ModuleWidget {
 
 		menu->addChild(createMenuLabel("Models"));
 
-		static const std::vector<std::string> modelLabels = {
-			"Original",
-			"Non-linear string",
-			"Chords",
-			"Ominous voice",
+		struct ModeNameAndId {
+			std::string name;
+			int id;
 		};
-		for (int i = 0; i < 4; i++) {
-			menu->addChild(createCheckMenuItem(modelLabels[i], "",
-				[=]() {return module->getModel() == i;},
-				[=]() {module->setModel(i);}
+
+		static const std::vector<ModeNameAndId> modelLabels = {
+			{"Original", 0},
+			{"Non-linear string", 1},
+			{"Chords", 2},
+			{"Ominous voice", -1}
+		};
+		
+		for (auto modelLabel : modelLabels) {
+			menu->addChild(createCheckMenuItem(modelLabel.name, "",
+				[=]() {return module->getModel() == modelLabel.id;},
+				[=]() {module->setModel(modelLabel.id);}
 			));
 		}
 	}
