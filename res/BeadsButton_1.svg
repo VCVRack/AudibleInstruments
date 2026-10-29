@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="8mm" height="8mm" viewBox="0 0 8 8" version="1.1">
+  <!-- Newly authored round button geometry. SPDX-License-Identifier: GPL-3.0-or-later. -->
+  <title>Beads round momentary button pressed</title>
+  <defs>
+    <linearGradient id="button-rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bdbdbd"/>
+      <stop offset="1" stop-color="#7d7d7d"/>
+    </linearGradient>
+    <linearGradient id="button-cap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3e2df"/>
+      <stop offset="1" stop-color="#fbfbf7"/>
+    </linearGradient>
+  </defs>
+  <circle cx="4" cy="4" r="3.98" fill="url(#button-rim)"/>
+  <circle cx="4" cy="4.03" r="3.7" fill="url(#button-cap)" stroke="#f7f7f4" stroke-width=".12"/>
+</svg>

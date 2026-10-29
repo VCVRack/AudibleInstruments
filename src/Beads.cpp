@@ -783,11 +783,36 @@ struct BeadsQualityLight : GrayModuleLightWidget {
 };
 
 
+// 8mm white cap, as on the hardware
+struct BeadsButton : SvgSwitch {
+	BeadsButton() {
+		momentary = true;
+		addFrame(Svg::load(asset::plugin(pluginInstance, "res/BeadsButton_0.svg")));
+		addFrame(Svg::load(asset::plugin(pluginInstance, "res/BeadsButton_1.svg")));
+	}
+};
+
+
 // Yellow-green, as the lit FREEZE and SEED buttons appear in the manual
 struct BeadsButtonLight : GrayModuleLightWidget {
 	BeadsButtonLight() {
 		box.size = Vec(22, 22);
+		// Let the white cap show through when unlit.
+		bgColor = color::BLACK_TRANSPARENT;
+		borderColor = color::BLACK_TRANSPARENT;
 		addBaseColor(nvgRGB(0xc8, 0xd0, 0x67));
+	}
+
+	void drawLayer(const DrawArgs& args, int layer) override {
+		if (layer == 1) {
+			// Paint the light over the cap. Rack's usual blend only brightens
+			// what's underneath, which barely shows on a white cap.
+			nvgGlobalCompositeOperation(args.vg, NVG_SOURCE_OVER);
+			drawLight(args);
+			nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
+			drawHalo(args);
+		}
+		Widget::drawLayer(args, layer);
 	}
 };
 
@@ -814,8 +839,8 @@ struct BeadsWidget : ModuleWidget {
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(29.835, 80.696)), module, Beads::SIZE_AMOUNT_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(41.286, 80.696)), module, Beads::SHAPE_AMOUNT_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(52.736, 80.696)), module, Beads::PITCH_AMOUNT_PARAM));
-		addParam(createParamCentered<CKD6>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_PARAM));
-		addParam(createParamCentered<CKD6>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_PARAM));
+		addParam(createParamCentered<BeadsButton>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_PARAM));
+		addParam(createParamCentered<BeadsButton>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_PARAM));
 		addParam(createParamCentered<TL1105>(mm2px(Vec(35.555, 45.146)), module, Beads::QUALITY_PARAM));
 		addParam(createParamCentered<TL1105>(mm2px(Vec(6.936, 76.896)), module, Beads::ASSIGN_PARAM));
 
