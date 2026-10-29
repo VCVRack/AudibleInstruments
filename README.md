@@ -36,6 +36,11 @@ The **Sample memory** context submenu saves and loads four audio-buffer slots, i
 
 New instances detect rising edges at TRIGGER. Older patches retain **Legacy trigger-as-gate behavior**, which can be disabled in the context menu.
 
+### Texture Synthesizer 2
+Based on [Beads](https://pichenettes.github.io/mutable-instruments-documentation/modules/beads/), [Manual](https://pichenettes.github.io/mutable-instruments-documentation/modules/beads/manual/)
+- button + knob combos (manual input gain, CV amounts) are also available in the right-click context menu
+- frozen buffer autosave is not supported
+
 ### Meta Modulator
 Based on [Warps](https://mutable-instruments.net/modules/warps), [Manual](https://mutable-instruments.net/modules/warps/manual/)
 

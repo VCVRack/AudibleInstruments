@@ -101,6 +101,10 @@ SOURCES += eurorack/streams/svf.cc
 SOURCES += eurorack/streams/vactrol.cc
 SOURCES += eurorack/streams/compressor.cc
 
+# Beads is not in the eurorack submodule, so its firmware code is in src/Beads.
+SOURCES += $(wildcard src/Beads/*.cc)
+SOURCES += $(wildcard src/Beads/dsp/*.cc)
+
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 

@@ -27,6 +27,7 @@ extern Model* modelMarbles;
 extern Model* modelRipples;
 extern Model* modelShelves;
 extern Model* modelStreams;
+extern Model* modelBeads;
 
 
 /** Mutable Instruments' red/green bicolor LEDs look orange, not yellow, with both dies lit. Rack adds the two
