@@ -8,8 +8,8 @@
       <stop offset="1" stop-color="#7d7d7d"/>
     </linearGradient>
     <linearGradient id="button-cap" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e3e2df"/>
-      <stop offset="1" stop-color="#fbfbf7"/>
+      <stop offset="0" stop-color="#eeeeea"/>
+      <stop offset="1" stop-color="#d6d5d1"/>
     </linearGradient>
   </defs>
   <circle cx="4" cy="4" r="3.98" fill="url(#button-rim)"/>
