@@ -14,12 +14,14 @@ static const float kInputFullScale = 9.f;
 static const float kOutputFullScale = 10.f;
 static const float kLongPressDuration[] = {4.f, 4.f, 1.5f, INFINITY};
 
-// LED drive values for each quality setting, from scorched cassette to bright digital.
+// LED color for each quality setting, from scorched cassette to bright digital.
+// The firmware's drive values don't look right on screen, so these are taken from the manual's quality table.
+// Bright digital is the firmware's slightly cool white (192, 192, 208) at full scale.
 static const uint8_t kQualityColors[4][3] = {
-	{128, 0, 48},
-	{255, 144, 0},
-	{0, 255, 192},
-	{192, 192, 208},
+	{214, 71, 121},
+	{231, 165, 52},
+	{0, 158, 154},
+	{236, 236, 255},
 };
 
 
@@ -82,7 +84,8 @@ struct Beads : Module {
 	enum LightIds {
 		FREEZE_LIGHT,
 		SEED_LIGHT,
-		ENUMS(QUALITY_LIGHT, 3),
+		// Red, green, blue, brightness
+		ENUMS(QUALITY_LIGHT, 4),
 		ENUMS(ASSIGN_LIGHT, 3),
 		LEVEL_LIGHT,
 		NUM_LIGHTS
@@ -555,34 +558,39 @@ struct Beads : Module {
 		triangle = triangle >= 256 ? 511 - triangle : triangle;
 
 		float color[3];
+		float brightness;
 		bool adjustingManualGain = switchPressed[SWITCH_QUALITY] && mixPots[MIX_FEEDBACK].editing_hidden_parameter();
 		if (adjustingManualGain) {
-			// Meter from green to red
+			// Meter from dim green to red
 			float value = 0.05f + 0.95f * inputGain / 256.f;
 			if (value < 0.25f) {
 				color[0] = 0.f;
-				color[1] = value * 4.f;
+				color[1] = 1.f;
+				brightness = value * 4.f;
 			}
 			else if (value < 0.5f) {
 				color[0] = (value - 0.25f) * 4.f;
 				color[1] = 1.f;
+				brightness = 1.f;
 			}
 			else {
 				color[0] = 1.f;
 				color[1] = 1.f - (value - 0.5f) * 2.f;
+				brightness = 1.f;
 			}
 			color[2] = 0.f;
 		}
 		else {
+			for (int c = 0; c < 3; c++) {
+				color[c] = kQualityColors[quality][c] / 255.f;
+			}
 			// Dim as the frozen buffer is about to be overwritten.
-			float reserve = synthMode ? 1.f : processor->overwrite_reserve();
-			color[0] = kQualityColors[quality][0] / 255.f * reserve * reserve;
-			color[1] = kQualityColors[quality][1] / 255.f * reserve;
-			color[2] = kQualityColors[quality][2] / 255.f * reserve;
+			brightness = synthMode ? 1.f : processor->overwrite_reserve();
 		}
 		for (int c = 0; c < 3; c++) {
 			lights[QUALITY_LIGHT + c].setBrightness(color[c]);
 		}
+		lights[QUALITY_LIGHT + 3].setBrightness(brightness);
 
 		lights[FREEZE_LIGHT].setBrightness(freezeLight);
 		if (seedLocked) {
@@ -747,10 +755,39 @@ struct BeadsSlider : ui::Slider {
 };
 
 
-template <typename BASE>
-struct BeadsButtonLight : BASE {
+// Draws the exact color in the first three channels, at the brightness in the
+// fourth. Rack's RedGreenBlueLight blends its own red, green and blue, which
+// can't reproduce the manual's colors.
+struct BeadsQualityLight : GrayModuleLightWidget {
+	BeadsQualityLight() {
+		// One base color per light channel
+		for (int i = 0; i < 4; i++) {
+			addBaseColor(color::WHITE);
+		}
+	}
+
+	void step() override {
+		ModuleLightWidget::step();
+		if (!module) {
+			color = color::WHITE;
+		}
+		else if (!module->isBypassed()) {
+			float c[4];
+			for (int i = 0; i < 4; i++) {
+				c[i] = clamp(module->lights[firstLightId + i].getBrightness(), 0.f, 1.f);
+			}
+			// Same brightness curve as ModuleLightWidget
+			color = nvgRGBAf(c[0], c[1], c[2], std::sqrt(c[3]));
+		}
+	}
+};
+
+
+// Yellow-green, as the lit FREEZE and SEED buttons appear in the manual
+struct BeadsButtonLight : GrayModuleLightWidget {
 	BeadsButtonLight() {
-		this->box.size = Vec(22, 22);
+		box.size = Vec(22, 22);
+		addBaseColor(nvgRGB(0xc8, 0xd0, 0x67));
 	}
 };
 
@@ -795,9 +832,9 @@ struct BeadsWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(52.735, 111.196)), module, Beads::OUT_L_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(64.186, 111.196)), module, Beads::OUT_R_OUTPUT));
 
-		addChild(createLightCentered<BeadsButtonLight<GreenLight>>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_LIGHT));
-		addChild(createLightCentered<BeadsButtonLight<GreenLight>>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(mm2px(Vec(29.186, 45.146)), module, Beads::QUALITY_LIGHT));
+		addChild(createLightCentered<BeadsButtonLight>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_LIGHT));
+		addChild(createLightCentered<BeadsButtonLight>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_LIGHT));
+		addChild(createLightCentered<MediumLight<BeadsQualityLight>>(mm2px(Vec(29.186, 45.146)), module, Beads::QUALITY_LIGHT));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(6.936, 69.896)), module, Beads::ASSIGN_LIGHT + 0));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(64.185, 69.896)), module, Beads::ASSIGN_LIGHT + 1));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(64.185, 86.096)), module, Beads::ASSIGN_LIGHT + 2));
