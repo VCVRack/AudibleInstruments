@@ -9,6 +9,9 @@
 static const int kBlockRate = 4000;
 static const int kMaxBlockSize = 12;
 static const float kSynthModeDelay = 10.f;
+// Codec full scale at the jacks, from the hardware's analog stages
+static const float kInputFullScale = 9.f;
+static const float kOutputFullScale = 10.f;
 static const float kLongPressDuration[] = {4.f, 4.f, 1.5f, INFINITY};
 
 // LED drive values for each quality setting, from scorched cassette to bright digital.
@@ -223,8 +226,8 @@ struct Beads : Module {
 		if (!inputBuffer.full()) {
 			// The codec clips at full scale.
 			dsp::Frame<2> inputFrame;
-			inputFrame.samples[0] = clamp(inputs[IN_L_INPUT].getVoltage() / 5.f, -1.f, 1.f);
-			inputFrame.samples[1] = clamp(inputs[IN_R_INPUT].getVoltage() / 5.f, -1.f, 1.f);
+			inputFrame.samples[0] = clamp(inputs[IN_L_INPUT].getVoltage() / kInputFullScale, -1.f, 1.f);
+			inputFrame.samples[1] = clamp(inputs[IN_R_INPUT].getVoltage() / kInputFullScale, -1.f, 1.f);
 			inputBuffer.push(inputFrame);
 		}
 
@@ -245,14 +248,16 @@ struct Beads : Module {
 			outputFrame = outputBuffer.shift();
 		}
 		if (outputs[OUT_R_OUTPUT].isConnected()) {
-			outputs[OUT_L_OUTPUT].setVoltage(5.f * outputFrame.samples[0]);
-			// The hardware's inverting output stage turns the firmware's -0.8 gate into a positive gate.
-			outputs[OUT_R_OUTPUT].setVoltage(gateOutput ? -10.f * outputFrame.samples[1] : 5.f * outputFrame.samples[1]);
+			outputs[OUT_L_OUTPUT].setVoltage(kOutputFullScale * outputFrame.samples[0]);
+			// Audio is not inverted like the hardware's output stage, but the
+			// firmware's -0.8 gate still needs inverting to become a positive gate.
+			float r = gateOutput ? -outputFrame.samples[1] : outputFrame.samples[1];
+			outputs[OUT_R_OUTPUT].setVoltage(kOutputFullScale * r);
 		}
 		else {
 			// L carries a mono mix when R is unpatched.
 			float mix = clamp(outputFrame.samples[0] + outputFrame.samples[1], -1.f, 1.f);
-			outputs[OUT_L_OUTPUT].setVoltage(5.f * mix);
+			outputs[OUT_L_OUTPUT].setVoltage(kOutputFullScale * mix);
 		}
 	}
 
