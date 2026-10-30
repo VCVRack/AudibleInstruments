@@ -359,8 +359,6 @@ struct Beads : Module {
 	bool blockFreeze = false;
 	bool blockSeed = false;
 	stmlib::GateFlags previousSeed = stmlib::GATE_FLAG_LOW;
-	bool freezeLight = false;
-	bool seedLight = false;
 
 	Beads() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -451,7 +449,135 @@ struct Beads : Module {
 
 		// Render frames
 		if (outputBuffer.empty()) {
-			renderBlock(args.sampleRate);
+			bool inL = inputs[IN_L_INPUT].isConnected();
+			bool inR = inputs[IN_R_INPUT].isConnected();
+			bool frozen = freezeButton || blockFreeze;
+
+			// Port of MonitorStateChange(): switches to the wavetable synth after 10
+			// seconds without audio input, and reconfigures the processor when quality or
+			// input patching changes.
+			if (configured && (frozen || transitionBlocks)) {
+				noInputTime = 0.f;
+			}
+			else if (configured && !inL && !inR) {
+				if (!synthMode) {
+					noInputTime += 1.f / kBlockRate;
+					if (noInputTime >= kSynthModeDelay) {
+						configure(true, true);
+					}
+				}
+			}
+			else {
+				beads::Processor::Media media = (beads::Processor::Media) quality;
+				bool mono = !inL || !inR;
+				bool monoChanged = mono != processor->mono();
+				if (!configured || synthMode || monoChanged || media != processor->media()) {
+					bool resetGainControl = !configured || monoChanged || synthMode;
+					processor->Configure(media, mono);
+					configure(false, resetGainControl);
+				}
+				noInputTime = 0.f;
+			}
+
+			float sampleRate = synthMode ? 48000.f : processor->sample_rate();
+			int blockSize = (int) sampleRate / kBlockRate;
+
+			// Convert input buffer
+			beads::FloatFrame input[kMaxBlockSize] = {};
+			{
+				inputSrc.setRates(args.sampleRate, sampleRate);
+				dsp::Frame<2> inputFrames[kMaxBlockSize];
+				int inLen = inputBuffer.size();
+				int outLen = blockSize;
+				inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
+				inputBuffer.startIncr(inLen);
+
+				// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
+				for (int i = 0; i < outLen; i++) {
+					input[i].l = inputFrames[i].samples[0];
+					input[i].r = inputFrames[i].samples[1];
+				}
+			}
+
+			// Gate events
+			bool seedPatched = inputs[SEED_INPUT].isConnected();
+			bool freeze[kMaxBlockSize];
+			stmlib::GateFlags seed[kMaxBlockSize];
+			for (int i = 0; i < blockSize; i++) {
+				freeze[i] = frozen;
+				previousSeed = seed[i] = stmlib::ExtractGateFlags(previousSeed, seedPatched && blockSeed);
+			}
+			blockFreeze = false;
+			blockSeed = false;
+
+			beads::FloatFrame output[kMaxBlockSize] = {};
+			gainControl->Process(!transitionBlocks, inputGain, !inL, !inR, input, input, blockSize);
+			if (transitionBlocks) {
+				transitionBlocks--;
+			}
+			else {
+				beads::Parameters p;
+				setGrainParameter(&p.time, params[TIME_PARAM].getValue(), TIME_AMOUNT_PARAM, TIME_INPUT);
+				setGrainParameter(&p.size, params[SIZE_PARAM].getValue(), SIZE_AMOUNT_PARAM, SIZE_INPUT);
+				setGrainParameter(&p.shape, params[SHAPE_PARAM].getValue(), SHAPE_AMOUNT_PARAM, SHAPE_INPUT);
+				setGrainParameter(&p.pitch, detuneLaw(params[PITCH_PARAM].getValue()), PITCH_AMOUNT_PARAM, PITCH_INPUT);
+				// Pitch is in semitones
+				p.pitch.cv = clamp(inputs[PITCH_INPUT].getVoltage() * 12.f, -60.f, 60.f);
+				p.monophonic_mode = false;
+
+				beads::ModulatedParameter density;
+				density.base = params[DENSITY_PARAM].getValue();
+				density.cv = inputs[DENSITY_INPUT].isConnected() ? clamp(inputs[DENSITY_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
+
+				float assignCv = clamp(inputs[ASSIGN_INPUT].getVoltage() / 5.f, -1.f, 1.f);
+				float mix[NUM_MIX_PARAMETERS];
+				for (int i = 0; i < NUM_MIX_PARAMETERS; i++) {
+					float amount = (assignDestination == 3) ? assignAmounts[i] / 256.f : (assignDestination == i);
+					mix[i] = clamp(mixPots[i].main_parameter() * 1.005f + (assignCv - 0.002f) * amount, 0.f, 1.f);
+				}
+
+				beads::Processor::MixParameters m;
+				m.feedback = mix[MIX_FEEDBACK];
+				m.dry_wet = mix[MIX_DRY_WET];
+				m.reverb_amount = mix[MIX_REVERB];
+				// L carries a mono mix when R is unpatched, which would include the gate.
+				m.output_gate = gateOutput && outputs[OUT_R_OUTPUT].isConnected();
+
+				beads::SeedButtonState seedState = beads::SEED_BUTTON_STATE_OFF;
+				if (seedLocked)
+					seedState = beads::SEED_BUTTON_STATE_LOCKED;
+				else if (seedButton)
+					seedState = beads::SEED_BUTTON_STATE_ON;
+
+				const stmlib::GateFlags* seedFlags = seedPatched ? seed : NULL;
+				if (synthMode) {
+					synth->Render(seedState, seedFlags, freeze, (beads::Synth::Resolution) quality, density, p, m, output, blockSize);
+				}
+				else {
+					processor->Process(seedState, seedFlags, freeze, density, p, m, input, output, blockSize);
+				}
+			}
+
+			// Convert output buffer
+			{
+				dsp::Frame<2> outputFrames[kMaxBlockSize];
+				for (int i = 0; i < blockSize; i++) {
+					float l = clamp(output[i].l, -1.f, 0.999999f);
+					float r = clamp(output[i].r, -1.f, 0.999999f);
+					// Don't enter the synth mode while a frozen or delayed sound is still playing.
+					if (std::fabs(l) > 0.01f || std::fabs(r) > 0.01f) {
+						noInputTime = 0.f;
+					}
+					outputFrames[i].samples[0] = l;
+					outputFrames[i].samples[1] = r;
+				}
+
+				outputSrc.setRates(sampleRate, args.sampleRate);
+				int inLen = blockSize;
+				int outLen = outputBuffer.capacity();
+				outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
+				outputBuffer.endIncr(outLen);
+			}
 		}
 
 		// Set output
@@ -473,10 +599,6 @@ struct Beads : Module {
 		}
 	}
 
-	float mediaSampleRate() {
-		return synthMode ? 48000.f : processor->sample_rate();
-	}
-
 	// Port of ConfigureAndStartCodec()
 	void configure(bool newSynthMode, bool resetGainControl) {
 		synthMode = newSynthMode;
@@ -485,110 +607,11 @@ struct Beads : Module {
 			softClipping = beads::GainControl::SOFT_CLIPPING_MODE_ON;
 		else if (processor->media() == beads::Processor::MEDIA_CLEAN_TAPE)
 			softClipping = beads::GainControl::SOFT_CLIPPING_MODE_DYNAMIC;
-		gainControl->Init(mediaSampleRate(), softClipping, resetGainControl);
+		gainControl->Init(synthMode ? 48000.f : processor->sample_rate(), softClipping, resetGainControl);
 		// Blank the output and hold the gain control while the new configuration settles.
 		transitionBlocks = kBlockRate / 4;
 		noInputTime = 0.f;
 		configured = true;
-	}
-
-	// Port of MonitorStateChange(): switches to the wavetable synth after 10
-	// seconds without audio input, and reconfigures the processor when quality or
-	// input patching changes.
-	void monitorStateChange(bool inL, bool inR, bool frozen, float blockTime) {
-		if (configured && (frozen || transitionBlocks)) {
-			noInputTime = 0.f;
-			return;
-		}
-
-		if (configured && !inL && !inR) {
-			if (!synthMode) {
-				noInputTime += blockTime;
-				if (noInputTime >= kSynthModeDelay) {
-					configure(true, true);
-				}
-			}
-		}
-		else {
-			beads::Processor::Media media = (beads::Processor::Media) quality;
-			bool mono = !inL || !inR;
-			bool monoChanged = mono != processor->mono();
-			if (!configured || synthMode || monoChanged || media != processor->media()) {
-				bool resetGainControl = !configured || monoChanged || synthMode;
-				processor->Configure(media, mono);
-				configure(false, resetGainControl);
-			}
-			noInputTime = 0.f;
-		}
-	}
-
-	void renderBlock(float hostSampleRate) {
-		bool inL = inputs[IN_L_INPUT].isConnected();
-		bool inR = inputs[IN_R_INPUT].isConnected();
-		bool frozen = freezeButton || blockFreeze;
-		monitorStateChange(inL, inR, frozen, 1.f / kBlockRate);
-		float sampleRate = mediaSampleRate();
-		int blockSize = (int) sampleRate / kBlockRate;
-
-		// Convert input buffer
-		beads::FloatFrame input[kMaxBlockSize] = {};
-		{
-			inputSrc.setRates(hostSampleRate, sampleRate);
-			dsp::Frame<2> inputFrames[kMaxBlockSize];
-			int inLen = inputBuffer.size();
-			int outLen = blockSize;
-			inputSrc.process(inputBuffer.startData(), &inLen, inputFrames, &outLen);
-			inputBuffer.startIncr(inLen);
-
-			// We might not fill all of the input buffer if there is a deficiency, but this cannot be avoided due to imprecisions between the input and output SRC.
-			for (int i = 0; i < outLen; i++) {
-				input[i].l = inputFrames[i].samples[0];
-				input[i].r = inputFrames[i].samples[1];
-			}
-		}
-
-		// Gate events
-		bool seedPatched = inputs[SEED_INPUT].isConnected();
-		bool freeze[kMaxBlockSize];
-		stmlib::GateFlags seed[kMaxBlockSize];
-		for (int i = 0; i < blockSize; i++) {
-			freeze[i] = frozen;
-			previousSeed = seed[i] = stmlib::ExtractGateFlags(previousSeed, seedPatched && blockSeed);
-		}
-		freezeLight = frozen;
-		seedLight = seedPatched && blockSeed && !transitionBlocks;
-		blockFreeze = false;
-		blockSeed = false;
-
-		beads::FloatFrame output[kMaxBlockSize] = {};
-		gainControl->Process(!transitionBlocks, inputGain, !inL, !inR, input, input, blockSize);
-		if (transitionBlocks) {
-			transitionBlocks--;
-		}
-		else {
-			renderEngine(seedPatched ? seed : NULL, freeze, input, output, blockSize);
-		}
-
-		// Convert output buffer
-		{
-			dsp::Frame<2> outputFrames[kMaxBlockSize];
-			for (int i = 0; i < blockSize; i++) {
-				float l = clamp(output[i].l, -1.f, 0.999999f);
-				float r = clamp(output[i].r, -1.f, 0.999999f);
-				// Don't enter the synth mode while a frozen or delayed sound is still playing.
-				if (std::fabs(l) > 0.01f || std::fabs(r) > 0.01f) {
-					noInputTime = 0.f;
-				}
-				outputFrames[i].samples[0] = l;
-				outputFrames[i].samples[1] = r;
-			}
-
-			outputSrc.setRates(sampleRate, hostSampleRate);
-			int inLen = blockSize;
-			int outLen = outputBuffer.capacity();
-			outputSrc.process(outputFrames, &inLen, outputBuffer.endData(), &outLen);
-			outputBuffer.endIncr(outLen);
-		}
 	}
 
 	void setGrainParameter(beads::RandomizedParameter* p, float base, int amountParam, int input) {
@@ -596,48 +619,6 @@ struct Beads : Module {
 		p->attenuverter = attenurandomizerLaw(params[amountParam].getValue());
 		p->has_cv = inputs[input].isConnected();
 		p->cv = clamp(inputs[input].getVoltage() / 5.f, -1.6f, 1.6f);
-	}
-
-	void renderEngine(const stmlib::GateFlags* seed, const bool* freeze, const beads::FloatFrame* input, beads::FloatFrame* output, int blockSize) {
-		beads::Parameters p;
-		setGrainParameter(&p.time, params[TIME_PARAM].getValue(), TIME_AMOUNT_PARAM, TIME_INPUT);
-		setGrainParameter(&p.size, params[SIZE_PARAM].getValue(), SIZE_AMOUNT_PARAM, SIZE_INPUT);
-		setGrainParameter(&p.shape, params[SHAPE_PARAM].getValue(), SHAPE_AMOUNT_PARAM, SHAPE_INPUT);
-		setGrainParameter(&p.pitch, detuneLaw(params[PITCH_PARAM].getValue()), PITCH_AMOUNT_PARAM, PITCH_INPUT);
-		// Pitch is in semitones
-		p.pitch.cv = clamp(inputs[PITCH_INPUT].getVoltage() * 12.f, -60.f, 60.f);
-		p.monophonic_mode = false;
-
-		beads::ModulatedParameter density;
-		density.base = params[DENSITY_PARAM].getValue();
-		density.cv = inputs[DENSITY_INPUT].isConnected() ? clamp(inputs[DENSITY_INPUT].getVoltage() / 5.f, -1.f, 1.f) : 0.f;
-
-		float assignCv = clamp(inputs[ASSIGN_INPUT].getVoltage() / 5.f, -1.f, 1.f);
-		float mix[NUM_MIX_PARAMETERS];
-		for (int i = 0; i < NUM_MIX_PARAMETERS; i++) {
-			float amount = (assignDestination == 3) ? assignAmounts[i] / 256.f : (assignDestination == i);
-			mix[i] = clamp(mixPots[i].main_parameter() * 1.005f + (assignCv - 0.002f) * amount, 0.f, 1.f);
-		}
-
-		beads::Processor::MixParameters m;
-		m.feedback = mix[MIX_FEEDBACK];
-		m.dry_wet = mix[MIX_DRY_WET];
-		m.reverb_amount = mix[MIX_REVERB];
-		// L carries a mono mix when R is unpatched, which would include the gate.
-		m.output_gate = gateOutput && outputs[OUT_R_OUTPUT].isConnected();
-
-		beads::SeedButtonState seedState = beads::SEED_BUTTON_STATE_OFF;
-		if (seedLocked)
-			seedState = beads::SEED_BUTTON_STATE_LOCKED;
-		else if (seedButton)
-			seedState = beads::SEED_BUTTON_STATE_ON;
-
-		if (synthMode) {
-			synth->Render(seedState, seed, freeze, (beads::Synth::Resolution) quality, density, p, m, output, blockSize);
-		}
-		else {
-			processor->Process(seedState, seed, freeze, density, p, m, input, output, blockSize);
-		}
 	}
 
 	// Port of Ui::Poll(): long presses fire while held, and combos suppress the release.
@@ -812,12 +793,14 @@ struct Beads : Module {
 			lights[QUALITY_LIGHT + c].setBrightness(color[c] * color[c] * brightness);
 		}
 
-		lights[FREEZE_LIGHT].setBrightness(freezeLight);
+		lights[FREEZE_LIGHT].setBrightness(freezeButton || freezeTrigger.isHigh());
 		if (seedLocked) {
 			lights[SEED_LIGHT].setBrightness(((triangle * 3 >> 2) + 64) / 255.f);
 		}
 		else {
-			lights[SEED_LIGHT].setBrightness(seedButton || seedLight);
+			bool seedGate = inputs[SEED_INPUT].isConnected() && seedTrigger.isHigh() && !transitionBlocks;
+			// Fade out instead of switching off, so short triggers last long enough to be drawn.
+			lights[SEED_LIGHT].setBrightnessSmooth(seedButton || seedGate, dt);
 		}
 
 		for (int i = 0; i < NUM_MIX_PARAMETERS; i++) {
@@ -830,7 +813,7 @@ struct Beads : Module {
 			lights[LEVEL_LIGHT].setBrightness(((int) (uiTime * 1000.0) & 128) ? 0.5f : 0.f);
 		}
 		else {
-			lights[LEVEL_LIGHT].setSmoothBrightness(gainControl->vu_meter() / 255.f, dt);
+			lights[LEVEL_LIGHT].setBrightnessSmooth(gainControl->vu_meter() / 255.f, dt);
 		}
 	}
 
