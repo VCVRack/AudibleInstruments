@@ -68,6 +68,21 @@ static float grainDuration(float size) {
 	return 4.f * std::pow(2.f, -9.f * shortness);
 }
 
+// The firmware's objects are globals, which start zeroed, and their constructors
+// leave most members to Init(). Construct them in zeroed memory to match.
+template <typename T>
+static T* newZeroed() {
+	static_assert(alignof(T) <= alignof(std::max_align_t), "calloc alignment too small");
+	void* memory = std::calloc(1, sizeof(T));
+	return new (memory) T;
+}
+
+template <typename T>
+static void deleteZeroed(T* p) {
+	p->~T();
+	std::free(p);
+}
+
 // Fastest grain rates, from the firmware's TriggerGenerator
 static const float kMaxGrainFrequency = 130.81278f;
 static const int kDivisionRatios[] = {1, 2, 3, 4, 6, 8, 12, 16};
@@ -313,7 +328,7 @@ struct Beads : Module {
 	uint16_t* reverbBuffer;
 	beads::Processor* processor;
 	beads::Synth* synth;
-	beads::GainControl gainControl;
+	beads::GainControl* gainControl;
 	// Track the mix knobs, or edit hidden settings while QUALITY or ASSIGN is held.
 	beads::PotController mixPots[NUM_MIX_PARAMETERS];
 
@@ -385,8 +400,9 @@ struct Beads : Module {
 
 		delayBuffer = new uint8_t[768 * 1024]();
 		reverbBuffer = new uint16_t[32768]();
-		processor = new beads::Processor();
-		synth = new beads::Synth();
+		processor = newZeroed<beads::Processor>();
+		synth = newZeroed<beads::Synth>();
+		gainControl = newZeroed<beads::GainControl>();
 
 		uint8_t* delayBuffers[3] = {
 			delayBuffer,
@@ -395,7 +411,7 @@ struct Beads : Module {
 		};
 		processor->Init(delayBuffers, reverbBuffer);
 		synth->Init(reverbBuffer);
-		gainControl.Init(48000.f, beads::GainControl::SOFT_CLIPPING_MODE_OFF, true);
+		gainControl->Init(48000.f, beads::GainControl::SOFT_CLIPPING_MODE_OFF, true);
 
 		for (int i = 0; i < NUM_MIX_PARAMETERS; i++) {
 			mixPots[i].Init(1.f, 0.f);
@@ -407,8 +423,9 @@ struct Beads : Module {
 	}
 
 	~Beads() {
-		delete synth;
-		delete processor;
+		deleteZeroed(gainControl);
+		deleteZeroed(synth);
+		deleteZeroed(processor);
 		delete[] reverbBuffer;
 		delete[] delayBuffer;
 	}
@@ -473,7 +490,7 @@ struct Beads : Module {
 			softClipping = beads::GainControl::SOFT_CLIPPING_MODE_ON;
 		else if (processor->media() == beads::Processor::MEDIA_CLEAN_TAPE)
 			softClipping = beads::GainControl::SOFT_CLIPPING_MODE_DYNAMIC;
-		gainControl.Init(mediaSampleRate(), softClipping, resetGainControl);
+		gainControl->Init(mediaSampleRate(), softClipping, resetGainControl);
 		// Blank the output and hold the gain control while the new configuration settles.
 		transitionBlocks = kBlockRate / 4;
 		noInputTime = 0.f;
@@ -549,7 +566,7 @@ struct Beads : Module {
 		blockSeed = false;
 
 		beads::FloatFrame output[kMaxBlockSize] = {};
-		gainControl.Process(!transitionBlocks, inputGain, !inL, !inR, input, input, blockSize);
+		gainControl->Process(!transitionBlocks, inputGain, !inL, !inR, input, input, blockSize);
 		if (transitionBlocks) {
 			transitionBlocks--;
 		}
@@ -675,9 +692,17 @@ struct Beads : Module {
 		}
 	}
 
+	// Rack can move the knob, so return it to the value in use instead of
+	// catching up like the hardware's pot. The saved knob position then matches the sound.
+	void unlockPot(int i) {
+		mixPots[i].Unlock();
+		params[FEEDBACK_PARAM + i].setValue(mixPots[i].main_parameter());
+		mixPots[i].Realign();
+	}
+
 	void unlockPots() {
 		for (int i = 0; i < NUM_MIX_PARAMETERS; i++) {
-			mixPots[i].Unlock();
+			unlockPot(i);
 		}
 	}
 
@@ -728,13 +753,13 @@ struct Beads : Module {
 					if (pressTime >= kLongPressDuration[SWITCH_QUALITY]) {
 						// Return to automatic gain control.
 						inputGain = 0;
-						gainControl.Restart();
+						gainControl->Restart();
 					}
 					else {
 						quality = (quality + 3) % 4;
 					}
 				}
-				mixPots[MIX_FEEDBACK].Unlock();
+				unlockPot(MIX_FEEDBACK);
 			} break;
 			case SWITCH_ASSIGN: {
 				bool potTouched = false;
@@ -802,12 +827,12 @@ struct Beads : Module {
 			lights[ASSIGN_LIGHT + i].setBrightness(b);
 		}
 
-		if (gainControl.adjusting()) {
+		if (gainControl->adjusting()) {
 			// Blink while the automatic gain control is learning the input level.
 			lights[LEVEL_LIGHT].setBrightness(((int) (uiTime * 1000.0) & 128) ? 0.5f : 0.f);
 		}
 		else {
-			lights[LEVEL_LIGHT].setSmoothBrightness(gainControl.vu_meter() / 255.f, dt);
+			lights[LEVEL_LIGHT].setSmoothBrightness(gainControl->vu_meter() / 255.f, dt);
 		}
 	}
 
@@ -1118,7 +1143,7 @@ struct BeadsWidget : ModuleWidget {
 			[=](bool autoGain) {
 				if (autoGain) {
 					module->inputGain = 0;
-					module->gainControl.Restart();
+					module->gainControl->Restart();
 				}
 				else {
 					module->inputGain = 1;
