@@ -206,7 +206,7 @@ struct Beads : Module {
 		}
 
 		uiDivider.setDivision(32);
-		onReset();
+		Beads::onReset();
 	}
 
 	~Beads() {
@@ -745,7 +745,7 @@ struct BeadsInputGainQuantity : Quantity {
 
 
 struct BeadsSlider : ui::Slider {
-	BeadsSlider(Quantity* quantity) {
+	explicit BeadsSlider(Quantity* quantity) {
 		this->quantity = quantity;
 		box.size.x = 200.0;
 	}
@@ -818,7 +818,7 @@ struct BeadsButtonLight : GrayModuleLightWidget {
 
 
 struct BeadsWidget : ModuleWidget {
-	BeadsWidget(Beads* module) {
+	explicit BeadsWidget(Beads* module) {
 		setModule(module);
 		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Beads.svg")));
 
