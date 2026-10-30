@@ -14,16 +14,6 @@ static const float kInputFullScale = 9.f;
 static const float kOutputFullScale = 10.f;
 static const float kLongPressDuration[] = {4.f, 4.f, 1.5f, INFINITY};
 
-// LED color for each quality setting, from scorched cassette to bright digital.
-// The firmware's drive values don't look right on screen, so these are taken from the manual's quality table.
-// Bright digital is the firmware's slightly cool white (192, 192, 208) at full scale.
-static const uint8_t kQualityColors[4][3] = {
-	{214, 71, 121},
-	{231, 165, 52},
-	{0, 158, 154},
-	{236, 236, 255},
-};
-
 
 // Pot laws from the firmware's cv_reader.h
 static float attenurandomizerLaw(float x) {
@@ -296,7 +286,8 @@ struct Beads : Module {
 	enum LightIds {
 		FREEZE_LIGHT,
 		SEED_LIGHT,
-		ENUMS(QUALITY_LIGHT, 3),
+		// One per quality, then green and red for the manual gain meter
+		ENUMS(QUALITY_LIGHT, 6),
 		ENUMS(ASSIGN_LIGHT, 3),
 		LEVEL_LIGHT,
 		NUM_LIGHTS
@@ -349,6 +340,8 @@ struct Beads : Module {
 	bool switchIgnoreRelease[NUM_SWITCHES] = {};
 	bool freezeButton = false;
 	bool seedButton = false;
+	// Set while the context menu's input gain slider is dragged
+	bool menuAdjustingGain = false;
 
 	bool configured = false;
 	bool synthMode = false;
@@ -757,40 +750,19 @@ struct Beads : Module {
 		int triangle = ((int) (uiTime * 1000.0) & 2047) >> 2;
 		triangle = triangle >= 256 ? 511 - triangle : triangle;
 
-		float color[3];
-		float brightness;
-		bool adjustingManualGain = switchPressed[SWITCH_QUALITY] && mixPots[MIX_FEEDBACK].editing_hidden_parameter();
+		for (int i = 0; i < 6; i++) {
+			lights[QUALITY_LIGHT + i].setBrightness(0.f);
+		}
+		bool adjustingManualGain = menuAdjustingGain || (switchPressed[SWITCH_QUALITY] && mixPots[MIX_FEEDBACK].editing_hidden_parameter());
 		if (adjustingManualGain) {
-			// Meter from dim green to red
+			// Port of Leds::set_meter(), from dim green to red
 			float value = 0.05f + 0.95f * inputGain / 256.f;
-			if (value < 0.25f) {
-				color[0] = 0.f;
-				color[1] = 1.f;
-				brightness = value * 4.f;
-			}
-			else if (value < 0.5f) {
-				color[0] = (value - 0.25f) * 4.f;
-				color[1] = 1.f;
-				brightness = 1.f;
-			}
-			else {
-				color[0] = 1.f;
-				color[1] = 1.f - (value - 0.5f) * 2.f;
-				brightness = 1.f;
-			}
-			color[2] = 0.f;
+			lights[QUALITY_LIGHT + 4].setBrightness((value < 0.5f) ? std::min(value * 4.f, 1.f) : 1.f - (value - 0.5f) * 2.f);
+			lights[QUALITY_LIGHT + 5].setBrightness(clamp((value - 0.25f) * 4.f, 0.f, 1.f));
 		}
 		else {
-			for (int c = 0; c < 3; c++) {
-				color[c] = kQualityColors[quality][c] / 255.f;
-			}
 			// Dim as the frozen buffer is about to be overwritten.
-			brightness = synthMode ? 1.f : processor->overwrite_reserve();
-		}
-		// Rack draws each channel at the square root of its brightness, so this
-		// shows each color component scaled by the square root of the LED brightness.
-		for (int c = 0; c < 3; c++) {
-			lights[QUALITY_LIGHT + c].setBrightness(color[c] * color[c] * brightness);
+			lights[QUALITY_LIGHT + quality].setBrightness(synthMode ? 1.f : processor->overwrite_reserve());
 		}
 
 		lights[FREEZE_LIGHT].setBrightness(freezeButton || freezeTrigger.isHigh());
@@ -965,6 +937,44 @@ struct BeadsSlider : ui::Slider {
 };
 
 
+// Shows the gain meter on the quality light while dragged, as QUALITY + FEEDBACK does
+struct BeadsInputGainSlider : BeadsSlider {
+	Beads* module;
+
+	explicit BeadsInputGainSlider(Beads* module) : BeadsSlider(new BeadsInputGainQuantity), module(module) {
+		static_cast<BeadsInputGainQuantity*>(quantity)->module = module;
+	}
+	~BeadsInputGainSlider() {
+		module->menuAdjustingGain = false;
+	}
+	void onDragStart(const DragStartEvent& e) override {
+		BeadsSlider::onDragStart(e);
+		if (e.button == GLFW_MOUSE_BUTTON_LEFT)
+			module->menuAdjustingGain = true;
+	}
+	void onDragEnd(const DragEndEvent& e) override {
+		BeadsSlider::onDragEnd(e);
+		module->menuAdjustingGain = false;
+	}
+};
+
+
+// The panel's quality legend colors, from scorched cassette to bright digital,
+// then green and red for the manual gain meter. Bright digital's gray bar
+// stands for white, so it looks like the assign lights, which are driven at
+// 128 and drawn at the square root of that.
+struct BeadsQualityLight : GrayModuleLightWidget {
+	BeadsQualityLight() {
+		addBaseColor(nvgRGB(0xdb, 0x40, 0x61));
+		addBaseColor(nvgRGB(0xe9, 0xa6, 0x22));
+		addBaseColor(nvgRGB(0x07, 0x9c, 0xbf));
+		addBaseColor(color::alpha(SCHEME_WHITE, std::sqrt(128.f / 255.f)));
+		addBaseColor(SCHEME_GREEN);
+		addBaseColor(SCHEME_RED);
+	}
+};
+
+
 // The hardware's 8mm cap, as a CKD6 drawn at that size
 static const float kButtonScale = mm2px(8.f) / 28.f;
 
@@ -1036,7 +1046,7 @@ struct BeadsWidget : ModuleWidget {
 
 		addChild(createLightCentered<BeadsButtonLight>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_LIGHT));
 		addChild(createLightCentered<BeadsButtonLight>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_LIGHT));
-		addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(mm2px(Vec(29.186, 45.146)), module, Beads::QUALITY_LIGHT));
+		addChild(createLightCentered<MediumLight<BeadsQualityLight>>(mm2px(Vec(29.186, 45.146)), module, Beads::QUALITY_LIGHT));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(6.936, 69.896)), module, Beads::ASSIGN_LIGHT + 0));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(64.185, 69.896)), module, Beads::ASSIGN_LIGHT + 1));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(64.185, 86.096)), module, Beads::ASSIGN_LIGHT + 2));
@@ -1099,9 +1109,7 @@ struct BeadsWidget : ModuleWidget {
 				}
 			}
 		));
-		BeadsInputGainQuantity* gainQuantity = new BeadsInputGainQuantity;
-		gainQuantity->module = module;
-		menu->addChild(new BeadsSlider(gainQuantity));
+		menu->addChild(new BeadsInputGainSlider(module));
 
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createBoolPtrMenuItem("Latch seed", "", &module->seedLocked));
