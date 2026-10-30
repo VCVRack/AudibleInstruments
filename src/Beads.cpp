@@ -996,7 +996,9 @@ struct BeadsButton : CKD6 {
 		fb->addChild(tw);
 		box.size = box.size.mult(kButtonScale);
 		fb->box.size = box.size;
-		tw->box.size = box.size;
+		// The framebuffer only renders its children's boxes, so include the
+		// shadow, which sits below the cap.
+		tw->box.size = tw->getChildrenBoundingBox().getBottomRight().mult(kButtonScale);
 	}
 };
 
