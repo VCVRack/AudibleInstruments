@@ -296,8 +296,7 @@ struct Beads : Module {
 	enum LightIds {
 		FREEZE_LIGHT,
 		SEED_LIGHT,
-		// Red, green, blue, brightness
-		ENUMS(QUALITY_LIGHT, 4),
+		ENUMS(QUALITY_LIGHT, 3),
 		ENUMS(ASSIGN_LIGHT, 3),
 		LEVEL_LIGHT,
 		NUM_LIGHTS
@@ -334,14 +333,14 @@ struct Beads : Module {
 
 	// Persistent settings, as stored by the firmware.
 	// Media index: 0 = scorched cassette, 1 = sunny tape, 2 = cold digital, 3 = bright digital
-	int quality;
+	int quality = beads::Processor::MEDIA_DIGITAL;
 	// 0-2 sends the assignable CV to one mix parameter, 3 uses assignAmounts
-	int assignDestination;
-	uint8_t assignAmounts[NUM_MIX_PARAMETERS];
+	int assignDestination = MIX_FEEDBACK;
+	uint8_t assignAmounts[NUM_MIX_PARAMETERS] = {255, 0, 128};
 	// 0 enables automatic gain control
-	uint8_t inputGain;
-	bool gateOutput;
-	bool seedLocked;
+	uint8_t inputGain = 0;
+	bool gateOutput = false;
+	bool seedLocked = true;
 
 	dsp::ClockDivider uiDivider;
 	double uiTime = 0.0;
@@ -355,7 +354,6 @@ struct Beads : Module {
 	bool synthMode = false;
 	int transitionBlocks = 0;
 	float noInputTime = 0.f;
-	float hostSampleRate = 48000.f;
 	dsp::SchmittTrigger freezeTrigger;
 	dsp::SchmittTrigger seedTrigger;
 	bool blockFreeze = false;
@@ -419,7 +417,6 @@ struct Beads : Module {
 		}
 
 		uiDivider.setDivision(32);
-		Beads::onReset();
 	}
 
 	~Beads() {
@@ -431,8 +428,6 @@ struct Beads : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		hostSampleRate = args.sampleRate;
-
 		if (uiDivider.process()) {
 			float dt = args.sampleTime * uiDivider.getDivision();
 			pollUi(dt);
@@ -456,7 +451,7 @@ struct Beads : Module {
 
 		// Render frames
 		if (outputBuffer.empty()) {
-			renderBlock();
+			renderBlock(args.sampleRate);
 		}
 
 		// Set output
@@ -500,8 +495,8 @@ struct Beads : Module {
 	// Port of MonitorStateChange(): switches to the wavetable synth after 10
 	// seconds without audio input, and reconfigures the processor when quality or
 	// input patching changes.
-	void monitorStateChange(bool inL, bool inR, float blockTime) {
-		if (configured && (freezeLight || transitionBlocks)) {
+	void monitorStateChange(bool inL, bool inR, bool frozen, float blockTime) {
+		if (configured && (frozen || transitionBlocks)) {
 			noInputTime = 0.f;
 			return;
 		}
@@ -527,10 +522,11 @@ struct Beads : Module {
 		}
 	}
 
-	void renderBlock() {
+	void renderBlock(float hostSampleRate) {
 		bool inL = inputs[IN_L_INPUT].isConnected();
 		bool inR = inputs[IN_R_INPUT].isConnected();
-		monitorStateChange(inL, inR, 1.f / kBlockRate);
+		bool frozen = freezeButton || blockFreeze;
+		monitorStateChange(inL, inR, frozen, 1.f / kBlockRate);
 		float sampleRate = mediaSampleRate();
 		int blockSize = (int) sampleRate / kBlockRate;
 
@@ -552,15 +548,14 @@ struct Beads : Module {
 		}
 
 		// Gate events
-		bool freezeBlock = freezeButton || blockFreeze;
 		bool seedPatched = inputs[SEED_INPUT].isConnected();
 		bool freeze[kMaxBlockSize];
 		stmlib::GateFlags seed[kMaxBlockSize];
 		for (int i = 0; i < blockSize; i++) {
-			freeze[i] = freezeBlock;
+			freeze[i] = frozen;
 			previousSeed = seed[i] = stmlib::ExtractGateFlags(previousSeed, seedPatched && blockSeed);
 		}
-		freezeLight = freezeBlock;
+		freezeLight = frozen;
 		seedLight = seedPatched && blockSeed && !transitionBlocks;
 		blockFreeze = false;
 		blockSeed = false;
@@ -692,11 +687,13 @@ struct Beads : Module {
 		}
 	}
 
-	// Rack can move the knob, so return it to the value in use instead of
-	// catching up like the hardware's pot. The saved knob position then matches the sound.
+	// Rack can move the knob, so return a knob that edited a hidden setting to
+	// the value in use instead of catching up like the hardware's pot. The saved
+	// knob position then matches the sound. Other knobs, which may be under MIDI
+	// control or automation, resume tracking where they are.
 	void unlockPot(int i) {
-		mixPots[i].Unlock();
-		params[FEEDBACK_PARAM + i].setValue(mixPots[i].main_parameter());
+		if (mixPots[i].editing_hidden_parameter())
+			params[FEEDBACK_PARAM + i].setValue(mixPots[i].main_parameter());
 		mixPots[i].Realign();
 	}
 
@@ -809,10 +806,11 @@ struct Beads : Module {
 			// Dim as the frozen buffer is about to be overwritten.
 			brightness = synthMode ? 1.f : processor->overwrite_reserve();
 		}
+		// Rack draws each channel at the square root of its brightness, so this
+		// shows each color component scaled by the square root of the LED brightness.
 		for (int c = 0; c < 3; c++) {
-			lights[QUALITY_LIGHT + c].setBrightness(color[c]);
+			lights[QUALITY_LIGHT + c].setBrightness(color[c] * color[c] * brightness);
 		}
-		lights[QUALITY_LIGHT + 3].setBrightness(brightness);
 
 		lights[FREEZE_LIGHT].setBrightness(freezeLight);
 		if (seedLocked) {
@@ -836,7 +834,8 @@ struct Beads : Module {
 		}
 	}
 
-	void onReset() override {
+	void onReset(const ResetEvent& e) override {
+		Module::onReset(e);
 		quality = beads::Processor::MEDIA_DIGITAL;
 		assignDestination = MIX_FEEDBACK;
 		assignAmounts[MIX_FEEDBACK] = 255;
@@ -983,64 +982,29 @@ struct BeadsSlider : ui::Slider {
 };
 
 
-// Draws the exact color in the first three channels, at the brightness in the
-// fourth. Rack's RedGreenBlueLight blends its own red, green and blue, which
-// can't reproduce the manual's colors.
-struct BeadsQualityLight : GrayModuleLightWidget {
-	BeadsQualityLight() {
-		// One base color per light channel
-		for (int i = 0; i < 4; i++) {
-			addBaseColor(color::WHITE);
-		}
-	}
+// The hardware's 8mm cap, as a CKD6 drawn at that size
+static const float kButtonScale = mm2px(8.f) / 28.f;
 
-	void step() override {
-		ModuleLightWidget::step();
-		if (!module) {
-			color = color::WHITE;
-		}
-		else if (!module->isBypassed()) {
-			float c[4];
-			for (int i = 0; i < 4; i++) {
-				c[i] = clamp(module->lights[firstLightId + i].getBrightness(), 0.f, 1.f);
-			}
-			// Same brightness curve as ModuleLightWidget
-			color = nvgRGBAf(c[0], c[1], c[2], std::sqrt(c[3]));
-		}
-	}
-};
-
-
-// 8mm white cap, as on the hardware
-struct BeadsButton : SvgSwitch {
+struct BeadsButton : CKD6 {
 	BeadsButton() {
-		momentary = true;
-		addFrame(Svg::load(asset::plugin(pluginInstance, "res/BeadsButton_0.svg")));
-		addFrame(Svg::load(asset::plugin(pluginInstance, "res/BeadsButton_1.svg")));
+		widget::TransformWidget* tw = new widget::TransformWidget;
+		tw->scale(kButtonScale);
+		fb->removeChild(shadow);
+		fb->removeChild(sw);
+		tw->addChild(shadow);
+		tw->addChild(sw);
+		fb->addChild(tw);
+		box.size = box.size.mult(kButtonScale);
+		fb->box.size = box.size;
+		tw->box.size = box.size;
 	}
 };
 
 
-// Yellow-green, as the lit FREEZE and SEED buttons appear in the manual
-struct BeadsButtonLight : GrayModuleLightWidget {
+// Light inside the button, the same proportion of the cap as on Marbles
+struct BeadsButtonLight : GreenLight {
 	BeadsButtonLight() {
-		box.size = Vec(22, 22);
-		// Let the white cap show through when unlit.
-		bgColor = color::BLACK_TRANSPARENT;
-		borderColor = color::BLACK_TRANSPARENT;
-		addBaseColor(nvgRGB(0xc8, 0xd0, 0x67));
-	}
-
-	void drawLayer(const DrawArgs& args, int layer) override {
-		if (layer == 1) {
-			// Paint the light over the cap. Rack's usual blend only brightens
-			// what's underneath, which barely shows on a white cap.
-			nvgGlobalCompositeOperation(args.vg, NVG_SOURCE_OVER);
-			drawLight(args);
-			nvgGlobalCompositeBlendFunc(args.vg, NVG_ONE_MINUS_DST_COLOR, NVG_ONE);
-			drawHalo(args);
-		}
-		Widget::drawLayer(args, layer);
+		box.size = Vec(22, 22).mult(kButtonScale);
 	}
 };
 
@@ -1087,7 +1051,7 @@ struct BeadsWidget : ModuleWidget {
 
 		addChild(createLightCentered<BeadsButtonLight>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_LIGHT));
 		addChild(createLightCentered<BeadsButtonLight>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_LIGHT));
-		addChild(createLightCentered<MediumLight<BeadsQualityLight>>(mm2px(Vec(29.186, 45.146)), module, Beads::QUALITY_LIGHT));
+		addChild(createLightCentered<MediumLight<RedGreenBlueLight>>(mm2px(Vec(29.186, 45.146)), module, Beads::QUALITY_LIGHT));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(6.936, 69.896)), module, Beads::ASSIGN_LIGHT + 0));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(64.185, 69.896)), module, Beads::ASSIGN_LIGHT + 1));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(64.185, 86.096)), module, Beads::ASSIGN_LIGHT + 2));
