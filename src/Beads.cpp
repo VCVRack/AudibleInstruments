@@ -42,6 +42,203 @@ static float detuneLaw(float x) {
 	return crossfade(intervals[integral], intervals[integral + 1], t) * sign;
 }
 
+// Knob position that gives y, in the middle of any flat zone of the law
+static float invertLaw(float (*law)(float), float y) {
+	y = clamp(y, law(0.f), law(1.f));
+	float lo = 0.f, hi = 1.f;
+	for (int i = 0; i < 24; i++) {
+		float x = (lo + hi) / 2.f;
+		(law(x) < y - 1e-4f ? lo : hi) = x;
+	}
+	float start = hi;
+	lo = 0.f, hi = 1.f;
+	for (int i = 0; i < 24; i++) {
+		float x = (lo + hi) / 2.f;
+		(law(x) <= y + 1e-4f ? lo : hi) = x;
+	}
+	return std::max((start + lo) / 2.f, start);
+}
+
+// Grain length in seconds, from the firmware's GranularPlayer::ComputeGrainDuration()
+static float grainDuration(float size) {
+	float shortness = (size < 1.f / 3.f)
+		? size * 3.f * (2.f - size * 3.f)
+		: 1.f - 1.5f * (size - 1.f / 3.f);
+	shortness = std::min(1.f, 1.025f * shortness);
+	return 4.f * std::pow(2.f, -9.f * shortness);
+}
+
+// Fastest grain rates, from the firmware's TriggerGenerator
+static const float kMaxGrainFrequency = 130.81278f;
+static const int kDivisionRatios[] = {1, 2, 3, 4, 6, 8, 12, 16};
+
+
+struct BeadsPitchQuantity : ParamQuantity {
+	float getDisplayValue() override {
+		return detuneLaw(getValue());
+	}
+	void setDisplayValue(float displayValue) override {
+		setValue(invertLaw(detuneLaw, displayValue));
+	}
+	int getDisplayPrecision() override {
+		return 3;
+	}
+	std::string getUnit() override {
+		return " semitones";
+	}
+};
+
+
+struct BeadsSizeQuantity : ParamQuantity {
+	bool reversed() {
+		return getValue() < 1.f / 3.f;
+	}
+	bool delayMode() {
+		return getValue() > 0.99f;
+	}
+	float getDisplayValue() override {
+		return grainDuration(getValue()) * 1000.f;
+	}
+	// Typed lengths keep the current direction
+	void setDisplayValue(float displayValue) override {
+		float shortness = -std::log2(clamp(displayValue / 1000.f, 1e-3f, 4.f) / 4.f) / 9.f;
+		shortness = std::min(shortness / 1.025f, 1.f);
+		if (reversed())
+			setValue((1.f - std::sqrt(1.f - shortness)) / 3.f);
+		else
+			setValue(std::min(1.f / 3.f + (1.f - shortness) / 1.5f, 0.98f));
+	}
+	int getDisplayPrecision() override {
+		return 4;
+	}
+	std::string getUnit() override {
+		return " ms";
+	}
+	std::string getString() override {
+		if (delayMode())
+			return getLabel() + ": Delay";
+		return ParamQuantity::getString();
+	}
+	std::string getDescription() override {
+		return (reversed() && !delayMode()) ? "Reversed" : "";
+	}
+};
+
+
+struct BeadsDensityQuantity : ParamQuantity {
+	enum Mode {
+		REGULAR,
+		OFF,
+		RANDOM,
+		DIVIDE,
+		PROBABILITY,
+	};
+
+	bool dividerMode();
+
+	// SEED patched and latched turns density into a divider and a probability of the SEED gates
+	Mode mode() {
+		float d = getValue();
+		bool divider = dividerMode();
+		if (d < 0.48f)
+			return divider ? DIVIDE : REGULAR;
+		if (d > 0.52f)
+			return divider ? PROBABILITY : RANDOM;
+		return OFF;
+	}
+	float getDisplayValue() override {
+		float d = getValue();
+		switch (mode()) {
+			case REGULAR: return kMaxGrainFrequency * std::pow(2.f, -16.f * d);
+			case RANDOM: return 0.5f * kMaxGrainFrequency * std::pow(2.f, -16.f * (1.f - d));
+			case DIVIDE: return kDivisionRatios[clamp((int) (d * 2.15f * 8.f), 0, 7)];
+			case PROBABILITY: {
+				float probabilitySqrt = (d - 0.52f) * 2.15f;
+				return std::min(probabilitySqrt * probabilitySqrt, 1.f) * 100.f;
+			}
+			default: return 0.f;
+		}
+	}
+	// Typed values keep the current side of the knob
+	void setDisplayValue(float displayValue) override {
+		switch (mode()) {
+			case REGULAR:
+				setValue(clamp(-std::log2(std::max(displayValue, 1e-3f) / kMaxGrainFrequency) / 16.f, 0.f, 0.47f));
+				break;
+			case OFF:
+			case RANDOM:
+				if (displayValue <= 0.f && mode() == OFF)
+					break;
+				setValue(clamp(1.f + std::log2(std::max(displayValue, 1e-3f) / (0.5f * kMaxGrainFrequency)) / 16.f, 0.53f, 1.f));
+				break;
+			case DIVIDE: {
+				int index = 0;
+				for (int i = 0; i < 8; i++) {
+					if (std::fabs(kDivisionRatios[i] - displayValue) < std::fabs(kDivisionRatios[index] - displayValue))
+						index = i;
+				}
+				setValue((index + 0.5f) / 8.f / 2.15f);
+			} break;
+			case PROBABILITY:
+				setValue(clamp(0.52f + std::sqrt(clamp(displayValue / 100.f, 0.f, 1.f)) / 2.15f, 0.53f, 1.f));
+				break;
+		}
+	}
+	int getDisplayPrecision() override {
+		return 3;
+	}
+	std::string getUnit() override {
+		switch (mode()) {
+			case REGULAR:
+			case RANDOM: return " Hz";
+			case PROBABILITY: return "%";
+			default: return "";
+		}
+	}
+	std::string getString() override {
+		switch (mode()) {
+			case OFF: return getLabel() + ": Off";
+			case DIVIDE: return getLabel() + ": ÷" + getDisplayValueString();
+			default: return ParamQuantity::getString();
+		}
+	}
+	std::string getDescription() override {
+		switch (mode()) {
+			case REGULAR: return "Regular";
+			case RANDOM: return "Random";
+			case PROBABILITY: return "SEED gate probability";
+			default: return "";
+		}
+	}
+};
+
+
+struct BeadsAttenurandomizerQuantity : ParamQuantity {
+	int cvInput = 0;
+
+	float getDisplayValue() override {
+		return attenurandomizerLaw(getValue()) * 100.f;
+	}
+	void setDisplayValue(float displayValue) override {
+		setValue(invertLaw(attenurandomizerLaw, displayValue / 100.f));
+	}
+	int getDisplayPrecision() override {
+		return 3;
+	}
+	std::string getUnit() override {
+		return "%";
+	}
+	// Behavior of RandomizedParameter::value()
+	std::string getDescription() override {
+		float amount = attenurandomizerLaw(getValue());
+		if (amount == 0.f)
+			return "";
+		if (module && module->inputs[cvInput].isConnected())
+			return amount > 0.f ? "CV" : "Random, CV sets amount";
+		return amount > 0.f ? "Random" : "Random, varying amount";
+	}
+};
+
 
 struct Beads : Module {
 	enum ParamIds {
@@ -154,18 +351,18 @@ struct Beads : Module {
 
 	Beads() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-		configParam(DENSITY_PARAM, 0.0, 1.0, 0.5, "Grain density");
+		configParam<BeadsDensityQuantity>(DENSITY_PARAM, 0.0, 1.0, 0.5, "Grain density");
 		configParam(TIME_PARAM, 0.0, 1.0, 0.5, "Grain time");
-		configParam(PITCH_PARAM, 0.0, 1.0, 0.5, "Grain pitch");
-		configParam(SIZE_PARAM, 0.0, 1.0, 0.5, "Grain size");
+		configParam<BeadsPitchQuantity>(PITCH_PARAM, 0.0, 1.0, 0.5, "Grain pitch");
+		configParam<BeadsSizeQuantity>(SIZE_PARAM, 0.0, 1.0, 0.5, "Grain size");
 		configParam(SHAPE_PARAM, 0.0, 1.0, 0.5, "Grain shape");
 		configParam(FEEDBACK_PARAM, 0.0, 1.0, 0.0, "Feedback", "%", 0, 100);
 		configParam(DRY_WET_PARAM, 0.0, 1.0, 0.5, "Dry/wet", "%", 0, 100);
 		configParam(REVERB_PARAM, 0.0, 1.0, 0.0, "Reverb", "%", 0, 100);
-		configParam(TIME_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Time attenurandomizer", "%", 0, 200, -100);
-		configParam(SIZE_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Size attenurandomizer", "%", 0, 200, -100);
-		configParam(SHAPE_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Shape attenurandomizer", "%", 0, 200, -100);
-		configParam(PITCH_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Pitch attenurandomizer", "%", 0, 200, -100);
+		configParam<BeadsAttenurandomizerQuantity>(TIME_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Time attenurandomizer")->cvInput = TIME_INPUT;
+		configParam<BeadsAttenurandomizerQuantity>(SIZE_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Size attenurandomizer")->cvInput = SIZE_INPUT;
+		configParam<BeadsAttenurandomizerQuantity>(SHAPE_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Shape attenurandomizer")->cvInput = SHAPE_INPUT;
+		configParam<BeadsAttenurandomizerQuantity>(PITCH_AMOUNT_PARAM, 0.0, 1.0, 0.5, "Pitch attenurandomizer")->cvInput = PITCH_INPUT;
 		configButton(FREEZE_PARAM, "Freeze");
 		configButton(SEED_PARAM, "Seed");
 		configButton(QUALITY_PARAM, "Quality");
@@ -675,6 +872,12 @@ struct Beads : Module {
 			seedLocked = json_boolean_value(seedLockedJ);
 	}
 };
+
+
+bool BeadsDensityQuantity::dividerMode() {
+	Beads* beads = dynamic_cast<Beads*>(module);
+	return beads && beads->seedLocked && beads->inputs[Beads::SEED_INPUT].isConnected();
+}
 
 
 // Context menu equivalents of the button + knob combos
