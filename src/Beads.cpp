@@ -235,7 +235,7 @@ struct BeadsAttenurandomizerQuantity : ParamQuantity {
 			return "";
 		if (module && module->inputs[cvInput].isConnected())
 			return amount > 0.f ? "CV" : "Random, CV sets amount";
-		return amount > 0.f ? "Random" : "Random, varying amount";
+		return amount > 0.f ? "Random, Uniform" : "Random, Peaky";
 	}
 };
 
