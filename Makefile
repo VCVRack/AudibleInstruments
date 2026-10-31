@@ -101,12 +101,21 @@ SOURCES += eurorack/streams/svf.cc
 SOURCES += eurorack/streams/vactrol.cc
 SOURCES += eurorack/streams/compressor.cc
 
-# Beads is not in the eurorack submodule, so its firmware code is in src/Beads.
-SOURCES += $(wildcard src/Beads/*.cc)
-SOURCES += $(wildcard src/Beads/dsp/*.cc)
+# The gain controller adapts codec input to Rack's floating-point audio.
+SOURCES += src/Beads/gain_control.cc
+SOURCES += eurorack/beads/resources.cc
+SOURCES += $(wildcard eurorack/beads/dsp/*.cc)
 
 
 DISTRIBUTABLES += $(wildcard LICENSE*) res
 
 RACK_DIR ?= ../..
 include $(RACK_DIR)/plugin.mk
+
+# Load Beads through the desktop adapter in every translation unit.
+BEADS_OBJECTS := build/src/Beads.cpp.o $(patsubst %,build/%.o,$(wildcard eurorack/beads/dsp/*.cc))
+$(BEADS_OBJECTS): CXXFLAGS += -include src/Beads/desktop.h
+ifdef ARCH_WIN
+# Firmware's packed 12-bit samples require GCC rather than MS bitfield layout.
+$(BEADS_OBJECTS): CXXFLAGS += -mno-ms-bitfields
+endif

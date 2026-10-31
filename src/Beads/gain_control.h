@@ -35,7 +35,7 @@
 
 #include "stmlib/stmlib.h"
 
-#include "dsp/frame.h"
+#include "beads/dsp/frame.h"
 
 namespace beads {
 

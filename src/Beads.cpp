@@ -1,8 +1,8 @@
 #include "plugin.hpp"
-#include "Beads/dsp/processor.h"
-#include "Beads/dsp/synth.h"
+#include "beads/dsp/processor.h"
+#include "beads/dsp/synth.h"
 #include "Beads/gain_control.h"
-#include "Beads/pot_controller.h"
+#include "beads/pot_controller.h"
 
 
 // Processing and UI behavior follow the firmware's beads.cc and ui.cc.
