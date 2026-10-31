@@ -1,11 +1,107 @@
 #include "plugin.hpp"
+#include <osdialog.h>
+#include <atomic>
+#include <mutex>
 
 #pragma GCC diagnostic push
 #ifndef __clang__
 	#pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 #include "plaits/dsp/voice.h"
+#include "plaits/user_data_receiver.h"
 #pragma GCC diagnostic pop
+
+
+// Size of a custom data block, as stored in the hardware's flash.
+static const size_t kUserDataSize = 4096;
+// The wavetable engine can read a whole custom wave past the end of the block,
+// so the voices get a zero-padded copy.
+static const size_t kUserDataBufferSize = 4352;
+// Hardware button long press time
+static const float kLongPressTime = 2.f;
+
+
+/** Reads the first channel of a PCM or float WAV file. Returns false if the file isn't one. */
+static bool readWav(const std::vector<uint8_t>& file, std::vector<float>& samples, float& sampleRate) {
+	auto u16 = [&](size_t i) {return (uint32_t) file[i] | (uint32_t) file[i + 1] << 8;};
+	auto u32 = [&](size_t i) {return u16(i) | u16(i + 2) << 16;};
+	if (file.size() < 12 || std::memcmp(&file[0], "RIFF", 4) || std::memcmp(&file[8], "WAVE", 4))
+		return false;
+
+	int format = 0;
+	int channels = 0;
+	int bits = 0;
+	size_t pos = 12;
+	while (pos + 8 <= file.size()) {
+		size_t size = u32(pos + 4);
+		size_t data = pos + 8;
+		size_t end = std::min(data + size, file.size());
+		if (!std::memcmp(&file[pos], "fmt ", 4) && size >= 16 && data + 16 <= file.size()) {
+			format = u16(data);
+			channels = u16(data + 2);
+			sampleRate = u32(data + 4);
+			bits = u16(data + 14);
+			// WAVE_FORMAT_EXTENSIBLE keeps the format in its subformat GUID.
+			if (format == 0xfffe && size >= 26 && data + 26 <= file.size())
+				format = u16(data + 24);
+		}
+		else if (!std::memcmp(&file[pos], "data", 4) && channels > 0) {
+			size_t bytes = bits / 8;
+			bool isInt = (format == 1 && bytes >= 1 && bytes <= 4);
+			bool isFloat = (format == 3 && bits == 32);
+			if (!(isInt || isFloat) || !(sampleRate > 0.f))
+				return false;
+			size_t frameSize = bytes * channels;
+			for (size_t i = data; i + frameSize <= end; i += frameSize) {
+				float x;
+				if (isFloat) {
+					uint32_t u = u32(i);
+					std::memcpy(&x, &u, 4);
+				}
+				else if (bytes == 1) {
+					x = (file[i] - 128) / 128.f;
+				}
+				else {
+					uint32_t u = 0;
+					for (size_t b = 0; b < bytes; b++)
+						u |= (uint32_t) file[i + b] << (8 * (b + 4 - bytes));
+					x = (int32_t) u / 2147483648.f;
+				}
+				samples.push_back(x);
+			}
+			return true;
+		}
+		pos = data + size + (size & 1);
+	}
+	return false;
+}
+
+
+/** Decodes custom data from the Plaits editor's audio, as the firmware does from the TIMBRE input. */
+static bool decodeUserData(const std::vector<float>& samples, float sampleRate, std::vector<uint8_t>& data) {
+	data.assign(kUserDataSize, 0);
+	plaits::UserDataReceiver receiver;
+	receiver.Init(data.data(), kUserDataSize);
+	// The firmware reads the CV once per 12-sample block at 48 kHz.
+	double step = sampleRate / 4000.0;
+	for (double t = 0.0; t + 1 < samples.size(); t += step) {
+		size_t i = t;
+		float x = crossfade(samples[i], samples[i + 1], (float) (t - i));
+		if (receiver.Process(x) == stm_audio_bootloader::PACKET_DECODER_STATE_END_OF_TRANSMISSION) {
+			if (receiver.progress() == 1.f)
+				return true;
+			receiver.Reset();
+		}
+	}
+	return receiver.progress() == 1.f;
+}
+
+
+struct PlaitsFrequencyQuantity : ParamQuantity {
+	float getDisplayValue() override;
+	void setDisplayValue(float displayValue) override;
+	std::string getUnit() override;
+};
 
 
 struct Plaits : Module {
@@ -21,6 +117,8 @@ struct Plaits : Module {
 		MORPH_CV_PARAM,
 		LPG_COLOR_PARAM,
 		LPG_DECAY_PARAM,
+		FREQ_RANGE_PARAM,
+		OCTAVES_ROOT_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -43,6 +141,11 @@ struct Plaits : Module {
 		ENUMS(MODEL_LIGHT, 8 * 2),
 		NUM_LIGHTS
 	};
+	enum UiMode {
+		UI_MODE_NORMAL,
+		UI_MODE_DISPLAY_ALTERNATE_PARAMETERS,
+		UI_MODE_DISPLAY_OCTAVE,
+	};
 
 	plaits::Voice voice[16];
 	// Keep the original sixteen-engine CV quantization and trigger latching.
@@ -55,6 +158,25 @@ struct Plaits : Module {
 	char shared_buffer[16][16384] = {};
 	float triPhase = 0.f;
 
+	// With firmware 1.2, patch.engine uses its numbering, where the original sixteen engines start at 8.
+	bool firmware12 = false;
+	bool altNavigation = false;
+	bool colorBlind = false;
+	UiMode uiMode = UI_MODE_NORMAL;
+	stmlib::HysteresisQuantizer2 octaveQuantizer;
+	bool buttonPressed[2] = {};
+	float pressTime[2] = {};
+	bool ignoreRelease[2] = {};
+
+	// Custom data for one firmware 1.2 engine, like the hardware's single flash page. Guarded by userDataMutex.
+	std::vector<uint8_t> userData;
+	int userDataEngine = -1;
+	std::mutex userDataMutex;
+	std::atomic<bool> userDataChanged{true};
+	// Padded copy the voices read, owned by the audio thread.
+	std::vector<uint8_t> voiceUserData;
+	bool voiceUserDataEnabled = false;
+
 	dsp::SampleRateConverter<16 * 2> outputSrc;
 	dsp::DoubleRingBuffer<dsp::Frame<16 * 2>, 256> outputBuffer;
 	bool lowCpu = false;
@@ -66,7 +188,7 @@ struct Plaits : Module {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configButton(MODEL1_PARAM, "Pitched models");
 		configButton(MODEL2_PARAM, "Noise/percussive models");
-		configParam(FREQ_PARAM, -4.0, 4.0, 0.0, "Frequency", " semitones", 0.f, 12.f);
+		configParam<PlaitsFrequencyQuantity>(FREQ_PARAM, -4.0, 4.0, 0.0, "Frequency", " semitones", 0.f, 12.f);
 		configParam(HARMONICS_PARAM, 0.0, 1.0, 0.5, "Harmonics", "%", 0.f, 100.f);
 		configParam(TIMBRE_PARAM, 0.0, 1.0, 0.5, "Timbre", "%", 0.f, 100.f);
 		configParam(LPG_COLOR_PARAM, 0.0, 1.0, 0.5, "Lowpass gate response", "%", 0.f, 100.f);
@@ -75,6 +197,10 @@ struct Plaits : Module {
 		configParam(TIMBRE_CV_PARAM, -1.0, 1.0, 0.0, "Timbre CV");
 		configParam(FREQ_CV_PARAM, -1.0, 1.0, 0.0, "Frequency CV");
 		configParam(MORPH_CV_PARAM, -1.0, 1.0, 0.0, "Morph CV");
+		configSwitch(FREQ_RANGE_PARAM, 0.0, 10.0, 10.0, "Frequency range", {
+			"LFO", "C0 ±7", "C1 ±7", "C2 ±7", "C3 ±7", "C4 ±7", "C5 ±7", "C6 ±7", "C7 ±7", "Octaves", "Full",
+		});
+		configParam(OCTAVES_ROOT_PARAM, -7.0, 7.0, 0.0, "Octaves root", " semitones");
 
 		configInput(ENGINE_INPUT, "Model");
 		configInput(TIMBRE_INPUT, "Timbre");
@@ -94,25 +220,44 @@ struct Plaits : Module {
 			engineQuantizer[i].Init();
 			engineTriggerDelay[i].Init(engineTriggerBuffer[i]);
 		}
+		octaveQuantizer.Init(9, 0.01f, false);
 
 		onReset();
 	}
 
 	void onReset() override {
-		patch.engine = 0;
+		patch.engine = firmware12 ? 8 : 0;
+		altNavigation = false;
+		uiMode = UI_MODE_NORMAL;
 		patch.lpg_colour = 0.5f;
 		patch.decay = 0.5f;
 	}
 
 	void onRandomize() override {
-		patch.engine = random::u32() % 16;
+		if (firmware12)
+			setEngine(random::u32() % 24);
+		else
+			patch.engine = random::u32() % 16;
 	}
 
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 
 		json_object_set_new(rootJ, "lowCpu", json_boolean(lowCpu));
-		json_object_set_new(rootJ, "model", json_integer(patch.engine));
+		// Original firmware numbering, for older versions
+		json_object_set_new(rootJ, "model", json_integer(firmware12 ? std::max(patch.engine - 8, 0) : patch.engine));
+		json_object_set_new(rootJ, "firmware12", json_boolean(firmware12));
+		json_object_set_new(rootJ, "engine", json_integer(patch.engine));
+		json_object_set_new(rootJ, "altNavigation", json_boolean(altNavigation));
+		json_object_set_new(rootJ, "colorBlind", json_boolean(colorBlind));
+
+		{
+			std::lock_guard<std::mutex> lock(userDataMutex);
+			if (userDataEngine >= 0) {
+				json_object_set_new(rootJ, "userDataEngine", json_integer(userDataEngine));
+				json_object_set_new(rootJ, "userData", json_string(string::toBase64(userData).c_str()));
+			}
+		}
 
 		return rootJ;
 	}
@@ -126,6 +271,34 @@ struct Plaits : Module {
 		if (modelJ)
 			patch.engine = json_integer_value(modelJ);
 
+		json_t* altNavigationJ = json_object_get(rootJ, "altNavigation");
+		altNavigation = altNavigationJ && json_boolean_value(altNavigationJ);
+
+		json_t* colorBlindJ = json_object_get(rootJ, "colorBlind");
+		if (colorBlindJ)
+			colorBlind = json_boolean_value(colorBlindJ);
+
+		json_t* firmware12J = json_object_get(rootJ, "firmware12");
+		firmware12 = firmware12J && json_boolean_value(firmware12J);
+		uiMode = UI_MODE_NORMAL;
+		if (firmware12) {
+			json_t* engineJ = json_object_get(rootJ, "engine");
+			setEngine(engineJ ? clamp((int) json_integer_value(engineJ), 0, 23) : patch.engine + 8);
+		}
+
+		json_t* userDataEngineJ = json_object_get(rootJ, "userDataEngine");
+		json_t* userDataJ = json_object_get(rootJ, "userData");
+		std::vector<uint8_t> data;
+		if (userDataEngineJ && json_is_string(userDataJ)) {
+			data = string::fromBase64(json_string_value(userDataJ));
+			if (data.size() != kUserDataSize)
+				data.clear();
+		}
+		if (data.empty())
+			clearUserData();
+		else
+			setUserData(clamp((int) json_integer_value(userDataEngineJ), 0, plaits::kMaxEngines - 1), std::move(data));
+
 		// Legacy <=1.0.2
 		json_t* lpgColorJ = json_object_get(rootJ, "lpgColor");
 		if (lpgColorJ)
@@ -137,14 +310,245 @@ struct Plaits : Module {
 			params[LPG_DECAY_PARAM].setValue(json_number_value(decayJ));
 	}
 
+	void setFirmware12(bool firmware12) {
+		if (firmware12 == this->firmware12)
+			return;
+		// Firmware 1.2 inserts eight engines before the original sixteen, which the original firmware can't select.
+		patch.engine = firmware12 ? patch.engine + 8 : std::max(patch.engine - 8, 0);
+		uiMode = UI_MODE_NORMAL;
+		this->firmware12 = firmware12;
+	}
+
+	void setEngine(int engine) {
+		// Like loading the hardware's settings, the new engines are only reachable with alternate navigation.
+		if (firmware12 && engine < 8)
+			altNavigation = true;
+		patch.engine = engine;
+	}
+
+	bool hasUserData(int engine) {
+		std::lock_guard<std::mutex> lock(userDataMutex);
+		return engine == userDataEngine;
+	}
+
+	/** Replaces the data of any other engine, which reverts to its built-in data. */
+	void setUserData(int engine, std::vector<uint8_t> data) {
+		std::lock_guard<std::mutex> lock(userDataMutex);
+		userData = std::move(data);
+		userDataEngine = userData.empty() ? -1 : engine;
+		userDataChanged = true;
+	}
+
+	void clearUserData() {
+		setUserData(-1, {});
+	}
+
+	/** Returns an error message, or an empty string on success. */
+	std::string loadUserData(int engine, const std::string& path) {
+		std::vector<uint8_t> data;
+		try {
+			data = system::readFile(path);
+		}
+		catch (Exception& e) {
+			return e.what();
+		}
+
+		std::vector<float> samples;
+		float sampleRate = 0.f;
+		if (readWav(data, samples, sampleRate)) {
+			if (!decodeUserData(samples, sampleRate, data))
+				return "No Plaits data found in this audio file.";
+			// Like UserData::Save(), only accept data tagged for this engine.
+			if (engine < data[kUserDataSize - 2] || engine > data[kUserDataSize - 1])
+				return "This data is for a different model.";
+		}
+		else {
+			// Strip the header and checksum of a DX7 32-voice bulk dump, with or without the end byte like the editor.
+			if ((data.size() == kUserDataSize + 8 || data.size() == kUserDataSize + 7) && data[0] == 0xf0 && data[1] == 0x43 && data[3] == 0x09)
+				data = std::vector<uint8_t>(data.begin() + 6, data.begin() + 6 + kUserDataSize);
+
+			// The 6-op FM engines and wave terrain read the whole block, the wavetable engine starts with a 64-wave map.
+			size_t minSize = (engine == 13) ? 64 : kUserDataSize - 2;
+			if (data.size() < minSize || data.size() > kUserDataSize)
+				return string::f("Expected %d bytes of data, got %d.", (int) kUserDataSize, (int) data.size());
+			data.resize(kUserDataSize);
+		}
+
+		// Tag the data like UserData::Save() does, which overwrites its last two bytes.
+		data[kUserDataSize - 2] = 'U';
+		data[kUserDataSize - 1] = ' ' + engine;
+		setUserData(engine, std::move(data));
+		return "";
+	}
+
+	void applyUserData() {
+		if (!userDataChanged && voiceUserDataEnabled == firmware12)
+			return;
+		std::unique_lock<std::mutex> lock(userDataMutex, std::try_to_lock);
+		if (!lock.owns_lock())
+			return;
+		userDataChanged = false;
+		voiceUserDataEnabled = firmware12;
+		voiceUserData = userData;
+		if (!voiceUserData.empty())
+			voiceUserData.resize(kUserDataBufferSize);
+		for (int e = 0; e < plaits::kMaxEngines; e++) {
+			const uint8_t* data = (firmware12 && e == userDataEngine) ? voiceUserData.data() : NULL;
+			for (int c = 0; c < 16; c++)
+				voice[c].set_user_data(e, data);
+		}
+	}
+
+	void navigate(int button) {
+		ignoreRelease[0] = ignoreRelease[1] = true;
+		if (altNavigation) {
+			patch.engine = (patch.engine + (button == 0 ? 23 : 1)) % 24;
+		}
+		else {
+			int newBank = button + 1;
+			int cycle = (newBank == patch.engine / 8) ? 1 : 0;
+			patch.engine = newBank * 8 + (patch.engine % 8 + cycle) % 8;
+		}
+	}
+
+	// Port of Ui::ReadSwitches() from firmware 1.2
+	void processButtons(float dt) {
+		bool released[2];
+		for (int i = 0; i < 2; i++) {
+			bool pressed = params[MODEL1_PARAM + i].getValue() > 0.f;
+			if (pressed && !buttonPressed[i]) {
+				pressTime[i] = 0.f;
+				ignoreRelease[i] = false;
+			}
+			released[i] = !pressed && buttonPressed[i];
+			buttonPressed[i] = pressed;
+			pressTime[i] = pressed ? pressTime[i] + dt : 0.f;
+		}
+
+		if (uiMode != UI_MODE_NORMAL) {
+			if (released[0] || released[1])
+				uiMode = UI_MODE_NORMAL;
+			return;
+		}
+
+		// Long double press calibrates the hardware, which isn't needed here.
+		if (pressTime[0] >= kLongPressTime && pressTime[1] >= kLongPressTime) {
+			pressTime[0] = pressTime[1] = 0.f;
+			ignoreRelease[0] = ignoreRelease[1] = true;
+		}
+		// Long press displays the hidden parameters.
+		if (pressTime[0] >= kLongPressTime && pressTime[1] == 0.f) {
+			pressTime[0] = 0.f;
+			uiMode = UI_MODE_DISPLAY_ALTERNATE_PARAMETERS;
+		}
+		if (pressTime[1] >= kLongPressTime && pressTime[0] == 0.f) {
+			pressTime[1] = 0.f;
+			uiMode = UI_MODE_DISPLAY_OCTAVE;
+		}
+
+		if ((released[0] && !ignoreRelease[0] && pressTime[1] > 0.f) || (released[1] && !ignoreRelease[1] && pressTime[0] > 0.f)) {
+			ignoreRelease[0] = ignoreRelease[1] = true;
+			altNavigation = !altNavigation;
+		}
+		else if (released[0] && !ignoreRelease[0]) {
+			navigate(0);
+		}
+		else if (released[1] && !ignoreRelease[1]) {
+			navigate(1);
+		}
+	}
+
+	// Port of Ui::UpdateLEDs() from firmware 1.2
+	void setFirmware12Lights(int channels, float tri) {
+		float green[8] = {};
+		float red[8] = {};
+		int triangle = std::min((int) (tri * 16.f), 15);
+
+		if (uiMode == UI_MODE_NORMAL) {
+			auto addEngine = [&](int e, float brightness) {
+				int row = e % 8;
+				int bank = e / 8;
+				if (colorBlind) {
+					// Yellow with a PWM duty cycle of 16, 4 or 1 out of 16 instead of a color per bank
+					brightness = std::min(brightness, 1.f / (1 << (2 * bank)));
+					green[row] = std::max(green[row], brightness);
+					red[row] = std::max(red[row], brightness);
+				}
+				else {
+					// Yellow, green and red banks
+					if (bank != 2)
+						green[row] = std::max(green[row], brightness);
+					if (bank != 1)
+						red[row] = std::max(red[row], brightness);
+				}
+			};
+			for (int c = 0; c < channels; c++) {
+				int activeEngine = voice[c].active_engine();
+				if (activeEngine >= 0 && activeEngine < 24)
+					addEngine(activeEngine, 1.f);
+			}
+			addEngine(patch.engine, tri);
+		}
+		else if (uiMode == UI_MODE_DISPLAY_ALTERNATE_PARAMETERS) {
+			for (int parameter = 0; parameter < 2; parameter++) {
+				float value = (parameter == 0) ? params[LPG_COLOR_PARAM].getValue() : params[LPG_DECAY_PARAM].getValue();
+				value -= 0.001f;
+				for (int i = 0; i < 4; i++) {
+					int row = parameter * 4 + 3 - i;
+					green[row] = red[row] = clamp(value * 4.f, 0.f, 1.f);
+					value -= 0.25f;
+				}
+			}
+		}
+		else if (uiMode == UI_MODE_DISPLAY_OCTAVE) {
+			int octave = (int) params[FREQ_RANGE_PARAM].getValue();
+			for (int i = 0; i < 8; i++) {
+				bool on;
+				if (octave == 0)
+					on = i != (triangle >> 1);
+				else if (octave == 10)
+					on = true;
+				else if (octave == 9)
+					on = (i & 1) != ((triangle >> 3) & 1);
+				else
+					on = (octave - 1) == i;
+				green[7 - i] = red[7 - i] = on;
+			}
+		}
+
+		for (int i = 0; i < 8; i++) {
+			lights[MODEL_LIGHT + i * 2 + 0].setBrightness(green[i]);
+			lights[MODEL_LIGHT + i * 2 + 1].setBrightness(red[i]);
+		}
+	}
+
+	// Port of the frequency range handling in Ui::Poll() from firmware 1.2
+	float getFirmware12Note() {
+		float transposition = params[FREQ_PARAM].getValue() / 4.f;
+		int octave = (int) params[FREQ_RANGE_PARAM].getValue();
+		if (octave == 0)
+			return -48.37f + transposition * 60.f;
+		if (octave == 9) {
+			float fineTune = (params[OCTAVES_ROOT_PARAM].getValue() + 7.f) / 14.f;
+			return 53.f + fineTune * 14.f + 12.f * (octaveQuantizer.Process(0.5f * transposition + 0.5f) - 4);
+		}
+		if (octave == 10)
+			return 60.f + transposition * 48.f;
+		return transposition * 7.f + octave * 12.f;
+	}
+
 	void process(const ProcessArgs& args) override {
 		int channels = std::max(inputs[NOTE_INPUT].getChannels(), 1);
 
 		if (outputBuffer.empty()) {
 			const int blockSize = 12;
 
+			applyUserData();
+
 			// Model buttons
-			if (model1Trigger.process(params[MODEL1_PARAM].getValue())) {
+			if (firmware12)
+				processButtons(lowCpu ? blockSize * args.sampleTime : blockSize / 48000.f);
+			else if (model1Trigger.process(params[MODEL1_PARAM].getValue())) {
 				if (patch.engine >= 8) {
 					patch.engine -= 8;
 				}
@@ -152,7 +556,7 @@ struct Plaits : Module {
 					patch.engine = (patch.engine + 1) % 8;
 				}
 			}
-			if (model2Trigger.process(params[MODEL2_PARAM].getValue())) {
+			if (!firmware12 && model2Trigger.process(params[MODEL2_PARAM].getValue())) {
 				if (patch.engine < 8) {
 					patch.engine += 8;
 				}
@@ -189,6 +593,9 @@ struct Plaits : Module {
 					brightness = tri;
 				lights[MODEL_LIGHT + lightId].setBrightness(brightness);
 			}
+			// Firmware 1.2 replaces the original lights.
+			if (firmware12)
+				setFirmware12Lights(channels, tri);
 
 			// Calculate pitch for lowCpu mode if needed
 			float pitch = params[FREQ_PARAM].getValue();
@@ -196,6 +603,9 @@ struct Plaits : Module {
 				pitch += std::log2(48000.f * args.sampleTime);
 			// Update patch
 			patch.note = 60.f + pitch * 12.f;
+			// Firmware 1.2 replaces the frequency response, keeping the lowCpu correction.
+			if (firmware12)
+				patch.note += getFirmware12Note() - (60.f + params[FREQ_PARAM].getValue() * 12.f);
 			patch.harmonics = params[HARMONICS_PARAM].getValue();
 			patch.timbre = params[TIMBRE_PARAM].getValue();
 			patch.morph = params[MORPH_PARAM].getValue();
@@ -243,6 +653,11 @@ struct Plaits : Module {
 				// Firmware 1.2 inserts eight engines before the original sixteen.
 				plaits::Patch firmwarePatch = patch;
 				firmwarePatch.engine = 8 + engineQuantizer[c].Process(patch.engine, engineCv[c], 16, 0.25f);
+				if (firmware12) {
+					// Voice quantizes the engine CV over all 24 engines and latches it on triggers.
+					firmwarePatch.engine = patch.engine;
+					modulations.engine = inputs[ENGINE_INPUT].getPolyVoltage(c) / 5.f;
+				}
 				voice[c].Render(firmwarePatch, modulations, output, blockSize);
 
 				// Convert output to frames
@@ -283,6 +698,69 @@ struct Plaits : Module {
 };
 
 
+// The frequency knob's response depends on the firmware 1.2 frequency range.
+static int getFrequencyRange(Module* module) {
+	Plaits* plaits = dynamic_cast<Plaits*>(module);
+	if (!plaits || !plaits->firmware12)
+		return 10;
+	return (int) plaits->params[Plaits::FREQ_RANGE_PARAM].getValue();
+}
+
+float PlaitsFrequencyQuantity::getDisplayValue() {
+	float transposition = getValue() / 4.f;
+	int range = getFrequencyRange(module);
+	if (range == 0)
+		return dsp::FREQ_A4 * std::pow(2.f, (-48.37f + transposition * 60.f - 69.f) / 12.f);
+	if (range == 9)
+		return clamp((int) (9.f * (0.5f * transposition + 0.5f)), 0, 8) - 4;
+	if (range == 10)
+		return ParamQuantity::getDisplayValue();
+	return transposition * 7.f;
+}
+
+void PlaitsFrequencyQuantity::setDisplayValue(float displayValue) {
+	int range = getFrequencyRange(module);
+	float transposition;
+	if (range == 0) {
+		if (!(displayValue > 0.f))
+			return;
+		transposition = (69.f + 12.f * std::log2(displayValue / dsp::FREQ_A4) + 48.37f) / 60.f;
+	}
+	else if (range == 9) {
+		transposition = (std::round(displayValue) + 4.f + 0.5f) / 9.f * 2.f - 1.f;
+	}
+	else if (range == 10) {
+		ParamQuantity::setDisplayValue(displayValue);
+		return;
+	}
+	else {
+		transposition = displayValue / 7.f;
+	}
+	setValue(clamp(transposition * 4.f, getMinValue(), getMaxValue()));
+}
+
+std::string PlaitsFrequencyQuantity::getUnit() {
+	int range = getFrequencyRange(module);
+	if (range == 0)
+		return " Hz";
+	if (range == 9)
+		return " octaves";
+	return " semitones";
+}
+
+
+static const std::string newModelLabels[8] = {
+	"Classic waveshapes with filter",
+	"Phase distortion",
+	"6-op FM 1",
+	"6-op FM 2",
+	"6-op FM 3",
+	"Wave terrain",
+	"String machine",
+	"Chiptune",
+};
+
+
 static const std::string modelLabels[16] = {
 	"Pair of classic waveforms",
 	"Waveshaping oscillator",
@@ -305,6 +783,7 @@ static const std::string modelLabels[16] = {
 
 struct PlaitsWidget : ModuleWidget {
 	bool lpgMode = false;
+	bool rangeMode = false;
 
 	PlaitsWidget(Plaits* module) {
 		setModule(module);
@@ -331,6 +810,12 @@ struct PlaitsWidget : ModuleWidget {
 		ParamWidget* decayParam = createParam<Rogan1PSBlue>(mm2px(Vec(42.71716, 49.6562)), module, Plaits::LPG_DECAY_PARAM);
 		decayParam->hide();
 		addParam(decayParam);
+		ParamWidget* octavesRootParam = createParam<Rogan3PSBlue>(mm2px(Vec(3.1577, 20.21088)), module, Plaits::OCTAVES_ROOT_PARAM);
+		octavesRootParam->hide();
+		addParam(octavesRootParam);
+		ParamWidget* freqRangeParam = createParam<Rogan3PSBlue>(mm2px(Vec(39.3327, 20.21088)), module, Plaits::FREQ_RANGE_PARAM);
+		freqRangeParam->hide();
+		addParam(freqRangeParam);
 
 		addInput(createInput<PJ301MPort>(mm2px(Vec(3.31381, 92.48067)), module, Plaits::ENGINE_INPUT));
 		addInput(createInput<PJ301MPort>(mm2px(Vec(14.75983, 92.48067)), module, Plaits::TIMBRE_INPUT));
@@ -354,6 +839,40 @@ struct PlaitsWidget : ModuleWidget {
 		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.79498, 61.11827)), module, Plaits::MODEL_LIGHT + 7 * 2));
 	}
 
+	void step() override {
+		Plaits* module = dynamic_cast<Plaits*>(this->module);
+		if (module) {
+			// The frequency range only exists in firmware 1.2.
+			if (rangeMode && !module->firmware12)
+				setRangeMode(false);
+
+			bool altNavigation = module->firmware12 && module->altNavigation;
+			module->paramQuantities[Plaits::MODEL1_PARAM]->name = altNavigation ? "Previous model" : "Pitched models";
+			module->paramQuantities[Plaits::MODEL2_PARAM]->name = altNavigation ? "Next model" : "Noise/percussive models";
+		}
+		ModuleWidget::step();
+	}
+
+	void appendUserDataItem(Menu* menu, Plaits* module, std::string label, int engine) {
+		menu->addChild(createSubmenuItem(label, module->hasUserData(engine) ? "Custom" : "Built-in",
+			[=](Menu* menu) {
+				menu->addChild(createMenuItem("Load...", "", [=]() {
+					char* pathC = osdialog_file(OSDIALOG_OPEN, NULL, NULL, NULL);
+					if (!pathC)
+						return;
+					std::string path = pathC;
+					std::free(pathC);
+					std::string error = module->loadUserData(engine, path);
+					if (!error.empty())
+						osdialog_message(OSDIALOG_WARNING, OSDIALOG_OK, error.c_str());
+				}));
+				menu->addChild(createMenuItem("Clear", "", [=]() {
+					module->clearUserData();
+				}, !module->hasUserData(engine)));
+			}
+		));
+	}
+
 	void appendContextMenu(Menu* menu) override {
 		Plaits* module = dynamic_cast<Plaits*>(this->module);
 
@@ -367,12 +886,58 @@ struct PlaitsWidget : ModuleWidget {
 		));
 
 		menu->addChild(new MenuSeparator);
+
+		menu->addChild(createBoolMenuItem("Firmware 1.2", "",
+			[=]() {return module->firmware12;},
+			[=](bool val) {module->setFirmware12(val);}
+		));
+
+		// The original sixteen engines start at 8 in firmware 1.2.
+		int offset = module->firmware12 ? 8 : 0;
+
+		if (module->firmware12) {
+			menu->addChild(createBoolPtrMenuItem("Alternate navigation", "", &module->altNavigation));
+			menu->addChild(createBoolPtrMenuItem("Color-blind LEDs", "", &module->colorBlind));
+
+			menu->addChild(createBoolMenuItem("Edit frequency range/octaves root", "",
+				[=]() {return this->getRangeMode();},
+				[=](bool val) {this->setRangeMode(val);}
+			));
+
+			SwitchQuantity* rangeQuantity = dynamic_cast<SwitchQuantity*>(module->paramQuantities[Plaits::FREQ_RANGE_PARAM]);
+			menu->addChild(createIndexSubmenuItem("Frequency range", rangeQuantity->labels,
+				[=]() {return (size_t) rangeQuantity->getValue();},
+				[=](size_t val) {rangeQuantity->setValue(val);}
+			));
+
+			menu->addChild(createSubmenuItem("Custom data", "",
+				[=](Menu* menu) {
+					appendUserDataItem(menu, module, "6-op FM 1", 2);
+					appendUserDataItem(menu, module, "6-op FM 2", 3);
+					appendUserDataItem(menu, module, "6-op FM 3", 4);
+					appendUserDataItem(menu, module, "Wave terrain", 5);
+					appendUserDataItem(menu, module, "Wavetable", 13);
+				}
+			));
+
+			menu->addChild(new MenuSeparator);
+			menu->addChild(createMenuLabel("New models"));
+
+			for (int i = 0; i < 8; i++) {
+				menu->addChild(createCheckMenuItem(newModelLabels[i], "",
+					[=]() {return module->patch.engine == i;},
+					[=]() {module->setEngine(i);}
+				));
+			}
+		}
+
+		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Pitched models"));
 
 		for (int i = 0; i < 8; i++) {
 			menu->addChild(createCheckMenuItem(modelLabels[i], "",
-				[=]() {return module->patch.engine == i;},
-				[=]() {module->patch.engine = i;}
+				[=]() {return module->patch.engine == i + offset;},
+				[=]() {module->patch.engine = i + offset;}
 			));
 		}
 
@@ -381,8 +946,8 @@ struct PlaitsWidget : ModuleWidget {
 
 		for (int i = 8; i < 16; i++) {
 			menu->addChild(createCheckMenuItem(modelLabels[i], "",
-				[=]() {return module->patch.engine == i;},
-				[=]() {module->patch.engine = i;}
+				[=]() {return module->patch.engine == i + offset;},
+				[=]() {module->patch.engine = i + offset;}
 			));
 		}
 	}
@@ -408,6 +973,29 @@ struct PlaitsWidget : ModuleWidget {
 
 	bool getLpgMode() {
 		return this->lpgMode;
+	}
+
+	// Like holding the right button on the hardware, FREQUENCY sets the octaves root and HARMONICS the range.
+	void setRangeMode(bool rangeMode) {
+		if (!module)
+			return;
+		if (rangeMode) {
+			getParam(Plaits::FREQ_PARAM)->hide();
+			getParam(Plaits::HARMONICS_PARAM)->hide();
+			getParam(Plaits::OCTAVES_ROOT_PARAM)->show();
+			getParam(Plaits::FREQ_RANGE_PARAM)->show();
+		}
+		else {
+			getParam(Plaits::FREQ_PARAM)->show();
+			getParam(Plaits::HARMONICS_PARAM)->show();
+			getParam(Plaits::OCTAVES_ROOT_PARAM)->hide();
+			getParam(Plaits::FREQ_RANGE_PARAM)->hide();
+		}
+		this->rangeMode = rangeMode;
+	}
+
+	bool getRangeMode() {
+		return this->rangeMode;
 	}
 };
 

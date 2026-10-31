@@ -16,6 +16,7 @@
 - Keyframer/Mixer: the channel response curve is now continuous, as on hardware, with a slider in each channel's context menu, and its exponential end follows the hardware's 75 dB VCA response. Poly LFO mode stays linear, as on hardware. Older patches keep the previous curve through **Legacy response curve**.
 - Show orange, as on hardware, where red/green LEDs light both colors, instead of Rack's yellow: Random Sampler mode and range, Resonator, Texture Synthesizer level meter, Segment Generator, Tidal Modulator 2, Meta Modulator carrier and Dual Dynamics Gate.
 - Add Texture Synthesizer 2, based on Beads.
+- Add Plaits firmware 1.2 option to Macro Oscillator 2, with its eight new models, navigation, frequency ranges and custom data loading.
 
 ### 1.5.0 (2020-11-07)
 - Add Streams via fundraiser.

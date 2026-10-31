@@ -23,6 +23,9 @@ SOURCES += $(wildcard eurorack/plaits/dsp/fm/*.cc)
 SOURCES += $(wildcard eurorack/plaits/dsp/speech/*.cc)
 SOURCES += $(wildcard eurorack/plaits/dsp/physical_modelling/*.cc)
 SOURCES += eurorack/plaits/resources.cc
+# Decodes custom data from the Plaits editor's audio files.
+SOURCES += eurorack/plaits/user_data_receiver.cc
+SOURCES += eurorack/stm_audio_bootloader/fsk/packet_decoder.cc
 
 SOURCES += eurorack/clouds/dsp/correlator.cc
 SOURCES += eurorack/clouds/dsp/granular_processor.cc
