@@ -316,6 +316,7 @@ struct Beads : Module {
 
 	uint8_t* delayBuffer;
 	uint16_t* reverbBuffer;
+	beads::Random randomSource;
 	beads::Processor* processor;
 	beads::Synth* synth;
 	beads::GainControl* gainControl;
@@ -398,8 +399,9 @@ struct Beads : Module {
 			delayBuffer + 256 * 1024,
 			delayBuffer + 512 * 1024,
 		};
-		processor->Init(delayBuffers, reverbBuffer);
-		synth->Init(reverbBuffer);
+		randomSource.Seed(random::u32());
+		processor->Init(delayBuffers, reverbBuffer, &randomSource);
+		synth->Init(reverbBuffer, &randomSource);
 		gainControl->Init(48000.f, beads::GainControl::SOFT_CLIPPING_MODE_OFF, true);
 
 		for (int i = 0; i < NUM_MIX_PARAMETERS; i++) {
