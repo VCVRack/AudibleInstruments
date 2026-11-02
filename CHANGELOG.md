@@ -6,6 +6,7 @@
 - Add Random Sampler gate length/randomization and optional Jitter/Steps reset inputs.
 - Add four Texture Synthesizer sample-memory slots in the context menu, embedded in patches and presets.
 - Fix the Plaits slope oscillator's moving-breakpoint correction in the eurorack dependency, preventing extreme samples during fast PWM at low pitch.
+- Fix Macro Oscillator 2 tuning, which was 4.6 cents sharp: Plaits corrects pitch for the hardware's 47,872 Hz codec clock, but Rack renders it at exactly 48 kHz (VCVRack/pichenettes-eurorack#3, by Lyle Mills).
 - Random Sampler: show negative X/Y output voltages in red, default X range to ±5 V, quantize Y to octaves (Y scale can follow X instead), and recognize T outputs patched into X CLOCK, all as on hardware. Older patches keep their previous Y output and self-patched clock detection through legacy options.
 - Random Sampler: external mode now tracks the X SPREAD input 1:1 (1 V/oct) as on hardware, instead of at half scale offset by the Spread knob, and the input no longer modulates Spread in that mode. Older patches keep the previous scaling through a legacy option.
 - Random Sampler: add the hardware's long-press functions: deja vu lock, the second bank of T models, scale selection, and scale recording into the six scale slots, which are saved with the patch.
