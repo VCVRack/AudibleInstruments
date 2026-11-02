@@ -32,9 +32,6 @@ static float legacyVcaGain(float gain, uint8_t response) {
 	return gain;
 }
 
-// Version 2: hardware VCA response. Patches without a version keep the legacy response curve.
-static const int kFramesVersion = 2;
-
 
 struct Frames : Module {
 	enum ParamIds {
@@ -322,16 +319,15 @@ struct Frames : Module {
 			json_array_append_new(channelsJ, channelJ);
 		}
 		json_object_set_new(rootJ, "channels", channelsJ);
-		json_object_set_new(rootJ, "version", json_integer(kFramesVersion));
 		json_object_set_new(rootJ, "legacyResponse", json_boolean(legacyResponse));
 
 		return rootJ;
 	}
 
 	void dataFromJson(json_t* rootJ) override {
-		// Patches saved before version 2 keep the legacy response curve, so their levels do not change.
+		// Patches saved before the hardware response curve keep the legacy curve, so their levels do not change.
 		json_t* legacyResponseJ = json_object_get(rootJ, "legacyResponse");
-		legacyResponse = legacyResponseJ ? json_boolean_value(legacyResponseJ) : !json_object_get(rootJ, "version");
+		legacyResponse = legacyResponseJ ? json_is_true(legacyResponseJ) : true;
 		sequencer_mode = json_is_true(json_object_get(rootJ, "sequencer"));
 		resetStepState();
 		json_t* polyLfoJ = json_object_get(rootJ, "polyLfo");

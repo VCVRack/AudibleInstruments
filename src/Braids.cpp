@@ -47,6 +47,8 @@ struct Braids : Module {
 	dsp::DoubleRingBuffer<dsp::Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
 	bool lowCpu = false;
+	// Patches saved before TRIG hard sync keep TRIG as strike only.
+	bool legacyTrigSync = false;
 	// TRIG edges for hard sync, positioned within the next render block at the oscillator's rate.
 	uint8_t pendingSync[24] = {};
 	int hostSamplesSinceRender = 0;
@@ -84,6 +86,10 @@ struct Braids : Module {
 		settings.signature = 0;
 		settings.resolution = braids::RESOLUTION_16_BIT;
 		settings.sample_rate = braids::SAMPLE_RATE_96K;
+	}
+
+	void onReset() override {
+		legacyTrigSync = false;
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -130,8 +136,9 @@ struct Braids : Module {
 			// As in the firmware, TRIG rising edges also hard-sync the oscillators. Blocks are rendered
 			// ahead, so edges received during the previous block land one block later, at the same
 			// relative position.
-			uint8_t sync_buffer[24];
-			std::copy(pendingSync, pendingSync + 24, sync_buffer);
+			uint8_t sync_buffer[24] = {};
+			if (!legacyTrigSync)
+				std::copy(pendingSync, pendingSync + 24, sync_buffer);
 			std::fill(pendingSync, pendingSync + 24, 0);
 			hostSamplesSinceRender = 0;
 
@@ -202,6 +209,7 @@ struct Braids : Module {
 		}
 		json_object_set_new(rootJ, "settings", settingsJ);
 		json_object_set_new(rootJ, "settingsVersion", json_integer(kSettingsVersion));
+		json_object_set_new(rootJ, "legacyTrigSync", json_boolean(legacyTrigSync));
 
 		json_t* lowCpuJ = json_boolean(lowCpu);
 		json_object_set_new(rootJ, "lowCpu", lowCpuJ);
@@ -219,6 +227,9 @@ struct Braids : Module {
 					settingsArray[i] = json_integer_value(settingJ);
 			}
 		}
+		json_t* legacyTrigSyncJ = json_object_get(rootJ, "legacyTrigSync");
+		legacyTrigSync = legacyTrigSyncJ ? json_is_true(legacyTrigSyncJ) : true;
+
 		json_t* versionJ = json_object_get(rootJ, "settingsVersion");
 		if (!versionJ || json_integer_value(versionJ) < kSettingsVersion) {
 			settings.resolution = braids::RESOLUTION_16_BIT;
@@ -410,6 +421,8 @@ struct BraidsWidget : ModuleWidget {
 		));
 
 		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", "", &module->lowCpu));
+
+		menu->addChild(createBoolPtrMenuItem("Legacy TRIG without hard sync", "", &module->legacyTrigSync));
 	}
 };
 

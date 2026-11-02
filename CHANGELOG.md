@@ -6,12 +6,12 @@
 - Add Random Sampler gate length/randomization and optional Jitter/Steps reset inputs.
 - Add four Texture Synthesizer sample-memory slots in the context menu, embedded in patches and presets.
 - Fix the Plaits slope oscillator's moving-breakpoint correction in the eurorack dependency, preventing extreme samples during fast PWM at low pitch.
-- Random Sampler: show negative X/Y output voltages in red, default X range to ±5 V, quantize Y to octaves (Y scale can follow X instead), and recognize T outputs patched into X CLOCK, all as on hardware. Older patches keep their previous Y output through a legacy option.
-- Random Sampler: external mode now tracks the X SPREAD input 1:1 (1 V/oct) as on hardware, instead of at half scale offset by the Spread knob, and the input no longer modulates Spread in that mode.
+- Random Sampler: show negative X/Y output voltages in red, default X range to ±5 V, quantize Y to octaves (Y scale can follow X instead), and recognize T outputs patched into X CLOCK, all as on hardware. Older patches keep their previous Y output and self-patched clock detection through legacy options.
+- Random Sampler: external mode now tracks the X SPREAD input 1:1 (1 V/oct) as on hardware, instead of at half scale offset by the Spread knob, and the input no longer modulates Spread in that mode. Older patches keep the previous scaling through a legacy option.
 - Random Sampler: add the hardware's long-press functions: deja vu lock, the second bank of T models, scale selection, and scale recording into the six scale slots, which are saved with the patch.
 - Fix the Marbles quantizer's out-of-bounds read at higher Y steps in the eurorack dependency.
 - Add Macro Oscillator's BITS (bit depth) and RATE (sample rate reduction) settings from the hardware to the context menu. Older patches keep 16 bit, 96 kHz.
-- Macro Oscillator: TRIG now also hard-syncs the models built on the analog oscillator, as on hardware.
+- Macro Oscillator: TRIG now also hard-syncs the models built on the analog oscillator, as on hardware. Older patches keep TRIG as strike only through a legacy option.
 - Keyframer/Mixer: the channel response curve is now continuous, as on hardware, with a slider in each channel's context menu, and its exponential end follows the hardware's 75 dB VCA response. Poly LFO mode stays linear, as on hardware. Older patches keep the previous curve through **Legacy response curve**.
 
 ### 1.5.0 (2020-11-07)

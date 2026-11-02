@@ -267,6 +267,11 @@ struct Marbles : Module {
 	int y_range;
 	// Patches saved before Y had its own settings drove Y from X's range and knobs.
 	bool legacyYFollowsX = false;
+	// Patches saved before these fixes keep the previous behavior.
+	// External mode sampled 0.5 * (SPREAD knob + V/5), and the jack also modulated SPREAD.
+	bool legacyExternalScaling = false;
+	// Self-patched X CLOCK was only detected with explicit reset enabled.
+	bool legacyClockDetection = false;
 	// Hardware Y quantizes to octaves only; optionally use X's selected scale instead.
 	bool yScaleFollowsX = false;
 	bool yScaleLoadedFollowsX = false;
@@ -393,6 +398,8 @@ struct Marbles : Module {
 		params[GATE_BIAS_PARAM].setValue(0.5f);
 		params[GATE_JITTER_PARAM].setValue(0.f);
 		legacyYFollowsX = false;
+		legacyExternalScaling = false;
+		legacyClockDetection = false;
 		yScaleFollowsX = false;
 		explicitReset = false;
 		tResetPending = xResetPending = false;
@@ -533,6 +540,8 @@ struct Marbles : Module {
 		json_object_set_new(rootJ, "t_pulse_width_std", json_real(params[GATE_JITTER_PARAM].getValue()));
 		json_object_set_new(rootJ, "explicitReset", json_boolean(explicitReset));
 		json_object_set_new(rootJ, "legacyYFollowsX", json_boolean(legacyYFollowsX));
+		json_object_set_new(rootJ, "legacyExternalScaling", json_boolean(legacyExternalScaling));
+		json_object_set_new(rootJ, "legacyClockDetection", json_boolean(legacyClockDetection));
 		json_object_set_new(rootJ, "yScaleFollowsX", json_boolean(yScaleFollowsX));
 		{
 			// Only recorded slots are stored; the others are the factory presets.
@@ -556,6 +565,10 @@ struct Marbles : Module {
 		// Patches saved before independent Y settings have no y_range.
 		json_t* legacyYJ = json_object_get(rootJ, "legacyYFollowsX");
 		legacyYFollowsX = legacyYJ ? json_boolean_value(legacyYJ) : !json_object_get(rootJ, "y_range");
+		json_t* legacyExternalJ = json_object_get(rootJ, "legacyExternalScaling");
+		legacyExternalScaling = legacyExternalJ ? json_is_true(legacyExternalJ) : true;
+		json_t* legacyClockJ = json_object_get(rootJ, "legacyClockDetection");
+		legacyClockDetection = legacyClockJ ? json_is_true(legacyClockJ) : true;
 		yScaleFollowsX = json_is_true(json_object_get(rootJ, "yScaleFollowsX"));
 		{
 			// Invalid or missing slots fall back to the factory presets.
@@ -858,8 +871,9 @@ struct Marbles : Module {
 		// Set up XYGenerator
 
 		marbles::ClockSource x_clock_source = (marbles::ClockSource) x_clock_source_internal;
-		if (inputs[X_CLOCK_INPUT].isConnected()) {
+		if (inputs[X_CLOCK_INPUT].isConnected())
 			x_clock_source = marbles::CLOCK_SOURCE_EXTERNAL;
+		if (inputs[X_CLOCK_INPUT].isConnected() && (explicitReset || !legacyClockDetection)) {
 			// As on hardware, a T output patched into X CLOCK is detected from matching edges
 			// (after several clocks) and X then follows that T output's exact internal ramp.
 			// This also covers indirect routes, and avoids querying Rack's engine lock from the audio thread.
@@ -882,13 +896,17 @@ struct Marbles : Module {
 		x.voltage_range = (marbles::VoltageRange) x_range;
 		// External mode samples the X SPREAD jack alone. Its input stage and default ADC calibration
 		// map ±5 V to ±1 and clip beyond, so X reproduces the input voltage (1 V/oct).
-		float note_cv = clamp(inputs[X_SPREAD_INPUT].getVoltage() / 5.f, -1.f, 1.f);
+		// Scale recording always uses this scaling.
+		bool legacyNote = legacyExternalScaling && !recordingScale;
+		float note_cv = legacyNote
+			? 0.5f * (params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f)
+			: clamp(inputs[X_SPREAD_INPUT].getVoltage() / 5.f, -1.f, 1.f);
 		float u = note_filter.Process(0.5f * (note_cv + 1.f));
 		x.register_mode = external;
 		x.register_value = u;
 
 		// In external mode, firmware sets the SPREAD attenuverter to 12 o'clock (no CV), so the jack only feeds the register.
-		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + (external ? 0.f : inputs[X_SPREAD_INPUT].getVoltage() / 5.f), 0.f, 1.f);
+		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + (external && !legacyExternalScaling ? 0.f : inputs[X_SPREAD_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		x.spread = x_spread;
 		float x_bias = clamp(params[X_BIAS_PARAM].getValue() + inputs[X_BIAS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		x.bias = x_bias;
@@ -1210,6 +1228,8 @@ struct MarblesWidget : ModuleWidget {
 		));
 
 		menu->addChild(createBoolPtrMenuItem("Legacy Y follows X range and knobs", "", &module->legacyYFollowsX));
+		menu->addChild(createBoolPtrMenuItem("Legacy external X SPREAD scaling", "", &module->legacyExternalScaling));
+		menu->addChild(createBoolPtrMenuItem("Legacy self-patched X clock detection", "", &module->legacyClockDetection));
 
 		menu->addChild(createBoolPtrMenuItem("Jitter/Steps CV inputs reset T/X", "", &module->explicitReset));
 
