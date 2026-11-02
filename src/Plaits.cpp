@@ -135,7 +135,7 @@ struct Plaits : Module {
 		NUM_OUTPUTS
 	};
 	enum LightIds {
-		ENUMS(MODEL_LIGHT, 8 * 3),
+		ENUMS(MODEL_LIGHT, 8 * 2),
 		NUM_LIGHTS
 	};
 	enum UiMode {
@@ -514,12 +514,10 @@ struct Plaits : Module {
 			}
 		}
 
+		// GreenRedBicolorLight shows both dies lit in orange, as on the hardware.
 		for (int i = 0; i < 8; i++) {
-			// Both dies lit look orange on the hardware, so show their overlap with the orange light.
-			float orange = std::min(green[i], red[i]);
-			lights[MODEL_LIGHT + i * 3 + 0].setBrightness(green[i] - orange);
-			lights[MODEL_LIGHT + i * 3 + 1].setBrightness(red[i] - orange);
-			lights[MODEL_LIGHT + i * 3 + 2].setBrightness(orange);
+			lights[MODEL_LIGHT + i * 2 + 0].setBrightness(green[i]);
+			lights[MODEL_LIGHT + i * 2 + 1].setBrightness(red[i]);
 		}
 	}
 
@@ -588,15 +586,12 @@ struct Plaits : Module {
 			// Set model lights
 			for (int i = 0; i < 16; i++) {
 				// Transpose the [light][color] table
-				int lightId = (i % 8) * 3 + (i / 8);
+				int lightId = (i % 8) * 2 + (i / 8);
 				float brightness = activeEngines[i];
 				if (patch.engine == i && pulse)
 					brightness = tri;
 				lights[MODEL_LIGHT + lightId].setBrightness(brightness);
 			}
-			// The original lights have no orange, so clear what an edit display left behind.
-			for (int i = 0; i < 8; i++)
-				lights[MODEL_LIGHT + i * 3 + 2].setBrightness(0.f);
 			// Firmware 1.2 replaces the original lights. Holding a button wins over the widget's edit mode.
 			UiMode displayMode = (uiMode != UI_MODE_NORMAL) ? uiMode : editMode;
 			if (firmware12 || displayMode != UI_MODE_NORMAL)
@@ -786,16 +781,6 @@ static const std::string modelLabels[16] = {
 };
 
 
-// Rack blends green and red to yellow, so firmware 1.2's yellow gets its own color.
-struct GreenRedOrangeLight : GrayModuleLightWidget {
-	GreenRedOrangeLight() {
-		addBaseColor(SCHEME_GREEN);
-		addBaseColor(SCHEME_RED);
-		addBaseColor(nvgRGB(0xff, 0x80, 0x00));
-	}
-};
-
-
 struct PlaitsWidget : ModuleWidget {
 	bool lpgMode = false;
 	bool rangeMode = false;
@@ -844,14 +829,14 @@ struct PlaitsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(mm2px(Vec(37.65257, 107.08103)), module, Plaits::OUT_OUTPUT));
 		addOutput(createOutput<PJ301MPort>(mm2px(Vec(49.0986, 107.08103)), module, Plaits::AUX_OUTPUT));
 
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 23.31649)), module, Plaits::MODEL_LIGHT + 0 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 28.71704)), module, Plaits::MODEL_LIGHT + 1 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 34.1162)), module, Plaits::MODEL_LIGHT + 2 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 39.51675)), module, Plaits::MODEL_LIGHT + 3 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 44.91731)), module, Plaits::MODEL_LIGHT + 4 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 50.31785)), module, Plaits::MODEL_LIGHT + 5 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 55.71771)), module, Plaits::MODEL_LIGHT + 6 * 3));
-		addChild(createLight<MediumLight<GreenRedOrangeLight>>(mm2px(Vec(28.79498, 61.11827)), module, Plaits::MODEL_LIGHT + 7 * 3));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 23.31649)), module, Plaits::MODEL_LIGHT + 0 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 28.71704)), module, Plaits::MODEL_LIGHT + 1 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 34.1162)), module, Plaits::MODEL_LIGHT + 2 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 39.51675)), module, Plaits::MODEL_LIGHT + 3 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 44.91731)), module, Plaits::MODEL_LIGHT + 4 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 50.31785)), module, Plaits::MODEL_LIGHT + 5 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 55.71771)), module, Plaits::MODEL_LIGHT + 6 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.79498, 61.11827)), module, Plaits::MODEL_LIGHT + 7 * 2));
 	}
 
 	void step() override {
