@@ -59,7 +59,7 @@ struct Warps : Module {
 
 		configBypass(MODULATOR_INPUT, MODULATOR_OUTPUT);
 
-		memset(&modulator, 0, sizeof(modulator));
+		memset((void*) &modulator, 0, sizeof(modulator));
 		modulator.Init(96000.0f);
 	}
 

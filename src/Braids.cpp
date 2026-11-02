@@ -72,11 +72,11 @@ struct Braids : Module {
 		configInput(COLOR_INPUT, "Color");
 		configOutput(OUT_OUTPUT, "Audio");
 
-		std::memset(&osc, 0, sizeof(osc));
+		std::memset((void*) &osc, 0, sizeof(osc));
 		osc.Init();
-		std::memset(&jitter_source, 0, sizeof(jitter_source));
+		std::memset((void*) &jitter_source, 0, sizeof(jitter_source));
 		jitter_source.Init();
-		std::memset(&ws, 0, sizeof(ws));
+		std::memset((void*) &ws, 0, sizeof(ws));
 		ws.Init(0x0000);
 		std::memset(&settings, 0, sizeof(settings));
 

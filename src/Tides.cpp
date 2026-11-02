@@ -77,7 +77,7 @@ struct Tides : Module {
 		configOutput(UNI_OUTPUT, "Unipolar");
 		configOutput(BI_OUTPUT, "Bipolar");
 
-		memset(&generator, 0, sizeof(generator));
+		memset((void*) &generator, 0, sizeof(generator));
 		generator.Init();
 		generator.set_sync(false);
 		onReset();

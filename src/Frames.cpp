@@ -121,9 +121,9 @@ struct Frames : Module {
 		configOutput(OUT4_OUTPUT, "Channel 4");
 		configOutput(FRAME_STEP_OUTPUT, "Frame step");
 
-		memset(&keyframer, 0, sizeof(keyframer));
+		memset((void*) &keyframer, 0, sizeof(keyframer));
 		keyframer.Init();
-		memset(&poly_lfo, 0, sizeof(poly_lfo));
+		memset((void*) &poly_lfo, 0, sizeof(poly_lfo));
 		poly_lfo.Init();
 
 		onReset();

@@ -213,7 +213,7 @@ struct Clouds : Module {
 		block_mem = new uint8_t[memLen]();
 		block_ccm = new uint8_t[ccmLen]();
 		processor = new clouds::GranularProcessor();
-		memset(processor, 0, sizeof(*processor));
+		memset((void*) processor, 0, sizeof(*processor));
 
 		processor->Init(block_mem, memLen, block_ccm, ccmLen);
 		onReset();
