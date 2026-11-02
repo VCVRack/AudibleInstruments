@@ -21,7 +21,7 @@ Connecting CLOCK enables PLL operation; the frequency control selects a ratio wi
 ### Random Sampler
 Based on [Marbles](https://pichenettes.github.io/mutable-instruments-documentation/modules/marbles/manual/).
 
-The context menu includes independent Y controls and **T gate length** / **T gate length randomness** for t1/t3; t2 stays at 50% duty. **Jitter/Steps CV inputs reset T/X** repurposes those two CV inputs for firmware-style resets while leaving the knobs active. Send reset before the next clock. Internally clocked X follows t reset; self-patched clocks are recognized after several matching edges. Older patches retain their original gate-length setting.
+The context menu includes independent Y controls and **T gate length** / **T gate length randomness** for t1/t3; t2 stays at 50% duty. **Jitter/Steps CV inputs reset T/X** repurposes those two CV inputs for firmware-style resets while leaving the knobs active. Send reset before the next clock. Internally clocked X follows t reset; self-patched clocks are recognized after several matching edges. Older patches retain their original gate-length setting. As on hardware, Y quantizes to octaves; **Y scale** can instead follow X's scale. Older patches load with **Legacy Y follows X range and knobs**, which reproduces earlier versions' Y output.
 
 ### Wavetable Oscillator
 Based on [Sheep](https://mutable-instruments.net/modules/tides/firmware/) (Tides alternative firmware)

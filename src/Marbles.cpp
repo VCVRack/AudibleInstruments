@@ -218,6 +218,11 @@ struct Marbles : Module {
 	int x_scale;
 	int x_clock_source_internal;
 	int y_range;
+	// Patches saved before Y had its own settings drove Y from X's range and knobs.
+	bool legacyYFollowsX = false;
+	// Hardware Y quantizes to octaves only; optionally use X's selected scale instead.
+	bool yScaleFollowsX = false;
+	bool yScaleLoadedFollowsX = false;
 	bool explicitReset = false;
 	bool tResetPending = false;
 	bool xResetPending = false;
@@ -296,7 +301,7 @@ struct Marbles : Module {
 		t_mode = 0;
 		x_mode = 0;
 		t_range = 1;
-		x_range = 1;
+		x_range = 2;
 		external = false;
 		x_scale = 0;
 		params[Y_RATE_PARAM].setValue(6);
@@ -307,6 +312,8 @@ struct Marbles : Module {
 		params[Y_STEPS_PARAM].setValue(0.f);
 		params[GATE_BIAS_PARAM].setValue(0.5f);
 		params[GATE_JITTER_PARAM].setValue(0.f);
+		legacyYFollowsX = false;
+		yScaleFollowsX = false;
 		explicitReset = false;
 		tResetPending = xResetPending = false;
 		tResetTrigger.reset();
@@ -327,12 +334,19 @@ struct Marbles : Module {
 		t_generator.Init(&random_stream, sampleRate);
 		xy_generator.Init(&random_stream, sampleRate);
 
-		// Set scales
+		// Set scales. As on hardware, the shared loader covers X only, leaving Y with the default octave scale.
 		for (int i = 0; i < 6; i++) {
 			xy_generator.LoadScale(i, preset_scales[i]);
-			// The shared loader covers X only; Y uses the same selected scale.
-			xy_generator.LoadScale(marbles::kNumXChannels, i, preset_scales[i]);
 		}
+		yScaleLoadedFollowsX = false;
+	}
+
+	void loadYScales() {
+		marbles::Scale octaves;
+		octaves.Init();
+		for (int i = 0; i < 6; i++)
+			xy_generator.LoadScale(marbles::kNumXChannels, i, yScaleFollowsX ? preset_scales[i] : octaves);
+		yScaleLoadedFollowsX = yScaleFollowsX;
 	}
 
 	json_t* dataToJson() override {
@@ -356,6 +370,8 @@ struct Marbles : Module {
 		json_object_set_new(rootJ, "t_pulse_width_mean", json_real(params[GATE_BIAS_PARAM].getValue()));
 		json_object_set_new(rootJ, "t_pulse_width_std", json_real(params[GATE_JITTER_PARAM].getValue()));
 		json_object_set_new(rootJ, "explicitReset", json_boolean(explicitReset));
+		json_object_set_new(rootJ, "legacyYFollowsX", json_boolean(legacyYFollowsX));
+		json_object_set_new(rootJ, "yScaleFollowsX", json_boolean(yScaleFollowsX));
 
 		return rootJ;
 	}
@@ -367,6 +383,10 @@ struct Marbles : Module {
 		json_t* stdJ = json_object_get(rootJ, "t_pulse_width_std");
 		params[GATE_JITTER_PARAM].setValue(stdJ ? clamp(float(json_number_value(stdJ)), 0.f, 1.f) : 0.f);
 		explicitReset = json_is_true(json_object_get(rootJ, "explicitReset"));
+		// Patches saved before independent Y settings have no y_range.
+		json_t* legacyYJ = json_object_get(rootJ, "legacyYFollowsX");
+		legacyYFollowsX = legacyYJ ? json_boolean_value(legacyYJ) : !json_object_get(rootJ, "y_range");
+		yScaleFollowsX = json_is_true(json_object_get(rootJ, "yScaleFollowsX"));
 		json_t* t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
 		if (t_deja_vuJ)
 			t_deja_vu = json_boolean_value(t_deja_vuJ);
@@ -377,19 +397,19 @@ struct Marbles : Module {
 
 		json_t* t_modeJ = json_object_get(rootJ, "t_mode");
 		if (t_modeJ)
-			t_mode = json_integer_value(t_modeJ);
+			t_mode = clamp((int) json_integer_value(t_modeJ), 0, 6);
 
 		json_t* x_modeJ = json_object_get(rootJ, "x_mode");
 		if (x_modeJ)
-			x_mode = json_integer_value(x_modeJ);
+			x_mode = clamp((int) json_integer_value(x_modeJ), 0, 2);
 
 		json_t* t_rangeJ = json_object_get(rootJ, "t_range");
 		if (t_rangeJ)
-			t_range = json_integer_value(t_rangeJ);
+			t_range = clamp((int) json_integer_value(t_rangeJ), 0, 2);
 
 		json_t* x_rangeJ = json_object_get(rootJ, "x_range");
 		if (x_rangeJ)
-			x_range = json_integer_value(x_rangeJ);
+			x_range = clamp((int) json_integer_value(x_rangeJ), 0, 2);
 
 		json_t* externalJ = json_object_get(rootJ, "external");
 		if (externalJ)
@@ -397,7 +417,7 @@ struct Marbles : Module {
 
 		json_t* x_scaleJ = json_object_get(rootJ, "x_scale");
 		if (x_scaleJ)
-			x_scale = json_integer_value(x_scaleJ);
+			x_scale = clamp((int) json_integer_value(x_scaleJ), 0, 5);
 
 		json_t* y_divider_indexJ = json_object_get(rootJ, "y_divider_index");
 		if (y_divider_indexJ)
@@ -405,11 +425,11 @@ struct Marbles : Module {
 
 		json_t* x_clock_source_internalJ = json_object_get(rootJ, "x_clock_source_internal");
 		if (x_clock_source_internalJ)
-			x_clock_source_internal = json_integer_value(x_clock_source_internalJ);
+			x_clock_source_internal = clamp((int) json_integer_value(x_clock_source_internalJ), 0, 3);
 
 		json_t* y_rangeJ = json_object_get(rootJ, "y_range");
 		if (y_rangeJ)
-			y_range = json_integer_value(y_rangeJ);
+			y_range = clamp((int) json_integer_value(y_rangeJ), 0, 2);
 
 		json_t* y_spreadJ = json_object_get(rootJ, "y_spread");
 		if (y_spreadJ)
@@ -604,12 +624,20 @@ struct Marbles : Module {
 
 		marbles::GroupSettings y;
 		y.control_mode = marbles::CONTROL_MODE_IDENTICAL;
-		y.voltage_range = (marbles::VoltageRange) y_range;
 		y.register_mode = false;
 		y.register_value = 0.0f;
-		y.spread = params[Y_SPREAD_PARAM].getValue();
-		y.bias = params[Y_BIAS_PARAM].getValue();
-		y.steps = params[Y_STEPS_PARAM].getValue();
+		if (legacyYFollowsX) {
+			y.voltage_range = x.voltage_range;
+			y.spread = x_spread;
+			y.bias = x_bias;
+			y.steps = x_steps;
+		}
+		else {
+			y.voltage_range = (marbles::VoltageRange) y_range;
+			y.spread = params[Y_SPREAD_PARAM].getValue();
+			y.bias = params[Y_BIAS_PARAM].getValue();
+			y.steps = params[Y_STEPS_PARAM].getValue();
+		}
 		y.deja_vu = 0.0f;
 		y.length = 1;
 		static const marbles::Ratio y_divider_ratios[] = {
@@ -628,6 +656,8 @@ struct Marbles : Module {
 		};
 		y.ratio = y_divider_ratios[clamp(int(std::round(params[Y_RATE_PARAM].getValue())), 0, 11)];
 		y.scale_index = x_scale;
+		if (yScaleLoadedFollowsX != yScaleFollowsX)
+			loadYScales();
 
 		bool xReset = xResetPending;
 		xResetPending = false;
@@ -836,6 +866,16 @@ struct MarblesWidget : ModuleWidget {
 			"Positive",
 			"Full",
 		}, &module->y_range));
+
+		menu->addChild(createIndexSubmenuItem("Y scale", {
+			"Octaves (hardware)",
+			"Same as X",
+		},
+			[=]() {return module->yScaleFollowsX ? 1 : 0;},
+			[=](int value) {module->yScaleFollowsX = value == 1;}
+		));
+
+		menu->addChild(createBoolPtrMenuItem("Legacy Y follows X range and knobs", "", &module->legacyYFollowsX));
 
 		menu->addChild(createBoolPtrMenuItem("Jitter/Steps CV inputs reset T/X", "", &module->explicitReset));
 
