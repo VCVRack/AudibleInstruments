@@ -1075,10 +1075,10 @@ struct MarblesWidget : ModuleWidget {
 
 		addChild(createLightCentered<CKD6Light<GreenLight>>(mm2px(Vec(16.545, 17.794)), module, Marbles::T_DEJA_VU_LIGHT));
 		addChild(createLightCentered<CKD6Light<GreenLight>>(mm2px(Vec(74.845, 17.794)), module, Marbles::X_DEJA_VU_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(6.944, 29.894)), module, Marbles::T_MODE_LIGHTS));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(84.444, 29.894)), module, Marbles::X_MODE_LIGHTS));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(26.644, 53.994)), module, Marbles::T_RANGE_LIGHTS));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(64.744, 53.994)), module, Marbles::X_RANGE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(6.944, 29.894)), module, Marbles::T_MODE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(84.444, 29.894)), module, Marbles::X_MODE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(26.644, 53.994)), module, Marbles::T_RANGE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(64.744, 53.994)), module, Marbles::X_RANGE_LIGHTS));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(45.695, 76.194)), module, Marbles::EXTERNAL_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(6.044, 104.794)), module, Marbles::T1_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(18.094, 104.794)), module, Marbles::T2_LIGHT));

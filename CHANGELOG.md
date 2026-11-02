@@ -13,6 +13,7 @@
 - Add Macro Oscillator's BITS (bit depth) and RATE (sample rate reduction) settings from the hardware to the context menu. Older patches keep 16 bit, 96 kHz.
 - Macro Oscillator: TRIG now also hard-syncs the models built on the analog oscillator, as on hardware. Older patches keep TRIG as strike only through a legacy option.
 - Keyframer/Mixer: the channel response curve is now continuous, as on hardware, with a slider in each channel's context menu, and its exponential end follows the hardware's 75 dB VCA response. Poly LFO mode stays linear, as on hardware. Older patches keep the previous curve through **Legacy response curve**.
+- Show orange, as on hardware, where red/green LEDs light both colors, instead of Rack's yellow: Random Sampler mode and range, Resonator, Texture Synthesizer level meter, Segment Generator, Tidal Modulator 2, Meta Modulator carrier and Dual Dynamics Gate.
 
 ### 1.5.0 (2020-11-07)
 - Add Streams via fundraiser.

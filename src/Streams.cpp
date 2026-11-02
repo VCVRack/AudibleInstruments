@@ -385,14 +385,14 @@ struct StreamsWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(23.116, 128.75 - 17.526)), module, Streams::CH1_SIGNAL_OUTPUT));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(37.726, 128.75 - 17.526)), module, Streams::CH2_SIGNAL_OUTPUT));
 
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 - 106.746)), module, Streams::CH1_LIGHT_1_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 - 101.026)), module, Streams::CH1_LIGHT_2_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 -  95.305)), module, Streams::CH1_LIGHT_3_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(24.715, 128.75 -  89.585)), module, Streams::CH1_LIGHT_4_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 - 106.746)), module, Streams::CH2_LIGHT_1_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 - 101.026)), module, Streams::CH2_LIGHT_2_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 -  95.305)), module, Streams::CH2_LIGHT_3_G));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(36.135, 128.75 -  89.585)), module, Streams::CH2_LIGHT_4_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(24.715, 128.75 - 106.746)), module, Streams::CH1_LIGHT_1_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(24.715, 128.75 - 101.026)), module, Streams::CH1_LIGHT_2_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(24.715, 128.75 -  95.305)), module, Streams::CH1_LIGHT_3_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(24.715, 128.75 -  89.585)), module, Streams::CH1_LIGHT_4_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(36.135, 128.75 - 106.746)), module, Streams::CH2_LIGHT_1_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(36.135, 128.75 - 101.026)), module, Streams::CH2_LIGHT_2_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(36.135, 128.75 -  95.305)), module, Streams::CH2_LIGHT_3_G));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(36.135, 128.75 -  89.585)), module, Streams::CH2_LIGHT_4_G));
 	}
 
 	void appendContextMenu(Menu* menu) override {

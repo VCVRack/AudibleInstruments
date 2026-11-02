@@ -311,9 +311,9 @@ struct Tides2Widget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(52.575, 111.099)), module, Tides2::OUT_OUTPUTS + 2));
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(64.025, 111.099)), module, Tides2::OUT_OUTPUTS + 3));
 
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(13.776, 16.149)), module, Tides2::RANGE_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(56.975, 16.149)), module, Tides2::OUTPUT_MODE_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(35.375, 33.449)), module, Tides2::RAMP_MODE_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(13.776, 16.149)), module, Tides2::RANGE_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(56.975, 16.149)), module, Tides2::OUTPUT_MODE_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(35.375, 33.449)), module, Tides2::RAMP_MODE_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(26.174, 104.749)), module, Tides2::OUTPUT_LIGHTS + 0));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(37.625, 104.749)), module, Tides2::OUTPUT_LIGHTS + 1));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(49.075, 104.749)), module, Tides2::OUTPUT_LIGHTS + 2));

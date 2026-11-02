@@ -509,10 +509,10 @@ struct CloudsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(230, 317), module, Clouds::OUT_R_OUTPUT));
 
 		addChild(createLight<FreezeLight>(Vec(12 + 3, 43 + 3), module, Clouds::FREEZE_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
 	}
 
 	void step() override {

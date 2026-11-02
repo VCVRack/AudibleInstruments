@@ -446,12 +446,12 @@ struct StagesWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 4));
 		addOutput(createOutput<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 5));
 
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(2.29462, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 0));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(13.73509, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 1));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(25.17556, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 2));

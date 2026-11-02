@@ -300,8 +300,8 @@ struct RingsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(131, 316), module, Rings::ODD_OUTPUT));
 		addOutput(createOutput<PJ301MPort>(Vec(169, 316), module, Rings::EVEN_OUTPUT));
 
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(37, 43), module, Rings::POLYPHONY_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(162, 43), module, Rings::RESONATOR_GREEN_LIGHT));
 	}
 
 	void appendContextMenu(Menu* menu) override {

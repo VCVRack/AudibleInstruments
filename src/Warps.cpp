@@ -173,7 +173,7 @@ struct WarpsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(80, 316), module, Warps::MODULATOR_OUTPUT));
 		addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
+		addChild(createLight<SmallLight<GreenRedBicolorLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
 		addChild(createLightCentered<Rogan6PSLight<RedGreenBlueLight>>(Vec(73.556641, 96.560532), module, Warps::ALGORITHM_LIGHT));
 	}
 
