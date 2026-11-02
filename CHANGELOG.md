@@ -12,6 +12,7 @@
 - Fix the Marbles quantizer's out-of-bounds read at higher Y steps in the eurorack dependency.
 - Add Macro Oscillator's BITS (bit depth) and RATE (sample rate reduction) settings from the hardware to the context menu. Older patches keep 16 bit, 96 kHz.
 - Macro Oscillator: TRIG now also hard-syncs the models built on the analog oscillator, as on hardware.
+- Keyframer/Mixer: the channel response curve is now continuous, as on hardware, with a slider in each channel's context menu, and its exponential end follows the hardware's 75 dB VCA response. Poly LFO mode stays linear, as on hardware. Older patches keep the previous curve through **Legacy response curve**.
 
 ### 1.5.0 (2020-11-07)
 - Add Streams via fundraiser.

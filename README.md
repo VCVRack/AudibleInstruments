@@ -49,6 +49,8 @@ Based on [Frames](https://mutable-instruments.net/modules/frames), [Manual](http
 
 FRAME STEP emits 5 V, 1 ms pulses when crossing keyframes, with the firmware's rearming behavior. Select **Sequencer** in the context menu to advance through stored frames with pulses on FRAME; turn MODULATION fully clockwise for standard 5 V clocks.
 
+Each channel's context menu sets its interpolation curve and its VCA response, a continuous blend from linear to exponential (75 dB range, as on hardware). The hardware sets these by holding ADD or DELETE and turning a channel knob; Rack uses the menu instead. Patches saved before this curve existed keep their previous levels through **Legacy response curve**, which can be turned off in the context menu.
+
 ### Segment Generator
 Based on [Stages](https://pichenettes.github.io/mutable-instruments-documentation/modules/stages/manual/).
 
