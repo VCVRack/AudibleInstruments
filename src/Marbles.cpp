@@ -583,20 +583,19 @@ struct Marbles : Module {
 		marbles::ClockSource x_clock_source = (marbles::ClockSource) x_clock_source_internal;
 		if (inputs[X_CLOCK_INPUT].isConnected()) {
 			x_clock_source = marbles::CLOCK_SOURCE_EXTERNAL;
-			// Reuse firmware detection instead of querying Rack's engine lock
-			// from the audio thread. As on hardware, this needs several edges.
-			if (explicitReset) {
-				size_t bestScore = 8;
-				for (int i = 0; i < 3; i++) {
-					size_t score = selfPatchingDetector[i].Process(&clockHistory, BLOCK_SIZE);
-					if (score >= bestScore) {
-						x_clock_source = marbles::ClockSource(marbles::CLOCK_SOURCE_INTERNAL_T1 + i);
-						bestScore = score;
-					}
+			// As on hardware, a T output patched into X CLOCK is detected from matching edges
+			// (after several clocks) and X then follows that T output's exact internal ramp.
+			// This also covers indirect routes, and avoids querying Rack's engine lock from the audio thread.
+			size_t bestScore = 8;
+			for (int i = 0; i < 3; i++) {
+				size_t score = selfPatchingDetector[i].Process(&clockHistory, BLOCK_SIZE);
+				if (score >= bestScore) {
+					x_clock_source = marbles::ClockSource(marbles::CLOCK_SOURCE_INTERNAL_T1 + i);
+					bestScore = score;
 				}
 			}
 		}
-		if (!explicitReset || !inputs[X_CLOCK_INPUT].isConnected()) {
+		else {
 			for (int i = 0; i < 3; i++)
 				selfPatchingDetector[i].Init(i);
 		}

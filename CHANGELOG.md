@@ -6,6 +6,8 @@
 - Add Random Sampler gate length/randomization and optional Jitter/Steps reset inputs.
 - Add four Texture Synthesizer sample-memory slots in the context menu, embedded in patches and presets.
 - Fix the Plaits slope oscillator's moving-breakpoint correction in the eurorack dependency, preventing extreme samples during fast PWM at low pitch.
+- Random Sampler: show negative X/Y output voltages in red, default X range to ±5 V, quantize Y to octaves (Y scale can follow X instead), and recognize T outputs patched into X CLOCK, all as on hardware. Older patches keep their previous Y output through a legacy option.
+- Fix the Marbles quantizer's out-of-bounds read at higher Y steps in the eurorack dependency.
 
 ### 1.5.0 (2020-11-07)
 - Add Streams via fundraiser.
