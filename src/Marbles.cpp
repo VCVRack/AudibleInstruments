@@ -128,6 +128,40 @@ static const marbles::Scale preset_scales[6] = {
 };
 
 
+// Panel buttons act on release, or as a long press once held for 2 s, as in the firmware UI.
+struct MarblesButton {
+	enum Press {
+		NONE,
+		SHORT,
+		LONG,
+	};
+	bool held = false;
+	bool longFired = false;
+	float heldTime = 0.f;
+
+	Press process(bool pressed, float sampleTime) {
+		if (pressed) {
+			if (!held) {
+				held = true;
+				longFired = false;
+				heldTime = 0.f;
+			}
+			else if (!longFired) {
+				heldTime += sampleTime;
+				if (heldTime >= 2.f) {
+					longFired = true;
+					return LONG;
+				}
+			}
+			return NONE;
+		}
+		Press press = (held && !longFired) ? SHORT : NONE;
+		held = false;
+		return press;
+	}
+};
+
+
 struct Marbles : Module {
 	enum ParamIds {
 		T_DEJA_VU_PARAM,
@@ -201,15 +235,25 @@ struct Marbles : Module {
 	marbles::NoteFilter note_filter;
 
 	// State
-	dsp::BooleanTrigger tDejaVuTrigger;
-	dsp::BooleanTrigger xDejaVuTrigger;
-	dsp::BooleanTrigger tModeTrigger;
-	dsp::BooleanTrigger xModeTrigger;
-	dsp::BooleanTrigger tRangeTrigger;
-	dsp::BooleanTrigger xRangeTrigger;
-	dsp::BooleanTrigger externalTrigger;
-	bool t_deja_vu;
-	bool x_deja_vu;
+	MarblesButton tDejaVuButton;
+	MarblesButton xDejaVuButton;
+	MarblesButton tModeButton;
+	MarblesButton xModeButton;
+	MarblesButton tRangeButton;
+	MarblesButton xRangeButton;
+	MarblesButton externalButton;
+	enum DejaVuState {
+		DEJA_VU_OFF,
+		DEJA_VU_ON,
+		// Long press: the loop stays locked regardless of the DEJA VU knob.
+		DEJA_VU_LOCKED,
+	};
+	int t_deja_vu;
+	int x_deja_vu;
+	// Long-pressing X RANGE selects the scale until the buttons have been idle for 4 s.
+	bool selectingScale = false;
+	float buttonIdleTime = 0.f;
+	float lightTime = 0.f;
 	int t_mode;
 	int x_mode;
 	int t_range;
@@ -296,8 +340,9 @@ struct Marbles : Module {
 	}
 
 	void onReset() override {
-		t_deja_vu = false;
-		x_deja_vu = false;
+		t_deja_vu = DEJA_VU_OFF;
+		x_deja_vu = DEJA_VU_OFF;
+		selectingScale = false;
 		t_mode = 0;
 		x_mode = 0;
 		t_range = 1;
@@ -352,8 +397,11 @@ struct Marbles : Module {
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 
-		json_object_set_new(rootJ, "t_deja_vu", json_boolean(t_deja_vu));
-		json_object_set_new(rootJ, "x_deja_vu", json_boolean(x_deja_vu));
+		// Older builds read these as on/off; locking is saved separately.
+		json_object_set_new(rootJ, "t_deja_vu", json_boolean(t_deja_vu != DEJA_VU_OFF));
+		json_object_set_new(rootJ, "x_deja_vu", json_boolean(x_deja_vu != DEJA_VU_OFF));
+		json_object_set_new(rootJ, "t_deja_vu_locked", json_boolean(t_deja_vu == DEJA_VU_LOCKED));
+		json_object_set_new(rootJ, "x_deja_vu_locked", json_boolean(x_deja_vu == DEJA_VU_LOCKED));
 		json_object_set_new(rootJ, "t_mode", json_integer(t_mode));
 		json_object_set_new(rootJ, "x_mode", json_integer(x_mode));
 		json_object_set_new(rootJ, "t_range", json_integer(t_range));
@@ -389,11 +437,15 @@ struct Marbles : Module {
 		yScaleFollowsX = json_is_true(json_object_get(rootJ, "yScaleFollowsX"));
 		json_t* t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
 		if (t_deja_vuJ)
-			t_deja_vu = json_boolean_value(t_deja_vuJ);
+			t_deja_vu = json_boolean_value(t_deja_vuJ) ? DEJA_VU_ON : DEJA_VU_OFF;
+		if (json_is_true(json_object_get(rootJ, "t_deja_vu_locked")))
+			t_deja_vu = DEJA_VU_LOCKED;
 
 		json_t* x_deja_vuJ = json_object_get(rootJ, "x_deja_vu");
 		if (x_deja_vuJ)
-			x_deja_vu = json_boolean_value(x_deja_vuJ);
+			x_deja_vu = json_boolean_value(x_deja_vuJ) ? DEJA_VU_ON : DEJA_VU_OFF;
+		if (json_is_true(json_object_get(rootJ, "x_deja_vu_locked")))
+			x_deja_vu = DEJA_VU_LOCKED;
 
 		json_t* t_modeJ = json_object_get(rootJ, "t_mode");
 		if (t_modeJ)
@@ -445,28 +497,59 @@ struct Marbles : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		// Buttons
-		if (tDejaVuTrigger.process(params[T_DEJA_VU_PARAM].getValue() <= 0.f)) {
-			t_deja_vu = !t_deja_vu;
+		// Buttons, following the firmware's Ui::OnSwitchReleased()
+		MarblesButton::Press press;
+		bool buttonEvent = false;
+		if ((press = tDejaVuButton.process(params[T_DEJA_VU_PARAM].getValue() > 0.f, args.sampleTime))) {
+			t_deja_vu = nextDejaVuState(t_deja_vu, press == MarblesButton::LONG);
+			buttonEvent = true;
 		}
-		if (xDejaVuTrigger.process(params[X_DEJA_VU_PARAM].getValue() <= 0.f)) {
-			x_deja_vu = !x_deja_vu;
+		if ((press = xDejaVuButton.process(params[X_DEJA_VU_PARAM].getValue() > 0.f, args.sampleTime))) {
+			x_deja_vu = nextDejaVuState(x_deja_vu, press == MarblesButton::LONG);
+			buttonEvent = true;
 		}
-		if (tModeTrigger.process(params[T_MODE_PARAM].getValue() <= 0.f)) {
-			t_mode = (t_mode + 1) % 3;
+		if ((press = tModeButton.process(params[T_MODE_PARAM].getValue() > 0.f, args.sampleTime))) {
+			// Long press switches to the second bank of models; short press returns to the
+			// same model in the first bank, or cycles models within it.
+			if (press == MarblesButton::LONG) {
+				if (t_mode < 3)
+					t_mode += 3;
+			}
+			else {
+				t_mode = (t_mode < 3) ? (t_mode + 1) % 3 : t_mode % 3;
+			}
+			buttonEvent = true;
 		}
-		if (xModeTrigger.process(params[X_MODE_PARAM].getValue() <= 0.f)) {
+		if ((press = xModeButton.process(params[X_MODE_PARAM].getValue() > 0.f, args.sampleTime))) {
 			x_mode = (x_mode + 1) % 3;
+			buttonEvent = true;
 		}
-		if (tRangeTrigger.process(params[T_RANGE_PARAM].getValue() <= 0.f)) {
+		if ((press = tRangeButton.process(params[T_RANGE_PARAM].getValue() > 0.f, args.sampleTime))) {
 			t_range = (t_range + 1) % 3;
+			buttonEvent = true;
 		}
-		if (xRangeTrigger.process(params[X_RANGE_PARAM].getValue() <= 0.f)) {
-			x_range = (x_range + 1) % 3;
+		if ((press = xRangeButton.process(params[X_RANGE_PARAM].getValue() > 0.f, args.sampleTime))) {
+			if (press == MarblesButton::LONG) {
+				selectingScale = true;
+			}
+			else if (selectingScale) {
+				x_scale = (x_scale + 1) % 6;
+			}
+			else if (!external) {
+				// Range does not apply while X processes the external input.
+				x_range = (x_range + 1) % 3;
+			}
+			buttonEvent = true;
 		}
-		if (externalTrigger.process(params[EXTERNAL_PARAM].getValue() <= 0.f)) {
-			external = !external;
+		if ((press = externalButton.process(params[EXTERNAL_PARAM].getValue() > 0.f, args.sampleTime))) {
+			// On hardware, a long press records a scale instead.
+			if (press == MarblesButton::SHORT)
+				external = !external;
+			buttonEvent = true;
 		}
+		buttonIdleTime = buttonEvent ? 0.f : buttonIdleTime + args.sampleTime;
+		if (selectingScale && buttonIdleTime > 4.f)
+			selectingScale = false;
 
 		// Clocks
 		bool t_gate = (inputs[T_CLOCK_INPUT].getVoltage() >= 1.7f);
@@ -493,23 +576,47 @@ struct Marbles : Module {
 
 		// Lights and outputs
 
-		lights[T_DEJA_VU_LIGHT].setBrightness(t_deja_vu);
-		lights[X_DEJA_VU_LIGHT].setBrightness(x_deja_vu);
+		// Firmware LED timing: 256 ms blink, 64 ms fast blink, 512 ms triangle pulse.
+		lightTime += args.sampleTime;
+		if (lightTime >= 1.024f)
+			lightTime -= 1.024f;
+		bool slowBlink = std::fmod(lightTime, 0.256f) > 0.128f;
+		bool fastBlink = std::fmod(lightTime, 0.064f) > 0.032f;
+		float pulse = 1.f - std::fabs(1.f - std::fmod(lightTime, 0.512f) / 0.256f);
 
+		// While selecting a scale, hardware shows only the X RANGE LED.
+		float panel = selectingScale ? 0.f : 1.f;
+
+		lights[T_DEJA_VU_LIGHT].setBrightness(panel * dejaVuLight(t_deja_vu, pulse));
+		lights[X_DEJA_VU_LIGHT].setBrightness(panel * dejaVuLight(x_deja_vu, pulse));
+
+		// The second bank of T models blinks.
 		int t_mode3 = t_mode % 3;
-		lights[T_MODE_LIGHTS + 0].setBrightness(t_mode3 == 0 || t_mode3 == 1);
-		lights[T_MODE_LIGHTS + 1].setBrightness(t_mode3 == 1 || t_mode3 == 2);
+		float t_mode_on = panel * (t_mode < 3 || slowBlink);
+		lights[T_MODE_LIGHTS + 0].setBrightness(t_mode_on * (t_mode3 == 0 || t_mode3 == 1));
+		lights[T_MODE_LIGHTS + 1].setBrightness(t_mode_on * (t_mode3 == 1 || t_mode3 == 2));
 
-		lights[X_MODE_LIGHTS + 0].setBrightness(x_mode == 0 || x_mode == 1);
-		lights[X_MODE_LIGHTS + 1].setBrightness(x_mode == 1 || x_mode == 2);
+		lights[X_MODE_LIGHTS + 0].setBrightness(panel * (x_mode == 0 || x_mode == 1));
+		lights[X_MODE_LIGHTS + 1].setBrightness(panel * (x_mode == 1 || x_mode == 2));
 
-		lights[T_RANGE_LIGHTS + 0].setBrightness(t_range == 0 || t_range == 1);
-		lights[T_RANGE_LIGHTS + 1].setBrightness(t_range == 1 || t_range == 2);
+		lights[T_RANGE_LIGHTS + 0].setBrightness(panel * (t_range == 0 || t_range == 1));
+		lights[T_RANGE_LIGHTS + 1].setBrightness(panel * (t_range == 1 || t_range == 2));
 
-		lights[X_RANGE_LIGHTS + 0].setBrightness(x_range == 0 || x_range == 1);
-		lights[X_RANGE_LIGHTS + 1].setBrightness(x_range == 1 || x_range == 2);
+		if (selectingScale) {
+			// Scales 1-3 blink slowly in green/yellow/red, scales 4-6 quickly.
+			int color = x_scale % 3;
+			float on = (x_scale < 3) ? slowBlink : fastBlink;
+			lights[X_RANGE_LIGHTS + 0].setBrightness(on * (color == 0 || color == 1));
+			lights[X_RANGE_LIGHTS + 1].setBrightness(on * (color == 1 || color == 2));
+		}
+		else {
+			// The range LED is off while X processes the external input.
+			float x_range_on = external ? 0.f : 1.f;
+			lights[X_RANGE_LIGHTS + 0].setBrightness(x_range_on * (x_range == 0 || x_range == 1));
+			lights[X_RANGE_LIGHTS + 1].setBrightness(x_range_on * (x_range == 1 || x_range == 2));
+		}
 
-		lights[EXTERNAL_LIGHT].setBrightness(external);
+		lights[EXTERNAL_LIGHT].setBrightness(panel * external);
 
 		outputs[T1_OUTPUT].setVoltage(gates[blockIndex * 2 + 0] ? 10.f : 0.f);
 		lights[T1_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 0], args.sampleTime);
@@ -526,6 +633,24 @@ struct Marbles : Module {
 		setVoltageLight(X3_LIGHT, voltages[blockIndex * 4 + 2], args.sampleTime);
 		outputs[Y_OUTPUT].setVoltage(voltages[blockIndex * 4 + 3]);
 		setVoltageLight(Y_LIGHT, voltages[blockIndex * 4 + 3], args.sampleTime);
+	}
+
+	static int nextDejaVuState(int state, bool longPress) {
+		if (state == DEJA_VU_OFF)
+			return longPress ? DEJA_VU_LOCKED : DEJA_VU_ON;
+		if (state == DEJA_VU_LOCKED)
+			return DEJA_VU_ON;
+		return longPress ? DEJA_VU_LOCKED : DEJA_VU_OFF;
+	}
+
+	static float dejaVuAmount(int state, float deja_vu) {
+		// A DEJA VU amount of 0.5 locks the loop.
+		return (state == DEJA_VU_LOCKED) ? 0.5f : (state == DEJA_VU_ON) ? deja_vu : 0.f;
+	}
+
+	static float dejaVuLight(int state, float pulse) {
+		// Locked deja vu pulses.
+		return (state == DEJA_VU_LOCKED) ? pulse : (state == DEJA_VU_ON) ? 1.f : 0.f;
 	}
 
 	// The hardware drives each bicolor X/Y LED with a current proportional to the output voltage: green when positive, red when negative.
@@ -569,7 +694,7 @@ struct Marbles : Module {
 		t_generator.set_bias(t_bias);
 		float t_jitter = clamp(params[T_JITTER_PARAM].getValue() + (explicitReset ? 0.f : inputs[T_JITTER_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		t_generator.set_jitter(t_jitter);
-		t_generator.set_deja_vu(t_deja_vu ? deja_vu : 0.f);
+		t_generator.set_deja_vu(dejaVuAmount(t_deja_vu, deja_vu));
 		t_generator.set_length(deja_vu_length);
 		t_generator.set_pulse_width_mean(params[GATE_BIAS_PARAM].getValue());
 		t_generator.set_pulse_width_std(params[GATE_JITTER_PARAM].getValue());
@@ -615,7 +740,7 @@ struct Marbles : Module {
 		x.bias = x_bias;
 		float x_steps = clamp(params[X_STEPS_PARAM].getValue() + (explicitReset ? 0.f : inputs[X_STEPS_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		x.steps = x_steps;
-		x.deja_vu = x_deja_vu ? deja_vu : 0.f;
+		x.deja_vu = dejaVuAmount(x_deja_vu, deja_vu);
 		x.length = deja_vu_length;
 		x.ratio.p = 1;
 		x.ratio.q = 1;
