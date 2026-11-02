@@ -13,10 +13,7 @@
 
 
 // Size of a custom data block, as stored in the hardware's flash.
-static const size_t kUserDataSize = 4096;
-// The wavetable engine can read a whole custom wave past the end of the block,
-// so the voices get a zero-padded copy.
-static const size_t kUserDataBufferSize = 4352;
+static const size_t kUserDataSize = plaits::kMaxUserDataSize;
 // Hardware button long press time
 static const float kLongPressTime = 2.f;
 
@@ -392,12 +389,11 @@ struct Plaits : Module {
 		userDataChanged = false;
 		voiceUserDataEnabled = firmware12;
 		voiceUserData = userData;
-		if (!voiceUserData.empty())
-			voiceUserData.resize(kUserDataBufferSize);
 		for (int e = 0; e < plaits::kMaxEngines; e++) {
 			const uint8_t* data = (firmware12 && e == userDataEngine) ? voiceUserData.data() : NULL;
+			// Voices reject data shorter than plaits::kMaxUserDataSize and keep the built-in data.
 			for (int c = 0; c < 16; c++)
-				voice[c].set_user_data(e, data);
+				voice[c].set_user_data(e, data, data ? voiceUserData.size() : 0);
 		}
 	}
 
