@@ -333,6 +333,11 @@ struct Beads : Module {
 	uint8_t inputGain = 0;
 	bool gateOutput = false;
 	bool seedLocked = true;
+	// Keep the frozen buffer with the patch, like the firmware's flash backup
+	bool autosave = true;
+	// Set once the current frozen buffer is in patch storage, and cleared on unfreeze
+	std::atomic<bool> bufferSaved{false};
+	float autosaveDisplayTime = 0.f;
 
 	dsp::ClockDivider uiDivider;
 	double uiTime = 0.0;
@@ -447,6 +452,8 @@ struct Beads : Module {
 			bool inL = inputs[IN_L_INPUT].isConnected();
 			bool inR = inputs[IN_R_INPUT].isConnected();
 			bool frozen = freezeButton || blockFreeze;
+			if (!frozen)
+				bufferSaved = false;
 
 			// Port of MonitorStateChange(): switches to the wavetable synth after 10
 			// seconds without audio input, and reconfigures the processor when quality or
@@ -687,6 +694,14 @@ struct Beads : Module {
 			switchIgnoreRelease[SWITCH_SEED] = switchIgnoreRelease[SWITCH_FREEZE] = true;
 			return;
 		}
+		// ASSIGN + FREEZE toggles the autosave.
+		if (s == SWITCH_FREEZE && switchPressed[SWITCH_ASSIGN]) {
+			autosave ^= true;
+			autosaveDisplayTime = 1.f;
+			unlockPots();
+			switchIgnoreRelease[SWITCH_ASSIGN] = switchIgnoreRelease[SWITCH_FREEZE] = true;
+			return;
+		}
 		// ASSIGN + SEED toggles the gate output on R.
 		if (s == SWITCH_SEED && switchPressed[SWITCH_ASSIGN]) {
 			gateOutput ^= true;
@@ -767,7 +782,14 @@ struct Beads : Module {
 			lights[QUALITY_LIGHT + quality].setBrightness(synthMode ? 1.f : processor->overwrite_reserve());
 		}
 
-		lights[FREEZE_LIGHT].setBrightness(freezeButton || freezeTrigger.isHigh());
+		if (autosaveDisplayTime > 0.f) {
+			// Show the autosave setting for a second after it changes.
+			autosaveDisplayTime -= dt;
+			lights[FREEZE_LIGHT].setBrightness((autosave ? 64 : 16) / 255.f);
+		}
+		else {
+			lights[FREEZE_LIGHT].setBrightness(freezeButton || freezeTrigger.isHigh());
+		}
 		if (seedLocked) {
 			lights[SEED_LIGHT].setBrightness(((triangle * 3 >> 2) + 64) / 255.f);
 		}
@@ -803,6 +825,82 @@ struct Beads : Module {
 		seedLocked = true;
 		seedButton = false;
 		freezeButton = false;
+		autosave = true;
+	}
+
+	// Port of BackgroundBufferBackup: the delay buffer is written to patch
+	// storage while frozen, and restored frozen when the patch is loaded.
+	static const uint32_t kBufferTag = 0x5a5a5246;
+	static const size_t kBufferBytes = beads::kDelayBufferSizeBits / 8;
+	static const size_t kBufferChunk = 32;
+
+	std::string bufferPath(const std::string& directory) {
+		return system::join(directory, "frozen-buffer.bin");
+	}
+
+	void onSave(const SaveEvent& e) override {
+		bool frozen = autosave && configured && !synthMode && (freezeButton || freezeTrigger.isHigh());
+		if (!frozen) {
+			system::remove(bufferPath(getPatchStorageDirectory()));
+			return;
+		}
+		// The buffer doesn't change while frozen, so write it once.
+		std::string path = bufferPath(createPatchStorageDirectory());
+		if (bufferSaved && system::exists(path))
+			return;
+
+		FILE* f = std::fopen(path.c_str(), "wb");
+		if (!f)
+			return;
+		uint32_t tag = kBufferTag;
+		int32_t writePtr = *processor->mutable_delay_write_ptr();
+		uint8_t media = processor->media();
+		uint8_t mono = processor->mono();
+		bool ok = std::fwrite(&tag, sizeof(tag), 1, f) == 1
+			&& std::fwrite(&writePtr, sizeof(writePtr), 1, f) == 1
+			&& std::fwrite(&media, 1, 1, f) == 1
+			&& std::fwrite(&mono, 1, 1, f) == 1;
+		for (size_t i = 0; ok && i < kBufferBytes; i += kBufferChunk) {
+			ok = std::fwrite(processor->delay_buffer_raw_bytes(i), kBufferChunk, 1, f) == 1;
+		}
+		std::fclose(f);
+		if (ok)
+			bufferSaved = true;
+		else
+			system::remove(path);
+	}
+
+	void onAdd(const AddEvent& e) override {
+		if (!autosave)
+			return;
+		std::string path = bufferPath(getPatchStorageDirectory());
+		FILE* f = std::fopen(path.c_str(), "rb");
+		if (!f)
+			return;
+		uint32_t tag = 0;
+		int32_t writePtr = -1;
+		uint8_t media = 0xff;
+		uint8_t mono = 0xff;
+		std::vector<uint8_t> bytes(kBufferBytes);
+		bool ok = std::fread(&tag, sizeof(tag), 1, f) == 1
+			&& std::fread(&writePtr, sizeof(writePtr), 1, f) == 1
+			&& std::fread(&media, 1, 1, f) == 1
+			&& std::fread(&mono, 1, 1, f) == 1
+			&& std::fread(bytes.data(), kBufferBytes, 1, f) == 1;
+		std::fclose(f);
+		if (!ok || tag != kBufferTag || media > 3 || mono > 1 || writePtr < 0 || writePtr >= (int32_t) kBufferBytes)
+			return;
+
+		processor->Configure((beads::Processor::Media) media, mono);
+		for (size_t i = 0; i < kBufferBytes; i += kBufferChunk) {
+			std::memcpy(processor->delay_buffer_raw_bytes(i), &bytes[i], kBufferChunk);
+		}
+		*processor->mutable_delay_write_ptr() = writePtr;
+		// Keep the saved quality, which may have changed while frozen. As on the
+		// hardware, it applies once the buffer is unfrozen.
+		configure(false, true);
+		freezeButton = true;
+		bufferSaved = true;
 	}
 
 	json_t* dataToJson() override {
@@ -818,6 +916,7 @@ struct Beads : Module {
 		json_object_set_new(rootJ, "inputGain", json_integer(inputGain));
 		json_object_set_new(rootJ, "gateOutput", json_boolean(gateOutput));
 		json_object_set_new(rootJ, "seedLocked", json_boolean(seedLocked));
+		json_object_set_new(rootJ, "autosave", json_boolean(autosave));
 
 		return rootJ;
 	}
@@ -851,6 +950,10 @@ struct Beads : Module {
 		json_t* seedLockedJ = json_object_get(rootJ, "seedLocked");
 		if (seedLockedJ)
 			seedLocked = json_boolean_value(seedLockedJ);
+
+		json_t* autosaveJ = json_object_get(rootJ, "autosave");
+		if (autosaveJ)
+			autosave = json_boolean_value(autosaveJ);
 	}
 };
 
@@ -1060,7 +1163,6 @@ struct BeadsWidget : ModuleWidget {
 		assert(module);
 
 		menu->addChild(new MenuSeparator);
-		menu->addChild(createMenuLabel("Quality"));
 
 		// Listed in the order of the panel's quality bars, top to bottom
 		static const std::vector<std::string> qualityLabels = {
@@ -1069,12 +1171,10 @@ struct BeadsWidget : ModuleWidget {
 			"Sunny tape",
 			"Scorched cassette",
 		};
-		for (int i = 0; i < (int) qualityLabels.size(); i++) {
-			menu->addChild(createCheckMenuItem(qualityLabels[i], "",
-				[=]() {return module->quality == 3 - i;},
-				[=]() {module->quality = 3 - i;}
-			));
-		}
+		menu->addChild(createIndexSubmenuItem("Quality", qualityLabels,
+			[=]() {return 3 - module->quality;},
+			[=](int i) {module->quality = 3 - i;}
+		));
 
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Assignable CV destination"));
@@ -1116,6 +1216,13 @@ struct BeadsWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createBoolPtrMenuItem("Latch seed", "", &module->seedLocked));
 		menu->addChild(createBoolPtrMenuItem("Grain gates on R output", "", &module->gateOutput));
+		menu->addChild(createBoolMenuItem("Autosave frozen buffer", "",
+			[=]() {return module->autosave;},
+			[=](bool val) {
+				module->autosave = val;
+				module->autosaveDisplayTime = 1.f;
+			}
+		));
 	}
 };
 
