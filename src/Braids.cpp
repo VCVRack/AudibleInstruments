@@ -2,6 +2,16 @@
 #include "braids/macro_oscillator.h"
 #include "braids/vco_jitter_source.h"
 #include "braids/signature_waveshaper.h"
+#include "braids/settings.h"
+
+
+// Firmware bit reduction and decimation tables (braids.cc). The "6 bit" mask keeps 5 bits, as on hardware.
+static const uint16_t bit_reduction_masks[braids::RESOLUTION_LAST] = {0xc000, 0xe000, 0xf000, 0xf800, 0xff00, 0xfff0, 0xffff};
+// Decimation factors, in samples at the firmware's 96 kHz rate.
+static const int decimation_factors[braids::SAMPLE_RATE_LAST] = {24, 12, 6, 4, 3, 2, 1};
+// Patches saved before settings version 2 left the resolution and sample rate bytes at 0 (2 bit, 4 kHz),
+// which the wrapper did not use, so those values cannot be trusted.
+static const int kSettingsVersion = 2;
 
 
 struct Braids : Module {
@@ -37,6 +47,12 @@ struct Braids : Module {
 	dsp::DoubleRingBuffer<dsp::Frame<1>, 256> outputBuffer;
 	bool lastTrig = false;
 	bool lowCpu = false;
+	// TRIG edges for hard sync, positioned within the next render block at the oscillator's rate.
+	uint8_t pendingSync[24] = {};
+	int hostSamplesSinceRender = 0;
+	// Decimation state across render blocks, counted in 96 kHz samples.
+	double decimationClock = 1e9;
+	int16_t heldSample = 0;
 
 	Braids() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS);
@@ -66,12 +82,15 @@ struct Braids : Module {
 		settings.meta_modulation = 0;
 		settings.vco_drift = 0;
 		settings.signature = 0;
+		settings.resolution = braids::RESOLUTION_16_BIT;
+		settings.sample_rate = braids::SAMPLE_RATE_96K;
 	}
 
 	void process(const ProcessArgs& args) override {
 		// Trigger
 		bool trig = inputs[TRIG_INPUT].getVoltage() >= 1.0;
-		if (!lastTrig && trig) {
+		bool trigRise = !lastTrig && trig;
+		if (trigRise) {
 			osc.Strike();
 		}
 		lastTrig = trig;
@@ -108,17 +127,32 @@ struct Braids : Module {
 			pitch = clamp(pitch, 0, 16383);
 			osc.set_pitch(pitch);
 
-			// TODO: add a sync input buffer (must be sample rate converted)
-			uint8_t sync_buffer[24] = {};
+			// As in the firmware, TRIG rising edges also hard-sync the oscillators. Blocks are rendered
+			// ahead, so edges received during the previous block land one block later, at the same
+			// relative position.
+			uint8_t sync_buffer[24];
+			std::copy(pendingSync, pendingSync + 24, sync_buffer);
+			std::fill(pendingSync, pendingSync + 24, 0);
+			hostSamplesSinceRender = 0;
 
 			int16_t render_buffer[24];
 			osc.Render(sync_buffer, render_buffer, 24);
 
-			// Signature waveshaping, decimation (not yet supported), and bit reduction (not yet supported)
+			// Decimation, bit reduction and signature waveshaping, as in the firmware's RenderBlock().
+			// The AD VCA is not supported, so gain stays at unity.
+			// Decimation periods are counted in 96 kHz samples, so low CPU mode (rendering at the
+			// host rate) holds samples for the same duration.
+			const int decimationFactor = decimation_factors[clamp((int) settings.sample_rate, 0, braids::SAMPLE_RATE_LAST - 1)];
+			const uint16_t bitMask = bit_reduction_masks[clamp((int) settings.resolution, 0, braids::RESOLUTION_LAST - 1)];
+			const double clockStep = lowCpu ? 96000.0 * args.sampleTime : 1.0;
 			uint16_t signature = settings.signature * settings.signature * 4095;
 			for (size_t i = 0; i < 24; i++) {
-				const int16_t bit_mask = 0xffff;
-				int16_t sample = render_buffer[i] & bit_mask;
+				if (decimationClock >= decimationFactor) {
+					decimationClock = std::fmod(decimationClock, (double) decimationFactor);
+					heldSample = render_buffer[i] & bitMask;
+				}
+				decimationClock += clockStep;
+				int16_t sample = heldSample;
 				int16_t warped = ws.Transform(sample);
 				render_buffer[i] = stmlib::Mix(sample, warped, signature);
 			}
@@ -145,6 +179,12 @@ struct Braids : Module {
 			}
 		}
 
+		if (trigRise) {
+			double oscillatorSamplesPerHostSample = lowCpu ? 1.0 : 96000.0 * args.sampleTime;
+			pendingSync[std::min((int) (hostSamplesSinceRender * oscillatorSamplesPerHostSample), 23)] = 1;
+		}
+		hostSamplesSinceRender++;
+
 		// Output
 		if (!outputBuffer.empty()) {
 			dsp::Frame<1> f = outputBuffer.shift();
@@ -161,6 +201,7 @@ struct Braids : Module {
 			json_array_insert_new(settingsJ, i, settingJ);
 		}
 		json_object_set_new(rootJ, "settings", settingsJ);
+		json_object_set_new(rootJ, "settingsVersion", json_integer(kSettingsVersion));
 
 		json_t* lowCpuJ = json_boolean(lowCpu);
 		json_object_set_new(rootJ, "lowCpu", lowCpuJ);
@@ -177,6 +218,11 @@ struct Braids : Module {
 				if (settingJ)
 					settingsArray[i] = json_integer_value(settingJ);
 			}
+		}
+		json_t* versionJ = json_object_get(rootJ, "settingsVersion");
+		if (!versionJ || json_integer_value(versionJ) < kSettingsVersion) {
+			settings.resolution = braids::RESOLUTION_16_BIT;
+			settings.sample_rate = braids::SAMPLE_RATE_96K;
 		}
 
 		json_t* lowCpuJ = json_object_get(rootJ, "lowCpu");
@@ -351,6 +397,16 @@ struct BraidsWidget : ModuleWidget {
 		menu->addChild(createBoolMenuItem("SIGN: Waveform imperfections", "",
 			[=]() {return module->settings.signature;},
 			[=](bool val) {module->settings.signature = val ? 4 : 0;}
+		));
+
+		menu->addChild(createIndexSubmenuItem("BITS: Bit depth", {"2 bit", "3 bit", "4 bit", "6 bit", "8 bit", "12 bit", "16 bit"},
+			[=]() {return module->settings.resolution;},
+			[=](int i) {module->settings.resolution = i;}
+		));
+
+		menu->addChild(createIndexSubmenuItem("RATE: Sample rate", {"4 kHz", "8 kHz", "16 kHz", "24 kHz", "32 kHz", "48 kHz", "96 kHz"},
+			[=]() {return module->settings.sample_rate;},
+			[=](int i) {module->settings.sample_rate = i;}
 		));
 
 		menu->addChild(createBoolPtrMenuItem("Low CPU (disable resampling)", "", &module->lowCpu));

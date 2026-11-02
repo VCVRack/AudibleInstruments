@@ -10,6 +10,8 @@
 - Random Sampler: external mode now tracks the X SPREAD input 1:1 (1 V/oct) as on hardware, instead of at half scale offset by the Spread knob, and the input no longer modulates Spread in that mode.
 - Random Sampler: add the hardware's long-press functions: deja vu lock, the second bank of T models, scale selection, and scale recording into the six scale slots, which are saved with the patch.
 - Fix the Marbles quantizer's out-of-bounds read at higher Y steps in the eurorack dependency.
+- Add Macro Oscillator's BITS (bit depth) and RATE (sample rate reduction) settings from the hardware to the context menu. Older patches keep 16 bit, 96 kHz.
+- Macro Oscillator: TRIG now also hard-syncs the models built on the analog oscillator, as on hardware.
 
 ### 1.5.0 (2020-11-07)
 - Add Streams via fundraiser.

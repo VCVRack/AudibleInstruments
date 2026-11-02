@@ -7,8 +7,8 @@ Based on [Mutable Instruments](https://mutable-instruments.net/) Eurorack module
 
 ### Macro Oscillator
 Based on [Braids](https://mutable-instruments.net/modules/braids), [Manual](https://mutable-instruments.net/modules/braids/manual/)
-- Sync input doesn't work
-- More settings could be supported
+- As on hardware, TRIG also hard-syncs the models built on the analog oscillator, with one render block (0.25 ms) of latency.
+- BITS (bit depth) and RATE (sample rate reduction) are in the context menu. The AD envelope, trigger delay and quantizer settings are not supported.
 
 ### Modal Synthesizer
 Based on [Elements](https://mutable-instruments.net/modules/elements), [Manual](https://mutable-instruments.net/modules/elements/manual/)
