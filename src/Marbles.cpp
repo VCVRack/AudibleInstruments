@@ -728,13 +728,15 @@ struct Marbles : Module {
 		marbles::GroupSettings x;
 		x.control_mode = (marbles::ControlMode) x_mode;
 		x.voltage_range = (marbles::VoltageRange) x_range;
-		// TODO Fix the scaling
-		float note_cv = 0.5f * (params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f);
+		// External mode samples the X SPREAD jack alone. Its input stage and default ADC calibration
+		// map ±5 V to ±1 and clip beyond, so X reproduces the input voltage (1 V/oct).
+		float note_cv = clamp(inputs[X_SPREAD_INPUT].getVoltage() / 5.f, -1.f, 1.f);
 		float u = note_filter.Process(0.5f * (note_cv + 1.f));
 		x.register_mode = external;
 		x.register_value = u;
 
-		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f, 0.f, 1.f);
+		// In external mode, firmware sets the SPREAD attenuverter to 12 o'clock (no CV), so the jack only feeds the register.
+		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + (external ? 0.f : inputs[X_SPREAD_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		x.spread = x_spread;
 		float x_bias = clamp(params[X_BIAS_PARAM].getValue() + inputs[X_BIAS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		x.bias = x_bias;
