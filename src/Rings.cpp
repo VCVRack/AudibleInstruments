@@ -99,8 +99,8 @@ struct Rings : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-		// TODO
-		// "Normalized to a pulse/burst generator that reacts to note changes on the V/OCT input."
+		// With IN unpatched, the firmware's internal exciter (performance_state.internal_exciter) provides
+		// the pulse/burst normalization, and the strummer below reacts to V/OCT note changes.
 		// Get input
 		if (!inputBuffer.full()) {
 			dsp::Frame<1> f;
@@ -171,8 +171,8 @@ struct Rings : Module {
 			performance_state.internal_strum = !inputs[STRUM_INPUT].isConnected();
 			performance_state.internal_note = !inputs[PITCH_INPUT].isConnected();
 
-			// TODO
-			// "Normalized to a step detector on the V/OCT input and a transient detector on the IN input."
+			// With STRUM unpatched, rings::Strummer::Process() below provides the normalization: a step
+			// detector on V/OCT, or a transient detector on IN.
 			performance_state.strum = strum && !lastStrum;
 			lastStrum = strum;
 			strum = false;

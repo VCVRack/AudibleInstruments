@@ -284,8 +284,7 @@ struct Clouds : Module {
 			p->dry_wet = params[BLEND_PARAM].getValue();
 			p->stereo_spread = params[SPREAD_PARAM].getValue();
 			p->feedback = params[FEEDBACK_PARAM].getValue();
-			// TODO
-			// Why doesn't dry audio get reverbed?
+			// As in the firmware, reverb is applied to the wet signal before the dry/wet mix, so dry audio is not reverberated.
 			p->reverb = params[REVERB_PARAM].getValue();
 			float blend = inputs[BLEND_INPUT].getVoltage() / 5.0f;
 			switch (blendMode) {
