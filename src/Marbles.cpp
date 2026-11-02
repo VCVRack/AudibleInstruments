@@ -5,6 +5,9 @@
 #include "marbles/random/x_y_generator.h"
 #include "marbles/note_filter.h"
 #include "marbles/clock_self_patching_detector.h"
+#include "marbles/scale_recorder.h"
+#include <atomic>
+#include <mutex>
 
 
 static const int BLOCK_SIZE = 5;
@@ -267,6 +270,27 @@ struct Marbles : Module {
 	// Hardware Y quantizes to octaves only; optionally use X's selected scale instead.
 	bool yScaleFollowsX = false;
 	bool yScaleLoadedFollowsX = false;
+	// Six scale slots, as in the firmware's persistent data. Recording replaces the selected slot.
+	// Patch saving reads these from another thread, so they are guarded by scalesMutex.
+	marbles::Scale scales[6];
+	bool scaleRecorded[6] = {};
+	std::mutex scalesMutex;
+	std::atomic<bool> scalesDirty{true};
+	// Long-pressing EXT records a scale from the X SPREAD input, one note per X CLOCK gate.
+	marbles::ScaleRecorder scaleRecorder;
+	bool recordingScale = false;
+	// Scale recording requested from the context menu, applied on the audio thread like EXT presses.
+	enum ScaleRecordingRequest {
+		SCALE_REQUEST_NONE,
+		SCALE_REQUEST_START,
+		SCALE_REQUEST_SAVE,
+		SCALE_REQUEST_RESTORE,
+	};
+	std::atomic<int> scaleRecordingRequest{SCALE_REQUEST_NONE};
+	// A recorded or restored slot waiting for scalesMutex.
+	int pendingScaleSlot = -1;
+	marbles::Scale pendingScale;
+	bool pendingScaleRecorded = false;
 	bool explicitReset = false;
 	bool tResetPending = false;
 	bool xResetPending = false;
@@ -335,6 +359,7 @@ struct Marbles : Module {
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);
 		note_filter.Init();
+		scaleRecorder.Init();
 		onSampleRateChange();
 		onReset();
 	}
@@ -343,6 +368,16 @@ struct Marbles : Module {
 		t_deja_vu = DEJA_VU_OFF;
 		x_deja_vu = DEJA_VU_OFF;
 		selectingScale = false;
+		recordingScale = false;
+		pendingScaleSlot = -1;
+		{
+			std::lock_guard<std::mutex> lock(scalesMutex);
+			for (int i = 0; i < 6; i++) {
+				scales[i] = preset_scales[i];
+				scaleRecorded[i] = false;
+			}
+		}
+		scalesDirty = true;
 		t_mode = 0;
 		x_mode = 0;
 		t_range = 1;
@@ -379,19 +414,98 @@ struct Marbles : Module {
 		t_generator.Init(&random_stream, sampleRate);
 		xy_generator.Init(&random_stream, sampleRate);
 
-		// Set scales. As on hardware, the shared loader covers X only, leaving Y with the default octave scale.
-		for (int i = 0; i < 6; i++) {
-			xy_generator.LoadScale(i, preset_scales[i]);
-		}
-		yScaleLoadedFollowsX = false;
+		// Init() clears the quantizer scales; stepBlock() reloads them before the next render.
+		scalesDirty = true;
 	}
 
-	void loadYScales() {
+	// Called on the audio thread. Applies a recorded or restored slot, then reloads the quantizers
+	// when anything changed. As on hardware, the shared loader covers X only; Y keeps the default
+	// octave scale unless it follows X.
+	void updateScales() {
+		if (pendingScaleSlot < 0 && !scalesDirty && yScaleLoadedFollowsX == yScaleFollowsX)
+			return;
+		// Never block the audio thread: if patch saving holds the lock, retry next block.
+		std::unique_lock<std::mutex> lock(scalesMutex, std::try_to_lock);
+		if (!lock.owns_lock())
+			return;
+		if (pendingScaleSlot >= 0) {
+			scales[pendingScaleSlot] = pendingScale;
+			scaleRecorded[pendingScaleSlot] = pendingScaleRecorded;
+			pendingScaleSlot = -1;
+		}
 		marbles::Scale octaves;
 		octaves.Init();
-		for (int i = 0; i < 6; i++)
-			xy_generator.LoadScale(marbles::kNumXChannels, i, yScaleFollowsX ? preset_scales[i] : octaves);
+		for (int i = 0; i < 6; i++) {
+			xy_generator.LoadScale(i, scales[i]);
+			xy_generator.LoadScale(marbles::kNumXChannels, i, yScaleFollowsX ? scales[i] : octaves);
+		}
 		yScaleLoadedFollowsX = yScaleFollowsX;
+		scalesDirty = false;
+	}
+
+	void startScaleRecording() {
+		scaleRecorder.Clear();
+		recordingScale = true;
+		selectingScale = false;
+	}
+
+	// Saving stores the recording in the selected slot if it has at least two notes; restoring brings
+	// back that slot's factory scale. Either way, recording ends.
+	void finishScaleRecording(bool restore) {
+		marbles::Scale scale;
+		if (restore)
+			queueScale(x_scale, preset_scales[x_scale], false);
+		else if (scaleRecorder.ExtractScale(&scale))
+			queueScale(x_scale, scale, true);
+		recordingScale = false;
+	}
+
+	void queueScale(int slot, const marbles::Scale& scale, bool recorded) {
+		pendingScale = scale;
+		pendingScaleRecorded = recorded;
+		pendingScaleSlot = slot;
+	}
+
+	static json_t* scaleToJson(const marbles::Scale& scale) {
+		json_t* scaleJ = json_object();
+		json_object_set_new(scaleJ, "baseInterval", json_real(scale.base_interval));
+		json_t* degreesJ = json_array();
+		for (int i = 0; i < scale.num_degrees; i++)
+			json_array_append_new(degreesJ, json_pack("[f, i]", scale.degree[i].voltage, (int) scale.degree[i].weight));
+		json_object_set_new(scaleJ, "degrees", degreesJ);
+		return scaleJ;
+	}
+
+	// Rejects anything the quantizer could misread: degree count, non-finite or extreme values, weights.
+	static bool scaleFromJson(json_t* scaleJ, marbles::Scale* scale) {
+		json_t* baseJ = json_object_get(scaleJ, "baseInterval");
+		json_t* degreesJ = json_object_get(scaleJ, "degrees");
+		if (!json_is_number(baseJ) || !json_is_array(degreesJ))
+			return false;
+		float base = json_number_value(baseJ);
+		size_t n = json_array_size(degreesJ);
+		if (!std::isfinite(base) || base <= 0.f || base > 10.f || n < 1 || n > (size_t) marbles::kMaxDegrees)
+			return false;
+		scale->base_interval = base;
+		scale->num_degrees = n;
+		for (size_t i = 0; i < n; i++) {
+			json_t* degreeJ = json_array_get(degreesJ, i);
+			json_t* voltageJ = json_array_get(degreeJ, 0);
+			json_t* weightJ = json_array_get(degreeJ, 1);
+			if (!json_is_number(voltageJ) || !json_is_integer(weightJ))
+				return false;
+			float voltage = json_number_value(voltageJ);
+			json_int_t weight = json_integer_value(weightJ);
+			if (!std::isfinite(voltage) || std::fabs(voltage) > 2.f * base || weight < 0 || weight > 255)
+				return false;
+			scale->degree[i].voltage = voltage;
+			scale->degree[i].weight = weight;
+		}
+		// The quantizer searches degrees in ascending voltage order, as ScaleRecorder::ExtractScale() sorts them.
+		std::sort(scale->degree, scale->degree + n, [](const marbles::Degree& a, const marbles::Degree& b) {
+			return a.voltage < b.voltage;
+		});
+		return true;
 	}
 
 	json_t* dataToJson() override {
@@ -420,6 +534,14 @@ struct Marbles : Module {
 		json_object_set_new(rootJ, "explicitReset", json_boolean(explicitReset));
 		json_object_set_new(rootJ, "legacyYFollowsX", json_boolean(legacyYFollowsX));
 		json_object_set_new(rootJ, "yScaleFollowsX", json_boolean(yScaleFollowsX));
+		{
+			// Only recorded slots are stored; the others are the factory presets.
+			std::lock_guard<std::mutex> lock(scalesMutex);
+			json_t* scalesJ = json_array();
+			for (int i = 0; i < 6; i++)
+				json_array_append_new(scalesJ, scaleRecorded[i] ? scaleToJson(scales[i]) : json_null());
+			json_object_set_new(rootJ, "recordedScales", scalesJ);
+		}
 
 		return rootJ;
 	}
@@ -435,6 +557,20 @@ struct Marbles : Module {
 		json_t* legacyYJ = json_object_get(rootJ, "legacyYFollowsX");
 		legacyYFollowsX = legacyYJ ? json_boolean_value(legacyYJ) : !json_object_get(rootJ, "y_range");
 		yScaleFollowsX = json_is_true(json_object_get(rootJ, "yScaleFollowsX"));
+		{
+			// Invalid or missing slots fall back to the factory presets.
+			json_t* scalesJ = json_object_get(rootJ, "recordedScales");
+			std::lock_guard<std::mutex> lock(scalesMutex);
+			for (int i = 0; i < 6; i++) {
+				marbles::Scale scale;
+				json_t* scaleJ = json_array_get(scalesJ, i);
+				scaleRecorded[i] = json_is_object(scaleJ) && scaleFromJson(scaleJ, &scale);
+				scales[i] = scaleRecorded[i] ? scale : preset_scales[i];
+			}
+		}
+		recordingScale = false;
+		pendingScaleSlot = -1;
+		scalesDirty = true;
 		json_t* t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
 		if (t_deja_vuJ)
 			t_deja_vu = json_boolean_value(t_deja_vuJ) ? DEJA_VU_ON : DEJA_VU_OFF;
@@ -530,7 +666,8 @@ struct Marbles : Module {
 		}
 		if ((press = xRangeButton.process(params[X_RANGE_PARAM].getValue() > 0.f, args.sampleTime))) {
 			if (press == MarblesButton::LONG) {
-				selectingScale = true;
+				if (!recordingScale)
+					selectingScale = true;
 			}
 			else if (selectingScale) {
 				x_scale = (x_scale + 1) % 6;
@@ -542,10 +679,24 @@ struct Marbles : Module {
 			buttonEvent = true;
 		}
 		if ((press = externalButton.process(params[EXTERNAL_PARAM].getValue() > 0.f, args.sampleTime))) {
-			// On hardware, a long press records a scale instead.
-			if (press == MarblesButton::SHORT)
+			if (recordingScale) {
+				// Short press saves the recording; long press restores the factory scale.
+				finishScaleRecording(press == MarblesButton::LONG);
+			}
+			else if (press == MarblesButton::LONG) {
+				startScaleRecording();
+			}
+			else {
 				external = !external;
+			}
 			buttonEvent = true;
+		}
+		if (scaleRecordingRequest.load(std::memory_order_relaxed) != SCALE_REQUEST_NONE) {
+			int request = scaleRecordingRequest.exchange(SCALE_REQUEST_NONE);
+			if (request == SCALE_REQUEST_START && !recordingScale)
+				startScaleRecording();
+			else if (request != SCALE_REQUEST_START && recordingScale)
+				finishScaleRecording(request == SCALE_REQUEST_RESTORE);
 		}
 		buttonIdleTime = buttonEvent ? 0.f : buttonIdleTime + args.sampleTime;
 		if (selectingScale && buttonIdleTime > 4.f)
@@ -602,7 +753,7 @@ struct Marbles : Module {
 		lights[T_RANGE_LIGHTS + 0].setBrightness(panel * (t_range == 0 || t_range == 1));
 		lights[T_RANGE_LIGHTS + 1].setBrightness(panel * (t_range == 1 || t_range == 2));
 
-		if (selectingScale) {
+		if (selectingScale || recordingScale) {
 			// Scales 1-3 blink slowly in green/yellow/red, scales 4-6 quickly.
 			int color = x_scale % 3;
 			float on = (x_scale < 3) ? slowBlink : fastBlink;
@@ -616,7 +767,8 @@ struct Marbles : Module {
 			lights[X_RANGE_LIGHTS + 1].setBrightness(x_range_on * (x_range == 1 || x_range == 2));
 		}
 
-		lights[EXTERNAL_LIGHT].setBrightness(panel * external);
+		// EXT stays lit while recording a scale.
+		lights[EXTERNAL_LIGHT].setBrightness(recordingScale ? 1.f : panel * external);
 
 		outputs[T1_OUTPUT].setVoltage(gates[blockIndex * 2 + 0] ? 10.f : 0.f);
 		lights[T1_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 0], args.sampleTime);
@@ -782,14 +934,32 @@ struct Marbles : Module {
 		};
 		y.ratio = y_divider_ratios[clamp(int(std::round(params[Y_RATE_PARAM].getValue())), 0, 11)];
 		y.scale_index = x_scale;
-		if (yScaleLoadedFollowsX != yScaleFollowsX)
-			loadYScales();
+		updateScales();
 
 		bool xReset = xResetPending;
 		xResetPending = false;
 		if (x_clock_source != marbles::CLOCK_SOURCE_EXTERNAL)
 			xReset |= tReset;
-		xy_generator.Process(x_clock_source, x, y, &xReset, xy_clocks, ramps, voltages, BLOCK_SIZE);
+
+		if (recordingScale) {
+			// As in firmware, X CLOCK gates mark notes on the X SPREAD input (nothing is recorded while
+			// it is unpatched), and every X/Y output monitors that input instead of generating.
+			float voltage = (u - 0.5f) * 10.f;
+			bool clockPatched = inputs[X_CLOCK_INPUT].isConnected();
+			for (int i = 0; i < BLOCK_SIZE; i++) {
+				stmlib::GateFlags gate = clockPatched ? xy_clocks[i] : stmlib::GATE_FLAG_LOW;
+				if (gate & stmlib::GATE_FLAG_RISING)
+					scaleRecorder.NewNote(voltage);
+				if (gate & stmlib::GATE_FLAG_HIGH)
+					scaleRecorder.UpdateVoltage(voltage);
+				if (gate & stmlib::GATE_FLAG_FALLING)
+					scaleRecorder.AcceptNote();
+			}
+			std::fill(&voltages[0], &voltages[BLOCK_SIZE * 4], voltage);
+		}
+		else {
+			xy_generator.Process(x_clock_source, x, y, &xReset, xy_clocks, ramps, voltages, BLOCK_SIZE);
+		}
 	}
 };
 
@@ -925,6 +1095,12 @@ struct MarblesWidget : ModuleWidget {
 			[=](int mode) {setEditMode(mode);}
 		));
 
+		menu->addChild(createIndexPtrSubmenuItem("T deja vu", {
+			"Off",
+			"On",
+			"Locked (hold T DEJA VU)",
+		}, &module->t_deja_vu));
+
 		menu->addChild(createIndexPtrSubmenuItem("T mode", {
 			"Complementary Bernoulli",
 			"Clusters",
@@ -941,6 +1117,12 @@ struct MarblesWidget : ModuleWidget {
 			"4x",
 		}, &module->t_range));
 
+		menu->addChild(createIndexPtrSubmenuItem("X deja vu", {
+			"Off",
+			"On",
+			"Locked (hold X DEJA VU)",
+		}, &module->x_deja_vu));
+
 		menu->addChild(createIndexPtrSubmenuItem("X mode", {
 			"Identical",
 			"Bump",
@@ -953,14 +1135,40 @@ struct MarblesWidget : ModuleWidget {
 			"Full",
 		}, &module->x_range));
 
-		menu->addChild(createIndexPtrSubmenuItem("Scales", {
+		std::vector<std::string> scaleNames = {
 			"Major",
 			"Minor",
 			"Pentatonic",
 			"Pelog",
 			"Raag Bhairav That",
 			"Raag Shri",
-		}, &module->x_scale));
+		};
+		std::vector<std::string> scaleLabels = scaleNames;
+		{
+			std::lock_guard<std::mutex> lock(module->scalesMutex);
+			for (int i = 0; i < 6; i++) {
+				if (module->scaleRecorded[i])
+					scaleLabels[i] += " (recorded)";
+			}
+		}
+		menu->addChild(createIndexPtrSubmenuItem("Scales (hold X RANGE)", scaleLabels, &module->x_scale));
+
+		// Scale recording, also available by holding EXT.
+		std::string slotName = scaleNames[clamp(module->x_scale, 0, 5)];
+		if (module->recordingScale) {
+			menu->addChild(createMenuLabel("Recording into " + slotName + ": play notes into X SPREAD, gated by X CLOCK"));
+			menu->addChild(createMenuItem("Save recorded scale", "EXT", [=]() {
+				module->scaleRecordingRequest = Marbles::SCALE_REQUEST_SAVE;
+			}));
+			menu->addChild(createMenuItem("Restore factory scale", "hold EXT", [=]() {
+				module->scaleRecordingRequest = Marbles::SCALE_REQUEST_RESTORE;
+			}));
+		}
+		else {
+			menu->addChild(createMenuItem("Record scale into " + slotName, "hold EXT", [=]() {
+				module->scaleRecordingRequest = Marbles::SCALE_REQUEST_START;
+			}));
+		}
 
 		menu->addChild(createIndexPtrSubmenuItem("Internal X clock source", {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
