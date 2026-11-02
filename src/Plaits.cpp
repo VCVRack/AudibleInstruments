@@ -598,6 +598,9 @@ struct Plaits : Module {
 					brightness = tri;
 				lights[MODEL_LIGHT + lightId].setBrightness(brightness);
 			}
+			// The original lights have no orange, so clear what an edit display left behind.
+			for (int i = 0; i < 8; i++)
+				lights[MODEL_LIGHT + i * 3 + 2].setBrightness(0.f);
 			// Firmware 1.2 replaces the original lights. Holding a button wins over the widget's edit mode.
 			UiMode displayMode = (uiMode != UI_MODE_NORMAL) ? uiMode : editMode;
 			if (firmware12 || displayMode != UI_MODE_NORMAL)
@@ -826,10 +829,10 @@ struct PlaitsWidget : ModuleWidget {
 		ParamWidget* decayParam = createParam<Rogan1PSBlue>(mm2px(Vec(42.71716, 49.6562)), module, Plaits::LPG_DECAY_PARAM);
 		decayParam->hide();
 		addParam(decayParam);
-		ParamWidget* octavesRootParam = createParam<Rogan3PSBlue>(mm2px(Vec(3.1577, 20.21088)), module, Plaits::OCTAVES_ROOT_PARAM);
+		ParamWidget* octavesRootParam = createParam<Rogan3PSRed>(mm2px(Vec(3.1577, 20.21088)), module, Plaits::OCTAVES_ROOT_PARAM);
 		octavesRootParam->hide();
 		addParam(octavesRootParam);
-		ParamWidget* freqRangeParam = createParam<Rogan3PSBlue>(mm2px(Vec(39.3327, 20.21088)), module, Plaits::FREQ_RANGE_PARAM);
+		ParamWidget* freqRangeParam = createParam<Rogan3PSRed>(mm2px(Vec(39.3327, 20.21088)), module, Plaits::FREQ_RANGE_PARAM);
 		freqRangeParam->hide();
 		addParam(freqRangeParam);
 
