@@ -187,10 +187,10 @@ struct Marbles : Module {
 		T1_LIGHT,
 		T2_LIGHT,
 		T3_LIGHT,
-		Y_LIGHT,
-		X1_LIGHT,
-		X2_LIGHT,
-		X3_LIGHT,
+		ENUMS(Y_LIGHT, 2),
+		ENUMS(X1_LIGHT, 2),
+		ENUMS(X2_LIGHT, 2),
+		ENUMS(X3_LIGHT, 2),
 		NUM_LIGHTS
 	};
 
@@ -499,13 +499,19 @@ struct Marbles : Module {
 		lights[T3_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 1], args.sampleTime);
 
 		outputs[X1_OUTPUT].setVoltage(voltages[blockIndex * 4 + 0]);
-		lights[X1_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 0], args.sampleTime);
+		setVoltageLight(X1_LIGHT, voltages[blockIndex * 4 + 0], args.sampleTime);
 		outputs[X2_OUTPUT].setVoltage(voltages[blockIndex * 4 + 1]);
-		lights[X2_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 1], args.sampleTime);
+		setVoltageLight(X2_LIGHT, voltages[blockIndex * 4 + 1], args.sampleTime);
 		outputs[X3_OUTPUT].setVoltage(voltages[blockIndex * 4 + 2]);
-		lights[X3_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 2], args.sampleTime);
+		setVoltageLight(X3_LIGHT, voltages[blockIndex * 4 + 2], args.sampleTime);
 		outputs[Y_OUTPUT].setVoltage(voltages[blockIndex * 4 + 3]);
-		lights[Y_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 3], args.sampleTime);
+		setVoltageLight(Y_LIGHT, voltages[blockIndex * 4 + 3], args.sampleTime);
+	}
+
+	// The hardware drives each bicolor X/Y LED with a current proportional to the output voltage: green when positive, red when negative.
+	void setVoltageLight(int lightId, float voltage, float sampleTime) {
+		lights[lightId + 0].setSmoothBrightness(clamp(voltage / 5.f, 0.f, 1.f), sampleTime);
+		lights[lightId + 1].setSmoothBrightness(clamp(-voltage / 5.f, 0.f, 1.f), sampleTime);
 	}
 
 	void stepBlock() {
@@ -733,10 +739,10 @@ struct MarblesWidget : ModuleWidget {
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(6.044, 104.794)), module, Marbles::T1_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(18.094, 104.794)), module, Marbles::T2_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(30.145, 104.794)), module, Marbles::T3_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(42.194, 104.794)), module, Marbles::Y_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(54.244, 104.794)), module, Marbles::X1_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(66.294, 104.794)), module, Marbles::X2_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(78.344, 104.794)), module, Marbles::X3_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(42.194, 104.794)), module, Marbles::Y_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(54.244, 104.794)), module, Marbles::X1_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(66.294, 104.794)), module, Marbles::X2_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(78.344, 104.794)), module, Marbles::X3_LIGHT));
 	}
 
 	void setEditMode(int mode) {
