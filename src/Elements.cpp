@@ -135,7 +135,7 @@ struct Elements : Module {
 		for (int c = 0; c < 16; c++) {
 			parts[c] = new elements::Part();
 			// In the Mutable Instruments code, Part doesn't initialize itself, so zero it here.
-			std::memset(parts[c], 0, sizeof(*parts[c]));
+			std::memset((void*) parts[c], 0, sizeof(*parts[c]));
 			parts[c]->Init(reverb_buffers[c]);
 			// Just some random numbers
 			uint32_t seed[3] = {1, 2, 3};

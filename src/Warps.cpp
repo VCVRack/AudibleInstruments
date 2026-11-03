@@ -37,6 +37,7 @@ struct Warps : Module {
 	warps::ShortFrame inputFrames[60] = {};
 	warps::ShortFrame outputFrames[60] = {};
 	dsp::SchmittTrigger stateTrigger;
+	bool legacyLevels = false;
 
 	Warps() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -58,7 +59,7 @@ struct Warps : Module {
 
 		configBypass(MODULATOR_INPUT, MODULATOR_OUTPUT);
 
-		memset(&modulator, 0, sizeof(modulator));
+		memset((void*) &modulator, 0, sizeof(modulator));
 		modulator.Init(96000.0f);
 	}
 
@@ -75,8 +76,18 @@ struct Warps : Module {
 		if (++frame >= 60) {
 			frame = 0;
 
-			p->channel_drive[0] = clamp(params[LEVEL1_PARAM].getValue() + inputs[LEVEL1_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
-			p->channel_drive[1] = clamp(params[LEVEL2_PARAM].getValue() + inputs[LEVEL2_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
+			for (int i = 0; i < 2; i++) {
+				float level = params[LEVEL1_PARAM + i].getValue();
+				// Firmware uses a squared pot as a CV attenuator. Pitch stays
+				// independent when the internal carrier is enabled.
+				// The level ADC has a 36k/100k input gain and a 3.3 V reference;
+				// CvScaler applies 1.6 gain, or substitutes pot squared if unpatched.
+				float cv = inputs[LEVEL1_INPUT + i].isConnected()
+					? inputs[LEVEL1_INPUT + i].getVoltage() * (36.f / 100.f / 3.3f * 1.6f) : 1.f;
+				p->channel_drive[i] = legacyLevels
+					? clamp(level + inputs[LEVEL1_INPUT + i].getVoltage() / 5.f, 0.f, 1.f)
+					: clamp(level * level * cv, 0.f, 1.f);
+			}
 			p->modulation_algorithm = clamp(params[ALGORITHM_PARAM].getValue() / 8.0f + inputs[ALGORITHM_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 
 			{
@@ -109,10 +120,13 @@ struct Warps : Module {
 		json_t* rootJ = json_object();
 		warps::Parameters* p = modulator.mutable_parameters();
 		json_object_set_new(rootJ, "shape", json_integer(p->carrier_shape));
+		json_object_set_new(rootJ, "legacyLevels", json_boolean(legacyLevels));
 		return rootJ;
 	}
 
 	void dataFromJson(json_t* rootJ) override {
+		json_t* legacyJ = json_object_get(rootJ, "legacyLevels");
+		legacyLevels = legacyJ ? json_is_true(legacyJ) : true;
 		json_t* shapeJ = json_object_get(rootJ, "shape");
 		warps::Parameters* p = modulator.mutable_parameters();
 		if (shapeJ) {
@@ -121,6 +135,7 @@ struct Warps : Module {
 	}
 
 	void onReset() override {
+		legacyLevels = false;
 		warps::Parameters* p = modulator.mutable_parameters();
 		p->carrier_shape = 0;
 	}
@@ -158,8 +173,14 @@ struct WarpsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(80, 316), module, Warps::MODULATOR_OUTPUT));
 		addOutput(createOutput<PJ301MPort>(Vec(116, 316), module, Warps::AUX_OUTPUT));
 
-		addChild(createLight<SmallLight<GreenRedLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
+		addChild(createLight<SmallLight<GreenRedBicolorLight>>(Vec(21, 167), module, Warps::CARRIER_GREEN_LIGHT));
 		addChild(createLightCentered<Rogan6PSLight<RedGreenBlueLight>>(Vec(73.556641, 96.560532), module, Warps::ALGORITHM_LIGHT));
+	}
+
+	void appendContextMenu(Menu* menu) override {
+		Warps* module = getModule<Warps>();
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createBoolPtrMenuItem("Legacy additive level CV", "", &module->legacyLevels));
 	}
 };
 
