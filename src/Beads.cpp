@@ -1101,6 +1101,44 @@ struct BeadsButton : CKD6 {
 };
 
 
+// Shared by the module menu and the FREEZE button's menu
+static MenuItem* createAutosaveMenuItem(Beads* module) {
+	return createBoolMenuItem("Autosave frozen buffer", "",
+		[=]() {return module->autosave;},
+		[=](bool val) {
+			module->autosave = val;
+			module->autosaveDisplayTime = 1.f;
+		}
+	);
+}
+
+
+// The FREEZE button's right-click menu can toggle saving the frozen buffer
+// with the patch.
+struct BeadsFreezeButton : BeadsButton {
+	void appendContextMenu(Menu* menu) override {
+		Beads* module = dynamic_cast<Beads*>(this->module);
+		if (!module)
+			return;
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createAutosaveMenuItem(module));
+	}
+};
+
+
+// The SEED button's right-click menu can toggle the latch, which otherwise
+// needs SEED + FREEZE (to latch) or a short SEED press (to unlatch).
+struct BeadsSeedButton : BeadsButton {
+	void appendContextMenu(Menu* menu) override {
+		Beads* module = dynamic_cast<Beads*>(this->module);
+		if (!module)
+			return;
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createBoolPtrMenuItem("Latch seed", "", &module->seedLocked));
+	}
+};
+
+
 // Light inside the button, the same proportion of the cap as on Marbles
 struct BeadsButtonLight : GreenLight {
 	BeadsButtonLight() {
@@ -1131,8 +1169,8 @@ struct BeadsWidget : ModuleWidget {
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(29.835, 80.696)), module, Beads::SIZE_AMOUNT_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(41.286, 80.696)), module, Beads::SHAPE_AMOUNT_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(52.736, 80.696)), module, Beads::PITCH_AMOUNT_PARAM));
-		addParam(createParamCentered<BeadsButton>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_PARAM));
-		addParam(createParamCentered<BeadsButton>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_PARAM));
+		addParam(createParamCentered<BeadsFreezeButton>(mm2px(Vec(8.886, 17.846)), module, Beads::FREEZE_PARAM));
+		addParam(createParamCentered<BeadsSeedButton>(mm2px(Vec(62.236, 17.846)), module, Beads::SEED_PARAM));
 		addParam(createParamCentered<TL1105>(mm2px(Vec(35.555, 45.146)), module, Beads::QUALITY_PARAM));
 		addParam(createParamCentered<TL1105>(mm2px(Vec(6.936, 76.896)), module, Beads::ASSIGN_PARAM));
 
@@ -1216,13 +1254,7 @@ struct BeadsWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createBoolPtrMenuItem("Latch seed", "", &module->seedLocked));
 		menu->addChild(createBoolPtrMenuItem("Grain gates on R output", "", &module->gateOutput));
-		menu->addChild(createBoolMenuItem("Autosave frozen buffer", "",
-			[=]() {return module->autosave;},
-			[=](bool val) {
-				module->autosave = val;
-				module->autosaveDisplayTime = 1.f;
-			}
-		));
+		menu->addChild(createAutosaveMenuItem(module));
 	}
 };
 
