@@ -781,9 +781,55 @@ static const std::string modelLabels[16] = {
 };
 
 
+// Model button that its context menu can hold down, like the hardware's long press.
+struct PlaitsButton : TL1105 {
+	// No menu item when empty
+	std::string holdLabel;
+	std::function<bool()> isHeld;
+	std::function<void(bool)> setHeld;
+	bool shownHeld = false;
+
+	void updateFrame() {
+		shownHeld = isHeld();
+		ParamQuantity* pq = getParamQuantity();
+		bool pressed = shownHeld || (pq && pq->getValue() > 0.f);
+		sw->setSvg(frames[pressed ? 1 : 0]);
+		fb->setDirty();
+	}
+
+	void onChange(const ChangeEvent& e) override {
+		TL1105::onChange(e);
+		updateFrame();
+	}
+
+	void step() override {
+		if (isHeld() != shownHeld)
+			updateFrame();
+		TL1105::step();
+	}
+
+	// Clicking a held button lets go of it instead of navigating.
+	void onDragStart(const DragStartEvent& e) override {
+		if (e.button == GLFW_MOUSE_BUTTON_LEFT && isHeld()) {
+			setHeld(false);
+			return;
+		}
+		TL1105::onDragStart(e);
+	}
+
+	void appendContextMenu(Menu* menu) override {
+		if (holdLabel.empty())
+			return;
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createBoolMenuItem("Hold (" + holdLabel + ")", "", isHeld, setHeld));
+	}
+};
+
+
 struct PlaitsWidget : ModuleWidget {
 	bool lpgMode = false;
 	bool rangeMode = false;
+	PlaitsButton* rangeButton;
 
 	PlaitsWidget(Plaits* module) {
 		setModule(module);
@@ -794,8 +840,15 @@ struct PlaitsWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
-		addParam(createParam<TL1105>(mm2px(Vec(23.32685, 14.6539)), module, Plaits::MODEL1_PARAM));
-		addParam(createParam<TL1105>(mm2px(Vec(32.22764, 14.6539)), module, Plaits::MODEL2_PARAM));
+		PlaitsButton* lpgButton = createParam<PlaitsButton>(mm2px(Vec(23.32685, 14.6539)), module, Plaits::MODEL1_PARAM);
+		lpgButton->holdLabel = "LPG response/decay";
+		lpgButton->isHeld = [=]() {return this->lpgMode;};
+		lpgButton->setHeld = [=](bool val) {this->setLpgMode(val);};
+		addParam(lpgButton);
+		rangeButton = createParam<PlaitsButton>(mm2px(Vec(32.22764, 14.6539)), module, Plaits::MODEL2_PARAM);
+		rangeButton->isHeld = [=]() {return this->rangeMode;};
+		rangeButton->setHeld = [=](bool val) {this->setRangeMode(val);};
+		addParam(rangeButton);
 		addParam(createParam<Rogan3PSWhite>(mm2px(Vec(3.1577, 20.21088)), module, Plaits::FREQ_PARAM));
 		addParam(createParam<Rogan3PSWhite>(mm2px(Vec(39.3327, 20.21088)), module, Plaits::HARMONICS_PARAM));
 		addParam(createParam<Rogan1PSWhite>(mm2px(Vec(4.04171, 49.6562)), module, Plaits::TIMBRE_PARAM));
@@ -845,6 +898,7 @@ struct PlaitsWidget : ModuleWidget {
 			// The frequency range only exists in firmware 1.2.
 			if (rangeMode && !module->firmware12)
 				setRangeMode(false);
+			rangeButton->holdLabel = module->firmware12 ? "frequency range/octaves root" : "";
 
 			bool altNavigation = module->firmware12 && module->altNavigation;
 			module->paramQuantities[Plaits::MODEL1_PARAM]->name = altNavigation ? "Previous model" : "Pitched models";
@@ -920,15 +974,26 @@ struct PlaitsWidget : ModuleWidget {
 				}
 			));
 
+			// One submenu per LED color bank, showing its selected model
 			menu->addChild(new MenuSeparator);
-			menu->addChild(createMenuLabel("New models"));
-
-			for (int i = 0; i < 8; i++) {
-				menu->addChild(createCheckMenuItem(newModelLabels[i], "",
-					[=]() {return module->patch.engine == i;},
-					[=]() {module->setEngine(i);}
+			auto appendBank = [=](std::string label, const std::string* labels, int firstEngine) {
+				int engine = module->patch.engine;
+				bool inBank = engine >= firstEngine && engine < firstEngine + 8;
+				menu->addChild(createSubmenuItem(label, inBank ? labels[engine - firstEngine] : "",
+					[=](Menu* menu) {
+						for (int i = 0; i < 8; i++) {
+							menu->addChild(createCheckMenuItem(labels[i], "",
+								[=]() {return module->patch.engine == firstEngine + i;},
+								[=]() {module->setEngine(firstEngine + i);}
+							));
+						}
+					}
 				));
-			}
+			};
+			appendBank("New models", newModelLabels, 0);
+			appendBank("Pitched models", modelLabels, 8);
+			appendBank("Noise/percussive models", modelLabels + 8, 16);
+			return;
 		}
 
 		menu->addChild(new MenuSeparator);
