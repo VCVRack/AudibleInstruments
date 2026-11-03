@@ -1,3 +1,4 @@
 [submodule "eurorack"]
 	path = eurorack
-	url = https://github.com/VCVRack/pichenettes-eurorack.git
+	url = https://github.com/PlasmaChroma/pichenettes-eurorack.git
+	branch = upstream-sync-pichenettes

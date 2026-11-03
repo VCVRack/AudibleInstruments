@@ -109,7 +109,6 @@ struct Shelves : Module {
 	}
 
 	void onSampleRateChange() override {
-		// TODO In Rack v2, replace with args.sampleRate
 		for (int c = 0; c < 16; c++) {
 			engines[c].setSampleRate(APP->engine->getSampleRate());
 		}

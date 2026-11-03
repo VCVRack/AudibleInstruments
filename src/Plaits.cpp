@@ -45,6 +45,12 @@ struct Plaits : Module {
 	};
 
 	plaits::Voice voice[16];
+	// Keep the original sixteen-engine CV quantization and trigger latching.
+	stmlib::HysteresisQuantizer engineQuantizer[16];
+	plaits::DelayLine<float, plaits::kMaxTriggerDelay> engineTriggerDelay[16];
+	float engineTriggerBuffer[16][plaits::kMaxTriggerDelay] = {};
+	float engineCv[16] = {};
+	bool engineTriggerHigh[16] = {};
 	plaits::Patch patch = {};
 	char shared_buffer[16][16384] = {};
 	float triPhase = 0.f;
@@ -85,6 +91,8 @@ struct Plaits : Module {
 		for (int i = 0; i < 16; i++) {
 			stmlib::BufferAllocator allocator(shared_buffer[i], sizeof(shared_buffer[i]));
 			voice[i].Init(&allocator);
+			engineQuantizer[i].Init();
+			engineTriggerDelay[i].Init(engineTriggerBuffer[i]);
 		}
 
 		onReset();
@@ -164,8 +172,9 @@ struct Plaits : Module {
 			bool activeEngines[16] = {};
 			bool pulse = false;
 			for (int c = 0; c < channels; c++) {
-				int activeEngine = voice[c].active_engine();
-				activeEngines[activeEngine] = true;
+				int activeEngine = voice[c].active_engine() - 8;
+				if (activeEngine >= 0 && activeEngine < 16)
+					activeEngines[activeEngine] = true;
 				// Pulse the light if at least one voice is using a different engine.
 				if (activeEngine != patch.engine)
 					pulse = true;
@@ -201,7 +210,7 @@ struct Plaits : Module {
 			for (int c = 0; c < channels; c++) {
 				// Construct modulations
 				plaits::Modulations modulations;
-				modulations.engine = inputs[ENGINE_INPUT].getPolyVoltage(c) / 5.f;
+				modulations.engine = 0.f;
 				modulations.note = inputs[NOTE_INPUT].getVoltage(c) * 12.f;
 				modulations.frequency = inputs[FREQ_INPUT].getPolyVoltage(c) * 6.f;
 				modulations.harmonics = inputs[HARMONICS_INPUT].getPolyVoltage(c) / 5.f;
@@ -219,7 +228,22 @@ struct Plaits : Module {
 
 				// Render frames
 				plaits::Voice::Frame output[blockSize];
-				voice[c].Render(patch, modulations, output, blockSize);
+				// Match Voice's delayed trigger before latching the legacy engine CV.
+				engineTriggerDelay[c].Write(modulations.trigger);
+				float trigger = engineTriggerDelay[c].Read(plaits::kTriggerDelay);
+				if (!engineTriggerHigh[c] && trigger > 0.3f) {
+					engineTriggerHigh[c] = true;
+					engineCv[c] = inputs[ENGINE_INPUT].getPolyVoltage(c) / 5.f;
+				}
+				else if (engineTriggerHigh[c] && trigger < 0.1f) {
+					engineTriggerHigh[c] = false;
+				}
+				if (!modulations.trigger_patched)
+					engineCv[c] = inputs[ENGINE_INPUT].getPolyVoltage(c) / 5.f;
+				// Firmware 1.2 inserts eight engines before the original sixteen.
+				plaits::Patch firmwarePatch = patch;
+				firmwarePatch.engine = 8 + engineQuantizer[c].Process(patch.engine, engineCv[c], 16, 0.25f);
+				voice[c].Render(firmwarePatch, modulations, output, blockSize);
 
 				// Convert output to frames
 				for (int i = 0; i < blockSize; i++) {

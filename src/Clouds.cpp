@@ -1,5 +1,81 @@
 #include "plugin.hpp"
 #include "clouds/dsp/granular_processor.h"
+#include <array>
+#include <cstring>
+#include <atomic>
+#include <mutex>
+
+
+// Rack-side storage for the firmware's tagged sample-memory format.
+// Fixed capacity allows capture/restore without allocating in process().
+namespace clouds_memory {
+constexpr size_t largeBytes = 118784;
+constexpr size_t smallBytes = 65536 - 128;
+constexpr size_t maxWords = (2 * smallBytes + sizeof(clouds::PersistentState) + 24) / 4;
+
+struct Slot {
+	std::array<uint32_t, maxWords> words = {};
+	size_t count = 0;
+	int playback = 0;
+
+	bool valid() const {
+		if (playback < 0 || playback >= clouds::PLAYBACK_MODE_LAST || count > words.size()
+				|| count < 2 + sizeof(clouds::PersistentState) / 4)
+			return false;
+		if (words[0] != clouds::FourCC<'s', 't', 'a', 't'>::value || words[1] != sizeof(clouds::PersistentState))
+			return false;
+		clouds::PersistentState state;
+		std::memcpy(&state, &words[2], sizeof(state));
+		if (state.quality > 3 || state.spectral > 1
+				|| bool(state.spectral) != (playback == clouds::PLAYBACK_MODE_SPECTRAL))
+			return false;
+		int channels = state.quality & 1 ? 1 : 2;
+		size_t bytes = channels == 1 ? largeBytes : smallBytes;
+		size_t pos = 2 + sizeof(state) / 4;
+		for (int c = 0; c < channels; c++) {
+			if (pos + 2 + bytes / 4 > count || words[pos] != clouds::FourCC<'b', 'u', 'f', 'f'>::value
+					|| words[pos + 1] != bytes)
+				return false;
+			// Spectral state does not use the time-domain write heads.
+			if (!state.spectral) {
+				int samples = bytes / (state.quality & 2 ? 1 : 2) - kInterpolationTail;
+				if (state.write_head[c] < 0 || state.write_head[c] >= samples)
+					return false;
+			}
+			pos += 2 + bytes / 4;
+		}
+		return pos == count;
+	}
+
+	bool capture(clouds::GranularProcessor& processor) {
+		processor.PreparePersistentData();
+		clouds::PersistentBlock blocks[4];
+		size_t n = 0;
+		processor.GetPersistentData(blocks, &n);
+		count = 0;
+		playback = processor.playback_mode();
+		for (size_t i = 0; i < n; i++) {
+			const auto& b = blocks[i];
+			if (b.size % 4 || count + 2 + b.size / 4 > words.size()) {
+				count = 0;
+				return false;
+			}
+			words[count++] = b.tag;
+			words[count++] = b.size;
+			std::memcpy(&words[count], b.data, b.size);
+			count += b.size / 4;
+		}
+		return valid();
+	}
+
+	bool restore(clouds::GranularProcessor& processor) const {
+		if (!valid())
+			return false;
+		processor.set_playback_mode(clouds::PlaybackMode(playback));
+		return processor.LoadPersistentData(words.data());
+	}
+};
+} // namespace clouds_memory
 
 
 struct Clouds : Module {
@@ -56,6 +132,42 @@ struct Clouds : Module {
 	clouds::GranularProcessor* processor;
 
 	bool triggered = false;
+	bool legacyTrigger = false;
+	dsp::SchmittTrigger grainTrigger;
+	std::array<clouds_memory::Slot, 4> memorySlots;
+	std::mutex memoryMutex;
+	std::atomic<int> memoryRequest{0}; // 1..4 save, 5..8 load
+	std::atomic<unsigned> populatedSlots{0};
+
+	void requestMemory(int slot, bool save) {
+		if (slot < 0 || slot >= 4)
+			return;
+		int idle = 0;
+		memoryRequest.compare_exchange_strong(idle, 1 + slot + (save ? 0 : 4));
+	}
+
+	void processMemory() {
+		int request = memoryRequest.load();
+		if (!request)
+			return;
+		// Serialization can hold the bank lock; the audio thread never waits.
+		std::unique_lock<std::mutex> lock(memoryMutex, std::try_to_lock);
+		if (!lock.owns_lock())
+			return;
+		int slot = (request - 1) % 4;
+		if (request <= 4) {
+			if (memorySlots[slot].capture(*processor))
+				populatedSlots.fetch_or(1u << slot);
+			else
+				populatedSlots.fetch_and(~(1u << slot));
+		}
+		else if (memorySlots[slot].restore(*processor)) {
+			playback = processor->playback_mode();
+			quality = processor->quality();
+			freeze = true;
+		}
+		memoryRequest.store(0);
+	}
 
 	dsp::SchmittTrigger freezeTrigger;
 	bool freeze = false;
@@ -79,7 +191,7 @@ struct Clouds : Module {
 		configParam(REVERB_PARAM, 0.0, 1.0, 0.0, "Reverb amount");
 		configButton(FREEZE_PARAM, "Freeze");
 		configButton(MODE_PARAM, "Mode");
-		configButton(LOAD_PARAM, "Load/save");
+		configButton(LOAD_PARAM, "Sample memory (right-click module to save/load)");
 		configInput(FREEZE_INPUT, "Freeze");
 		configInput(TRIG_INPUT, "Trigger");
 		configInput(POSITION_INPUT, "Position");
@@ -101,7 +213,7 @@ struct Clouds : Module {
 		block_mem = new uint8_t[memLen]();
 		block_ccm = new uint8_t[ccmLen]();
 		processor = new clouds::GranularProcessor();
-		memset(processor, 0, sizeof(*processor));
+		memset((void*) processor, 0, sizeof(*processor));
 
 		processor->Init(block_mem, memLen, block_ccm, ccmLen);
 		onReset();
@@ -130,7 +242,8 @@ struct Clouds : Module {
 		}
 
 		// Trigger
-		if (inputs[TRIG_INPUT].getVoltage() >= 1.0) {
+		bool rising = grainTrigger.process(inputs[TRIG_INPUT].getVoltage(), 0.1f, 1.f);
+		if (legacyTrigger ? inputs[TRIG_INPUT].getVoltage() >= 1.f : rising) {
 			triggered = true;
 		}
 
@@ -157,10 +270,11 @@ struct Clouds : Module {
 			processor->set_playback_mode(playback);
 			processor->set_quality(quality);
 			processor->Prepare();
+			processMemory();
 
 			clouds::Parameters* p = processor->mutable_parameters();
 			p->trigger = triggered;
-			p->gate = triggered;
+			p->gate = legacyTrigger ? triggered : grainTrigger.isHigh();
 			p->freeze = freeze || (inputs[FREEZE_INPUT].getVoltage() >= 1.0);
 			p->position = clamp(params[POSITION_PARAM].getValue() + inputs[POSITION_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
 			p->size = clamp(params[SIZE_PARAM].getValue() + inputs[SIZE_INPUT].getVoltage() / 5.0f, 0.0f, 1.0f);
@@ -170,8 +284,7 @@ struct Clouds : Module {
 			p->dry_wet = params[BLEND_PARAM].getValue();
 			p->stereo_spread = params[SPREAD_PARAM].getValue();
 			p->feedback = params[FEEDBACK_PARAM].getValue();
-			// TODO
-			// Why doesn't dry audio get reverbed?
+			// As in the firmware, reverb is applied to the wet signal before the dry/wet mix, so dry audio is not reverberated.
 			p->reverb = params[REVERB_PARAM].getValue();
 			float blend = inputs[BLEND_INPUT].getVoltage() / 5.0f;
 			switch (blendMode) {
@@ -240,6 +353,11 @@ struct Clouds : Module {
 	}
 
 	void onReset() override {
+		memoryRequest.store(0);
+		legacyTrigger = false;
+		triggered = false;
+		grainTrigger.reset();
+		grainTrigger.process(0.f);
 		freeze = false;
 		blendMode = 0;
 		playback = clouds::PLAYBACK_MODE_GRANULAR;
@@ -252,11 +370,66 @@ struct Clouds : Module {
 		json_object_set_new(rootJ, "playback", json_integer((int) playback));
 		json_object_set_new(rootJ, "quality", json_integer(quality));
 		json_object_set_new(rootJ, "blendMode", json_integer(blendMode));
+		json_object_set_new(rootJ, "legacyTrigger", json_boolean(legacyTrigger));
+		// Embed saved slots so presets, duplication, undo and patch transfer
+		// all carry their audio. Only explicit saves capture the live buffer.
+		json_t* slotsJ = json_array();
+		{
+			std::lock_guard<std::mutex> lock(memoryMutex);
+			for (const auto& slot : memorySlots) {
+				if (!slot.valid()) {
+					json_array_append_new(slotsJ, json_null());
+					continue;
+				}
+				json_t* slotJ = json_object();
+				json_object_set_new(slotJ, "version", json_integer(1));
+				json_object_set_new(slotJ, "playback", json_integer(slot.playback));
+				std::string audio = string::toBase64(reinterpret_cast<const uint8_t*>(slot.words.data()), slot.count * 4);
+				json_object_set_new(slotJ, "audio", json_string(audio.c_str()));
+				json_array_append_new(slotsJ, slotJ);
+			}
+		}
+		json_object_set_new(rootJ, "memorySlots", slotsJ);
 
 		return rootJ;
 	}
 
 	void dataFromJson(json_t* rootJ) override {
+		json_t* legacyJ = json_object_get(rootJ, "legacyTrigger");
+		legacyTrigger = legacyJ ? json_is_true(legacyJ) : true;
+		{
+			std::lock_guard<std::mutex> lock(memoryMutex);
+			memoryRequest.store(0);
+			unsigned populated = 0;
+			json_t* slotsJ = json_object_get(rootJ, "memorySlots");
+			for (int i = 0; i < 4; i++) {
+				auto& slot = memorySlots[i];
+				slot.count = 0;
+				json_t* slotJ = json_array_get(slotsJ, i);
+				json_t* audioJ = json_object_get(slotJ, "audio");
+				json_t* modeJ = json_object_get(slotJ, "playback");
+				if (json_integer_value(json_object_get(slotJ, "version")) != 1 || !json_is_string(audioJ)
+						|| !json_is_integer(modeJ) || json_integer_value(modeJ) < 0 || json_integer_value(modeJ) >= clouds::PLAYBACK_MODE_LAST
+						|| json_string_length(audioJ) > ((clouds_memory::maxWords * 4 + 2) / 3) * 4)
+					continue;
+				try {
+					auto bytes = string::fromBase64(json_string_value(audioJ));
+					if (bytes.size() % 4 || bytes.size() > slot.words.size() * 4)
+						continue;
+					slot.playback = json_integer_value(modeJ);
+					slot.count = bytes.size() / 4;
+					std::memcpy(slot.words.data(), bytes.data(), bytes.size());
+					if (slot.valid())
+						populated |= 1u << i;
+					else
+						slot.count = 0;
+				}
+				catch (const std::exception&) {
+					slot.count = 0;
+				}
+			}
+			populatedSlots.store(populated);
+		}
 		json_t* playbackJ = json_object_get(rootJ, "playback");
 		if (playbackJ) {
 			playback = (clouds::PlaybackMode) json_integer_value(playbackJ);
@@ -336,10 +509,10 @@ struct CloudsWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(Vec(230, 317), module, Clouds::OUT_R_OUTPUT));
 
 		addChild(createLight<FreezeLight>(Vec(12 + 3, 43 + 3), module, Clouds::FREEZE_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
-		addChild(createLight<MediumLight<GreenRedLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(82.5, 53), module, Clouds::MIX_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(114.5, 53), module, Clouds::PAN_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(145.5, 53), module, Clouds::FEEDBACK_GREEN_LIGHT));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(Vec(177.5, 53), module, Clouds::REVERB_GREEN_LIGHT));
 	}
 
 	void step() override {
@@ -358,6 +531,20 @@ struct CloudsWidget : ModuleWidget {
 	void appendContextMenu(Menu* menu) override {
 		Clouds* module = dynamic_cast<Clouds*>(this->module);
 		assert(module);
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createBoolPtrMenuItem("Legacy trigger-as-gate behavior", "", &module->legacyTrigger));
+		menu->addChild(createSubmenuItem("Sample memory", "", [=](Menu* child) {
+			if (module->memoryRequest.load())
+				child->addChild(createMenuLabel("Waiting for audio processing"));
+			for (int i = 0; i < 4; i++) {
+				bool occupied = module->populatedSlots.load() & (1u << i);
+				bool busy = module->memoryRequest.load() != 0;
+				child->addChild(createMenuItem(string::f("Save buffer to slot %d%s", i + 1, occupied ? " (overwrite)" : ""), "",
+					[=]() { module->requestMemory(i, true); }, busy));
+				child->addChild(createMenuItem(string::f("Load slot %d%s", i + 1, occupied ? "" : " (empty)"), "",
+					[=]() { module->requestMemory(i, false); }, busy || !occupied));
+			}
+		}));
 
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Blend knob"));

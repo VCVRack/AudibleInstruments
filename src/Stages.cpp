@@ -152,6 +152,7 @@ struct Stages : Module {
 	stmlib::GateFlags gate_flags[NUM_CHANNELS][BLOCK_SIZE] = {};
 	int blockIndex = 0;
 	GroupBuilder groupBuilder;
+	bool legacyControlRange = false;
 
 	Stages() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
@@ -168,6 +169,7 @@ struct Stages : Module {
 	}
 
 	void onReset() override {
+		legacyControlRange = false;
 		for (size_t i = 0; i < NUM_CHANNELS; ++i) {
 			segment_generator[i].Init();
 
@@ -182,6 +184,7 @@ struct Stages : Module {
 
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
+		json_object_set_new(rootJ, "legacyControlRange", json_boolean(legacyControlRange));
 
 		json_t* configurationsJ = json_array();
 		for (int i = 0; i < NUM_CHANNELS; i++) {
@@ -196,6 +199,8 @@ struct Stages : Module {
 	}
 
 	void dataFromJson(json_t* rootJ) override {
+		json_t* legacyJ = json_object_get(rootJ, "legacyControlRange");
+		legacyControlRange = legacyJ ? json_is_true(legacyJ) : true;
 		json_t* configurationsJ = json_object_get(rootJ, "configurations");
 		for (int i = 0; i < NUM_CHANNELS; i++) {
 			json_t* configurationJ = json_array_get(configurationsJ, i);
@@ -222,7 +227,11 @@ struct Stages : Module {
 		float primaries[NUM_CHANNELS];
 		float secondaries[NUM_CHANNELS];
 		for (int i = 0; i < NUM_CHANNELS; i++) {
-			primaries[i] = clamp(params[LEVEL_PARAMS + i].getValue() + inputs[LEVEL_INPUTS + i].getVoltage() / 8.f, 0.f, 1.f);
+			// CvReader passes this full range to every firmware mode. Keep
+			// clipping at the output, rather than losing negative CV and
+			// extended rates/levels before the generator processes them.
+			float primary = params[LEVEL_PARAMS + i].getValue() + inputs[LEVEL_INPUTS + i].getVoltage() / 8.f;
+			primaries[i] = legacyControlRange ? clamp(primary, 0.f, 1.f) : clamp(primary, -1.f, 1.999995f);
 			secondaries[i] = params[SHAPE_PARAMS + i].getValue();
 		}
 
@@ -258,7 +267,8 @@ struct Stages : Module {
 
 			// Set the segment parameters on the generator we're about to process
 			for (int j = 0; j < group.segment_count; j++) {
-				segment_generator[i].set_segment_parameters(j, primaries[group.first_segment + j], secondaries[group.first_segment + j]);
+				int segment = group.first_segment + j;
+				segment_generator[i].set_segment_parameters(j, primaries[segment], secondaries[segment]);
 			}
 
 			segment_generator[i].Process(gate_flags[group.first_segment], out, BLOCK_SIZE);
@@ -357,6 +367,11 @@ struct Stages : Module {
 				int segment = group.first_segment + j;
 
 				float envelope = envelopeBuffer[segment][blockIndex];
+				if (!legacyControlRange) {
+					// Invert the default Settings DAC calibration and its 0..65531
+					// code limits. Preserve Rack's floating-point output in between.
+					envelope = clamp(envelope, (32768.f - 65531.f) / 32263.f, 32768.f / 32263.f);
+				}
 				outputs[ENVELOPE_OUTPUTS + segment].setVoltage(envelope * 8.f);
 				lights[ENVELOPE_LIGHTS + segment].setSmoothBrightness(envelope, args.sampleTime);
 
@@ -431,18 +446,24 @@ struct StagesWidget : ModuleWidget {
 		addOutput(createOutput<PJ301MPort>(mm2px(Vec(48.48943, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 4));
 		addOutput(createOutput<PJ301MPort>(mm2px(Vec(59.92921, 106.95203)), module, Stages::ENVELOPE_OUTPUTS + 5));
 
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
-		addChild(createLight<MediumLight<GreenRedLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(5.27737, 26.74447)), module, Stages::TYPE_LIGHTS + 0 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(16.73784, 26.74447)), module, Stages::TYPE_LIGHTS + 1 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(28.1783, 26.74447)), module, Stages::TYPE_LIGHTS + 2 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(39.61877, 26.74447)), module, Stages::TYPE_LIGHTS + 3 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(51.07923, 26.74447)), module, Stages::TYPE_LIGHTS + 4 * 2));
+		addChild(createLight<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(62.51971, 26.74447)), module, Stages::TYPE_LIGHTS + 5 * 2));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(2.29462, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 0));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(13.73509, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 1));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(25.17556, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 2));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(36.63671, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 3));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(48.07649, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 4));
 		addChild(createLight<MediumLight<GreenLight>>(mm2px(Vec(59.51696, 103.19253)), module, Stages::ENVELOPE_LIGHTS + 5));
+	}
+
+	void appendContextMenu(Menu* menu) override {
+		Stages* module = getModule<Stages>();
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createBoolPtrMenuItem("Legacy limited CV range", "", &module->legacyControlRange));
 	}
 };
 

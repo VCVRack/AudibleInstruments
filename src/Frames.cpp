@@ -1,6 +1,36 @@
 #include "plugin.hpp"
 #include "frames/keyframer.h"
 #include "frames/poly_lfo.h"
+#include "frames/resources.h"
+
+
+// VCA gain for a 16-bit level and response setting, following Keyframer::ConvertToDacCode(). The firmware
+// blends the DAC codes of its linear and exponential responses, weighted by lut_response_balance. Per
+// frames/resources/lookup_tables.py, the 2164 sees a 2.5 V full-scale DAC at -30 dB/V, so the exponential
+// response spans 75 dB. Response 0 keeps the exact linear gain (hardware's linear table matches it down to a
+// -72 dB floor), floating point avoids the DAC's 12-bit steps, and a closed VCA is silent rather than at the
+// 2164's -72 to -75 dB floor.
+static float vcaGain(uint16_t level, uint8_t response) {
+	if (response == 0 || level == 0)
+		return level / 65535.f;
+	float index = level / 64.f;
+	int i = std::min((int) index, 1023);
+	float linear = crossfade((float) frames::lut_vca_linear[i], (float) frames::lut_vca_linear[i + 1], index - i);
+	float exponential = 65535.f - level;
+	float balance = frames::lut_response_balance[response] / 32768.f;
+	float code = linear + (exponential - linear) * balance;
+	return std::pow(10.f, -3.75f * code / 65536.f);
+}
+
+// The response curve used before patch version 2: a 200^x approximation of the 2164, crossfaded linearly.
+static float legacyVcaGain(float gain, uint8_t response) {
+	if (response > 0) {
+		const float expBase = 200.0;
+		float expGain = rescale(powf(expBase, gain), 1.0f, expBase, 0.0f, 1.0f);
+		gain = crossfade(gain, expGain, response / 255.0f);
+	}
+	return gain;
+}
 
 
 struct Frames : Module {
@@ -14,6 +44,8 @@ struct Frames : Module {
 		FRAME_PARAM,
 		MODULATION_PARAM,
 		OFFSET_PARAM,
+		// Appended to preserve existing patch and automation IDs. Set from the context menu, not the panel.
+		ENUMS(RESPONSE_PARAMS, 4),
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -44,6 +76,14 @@ struct Frames : Module {
 	frames::Keyframer keyframer;
 	frames::PolyLfo poly_lfo;
 	bool poly_lfo_mode = false;
+	bool sequencer_mode = false;
+	bool legacyResponse = false;
+	bool stepArmed = false;
+	int sequencerStep = 0;
+	int previousPosition = -2;
+	int previousNearest = -2;
+	bool canFireStep = false;
+	dsp::PulseGenerator frameStepPulse;
 	uint16_t lastControls[4] = {};
 
 	dsp::SchmittTrigger addTrigger;
@@ -60,6 +100,12 @@ struct Frames : Module {
 		configButton(ADD_PARAM, "Add keyframe");
 		configButton(DEL_PARAM, "Delete keyframe");
 		configSwitch(OFFSET_PARAM, 0.0, 1.0, 0.0, "Offset", {"+0V", "+10V"});
+		for (int i = 0; i < 4; i++) {
+			// The hardware sets each channel's response, 0-255, by holding DELETE and turning that channel's knob.
+			ParamQuantity* pq = configParam(RESPONSE_PARAMS + i, 0.f, 1.f, 0.f, string::f("Channel %d response", i + 1), "%", 0.f, 100.f);
+			pq->description = "0% linear, 100% exponential (VCA response)";
+			pq->randomizeEnabled = false;
+		}
 
 		configInput(ALL_INPUT, "All");
 		configInput(IN1_INPUT, "Channel 1");
@@ -75,9 +121,9 @@ struct Frames : Module {
 		configOutput(OUT4_OUTPUT, "Channel 4");
 		configOutput(FRAME_STEP_OUTPUT, "Frame step");
 
-		memset(&keyframer, 0, sizeof(keyframer));
+		memset((void*) &keyframer, 0, sizeof(keyframer));
 		keyframer.Init();
-		memset(&poly_lfo, 0, sizeof(poly_lfo));
+		memset((void*) &poly_lfo, 0, sizeof(poly_lfo));
 		poly_lfo.Init();
 
 		onReset();
@@ -91,7 +137,8 @@ struct Frames : Module {
 		}
 
 		int32_t timestamp = params[FRAME_PARAM].getValue() * 65535.0;
-		int32_t timestampMod = timestamp + params[MODULATION_PARAM].getValue() * inputs[FRAME_INPUT].getVoltage() / 10.0 * 65535.0;
+		float frameModulation = params[MODULATION_PARAM].getValue() * inputs[FRAME_INPUT].getVoltage() / 10.f * 65535.f;
+		int32_t timestampMod = timestamp + frameModulation;
 		timestamp = clamp(timestamp, 0, 65535);
 		timestampMod = clamp(timestampMod, 0, 65535);
 		int16_t nearestIndex = -1;
@@ -136,25 +183,57 @@ struct Frames : Module {
 					keyframer.RemoveKeyframe(nearestTimestamp);
 				}
 			}
+			if (sequencer_mode) {
+				// The hardware's 33k/100k ADC stage and 3.3 V reference,
+				// followed by firmware's doubling, give full scale at 5 V.
+				// Keep the existing animation CV mapping above unchanged.
+				float stepModulation = 2.f * frameModulation;
+				if (stepModulation < 21845.f)
+					stepArmed = true;
+				if (stepModulation > 43690.f && stepArmed) {
+					stepArmed = false;
+					++sequencerStep;
+				}
+				if (sequencerStep >= keyframer.num_keyframes())
+					sequencerStep = 0;
+				if (keyframer.num_keyframes() > 0)
+					timestampMod = keyframer.keyframe(sequencerStep).timestamp;
+			}
 			keyframer.Evaluate(timestampMod);
+
+			// Match frames.cc: crossing a boundary fires once, and a change
+			// of nearest keyframe rearms it (avoids chatter at a boundary).
+			int position = keyframer.position();
+			if (position != previousPosition) {
+				previousPosition = position;
+				if (canFireStep && keyframer.num_keyframes() > 0) {
+					frameStepPulse.trigger(1e-3f);
+					canFireStep = false;
+				}
+			}
+			int nearest = keyframer.nearest_keyframe();
+			if (nearest != previousNearest) {
+				previousNearest = nearest;
+				canFireStep = true;
+			}
 		}
+		outputs[FRAME_STEP_OUTPUT].setVoltage(frameStepPulse.process(args.sampleTime) ? 5.f : 0.f);
 
 		// Get gains
 		float gains[4];
 		for (int i = 0; i < 4; i++) {
-			if (poly_lfo_mode) {
-				// gains[i] = poly_lfo.level(i) / 255.0;
+			uint8_t response = (uint8_t) std::round(params[RESPONSE_PARAMS + i].getValue() * 255.f);
+			keyframer.mutable_settings(i)->response = response;
+			if (legacyResponse) {
+				float level = poly_lfo_mode ? poly_lfo.level16(i) / 65535.0 : keyframer.level(i) / 65535.0;
+				gains[i] = legacyVcaGain(level, response);
+			}
+			else if (poly_lfo_mode) {
+				// As in firmware (PolyLfo::Render), poly LFO levels always use the linear response.
 				gains[i] = poly_lfo.level16(i) / 65535.0;
 			}
 			else {
-				float lin = keyframer.level(i) / 65535.0;
-				gains[i] = lin;
-			}
-			// Simulate SSM2164
-			if (keyframer.mutable_settings(i)->response > 0) {
-				const float expBase = 200.0;
-				float expGain = rescale(powf(expBase, gains[i]), 1.0f, expBase, 0.0f, 1.0f);
-				gains[i] = crossfade(gains[i], expGain, keyframer.mutable_settings(i)->response / 255.0f);
+				gains[i] = vcaGain(keyframer.level(i), response);
 			}
 		}
 
@@ -218,6 +297,7 @@ struct Frames : Module {
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 		json_object_set_new(rootJ, "polyLfo", json_boolean(poly_lfo_mode));
+		json_object_set_new(rootJ, "sequencer", json_boolean(sequencer_mode));
 
 		json_t* keyframesJ = json_array();
 		for (int i = 0; i < keyframer.num_keyframes(); i++) {
@@ -239,11 +319,17 @@ struct Frames : Module {
 			json_array_append_new(channelsJ, channelJ);
 		}
 		json_object_set_new(rootJ, "channels", channelsJ);
+		json_object_set_new(rootJ, "legacyResponse", json_boolean(legacyResponse));
 
 		return rootJ;
 	}
 
 	void dataFromJson(json_t* rootJ) override {
+		// Patches saved before the hardware response curve keep the legacy curve, so their levels do not change.
+		json_t* legacyResponseJ = json_object_get(rootJ, "legacyResponse");
+		legacyResponse = legacyResponseJ ? json_is_true(legacyResponseJ) : true;
+		sequencer_mode = json_is_true(json_object_get(rootJ, "sequencer"));
+		resetStepState();
 		json_t* polyLfoJ = json_object_get(rootJ, "polyLfo");
 		if (polyLfoJ)
 			poly_lfo_mode = json_boolean_value(polyLfoJ);
@@ -270,16 +356,31 @@ struct Frames : Module {
 					json_t* curveJ = json_object_get(channelJ, "curve");
 					if (curveJ)
 						keyframer.mutable_settings(i)->easing_curve = (frames::EasingCurve) json_integer_value(curveJ);
+					// Patches saved before the response parameters existed store it only here.
 					json_t* responseJ = json_object_get(channelJ, "response");
-					if (responseJ)
-						keyframer.mutable_settings(i)->response = json_integer_value(responseJ);
+					if (responseJ) {
+						int response = clamp((int) json_integer_value(responseJ), 0, 255);
+						keyframer.mutable_settings(i)->response = response;
+						params[RESPONSE_PARAMS + i].setValue(response / 255.f);
+					}
 				}
 			}
 		}
 	}
 
+	void resetStepState() {
+		stepArmed = false;
+		sequencerStep = 0;
+		previousPosition = previousNearest = -2;
+		canFireStep = false;
+		frameStepPulse.reset();
+	}
+
 	void onReset() override {
 		poly_lfo_mode = false;
+		sequencer_mode = false;
+		legacyResponse = false;
+		resetStepState();
 		keyframer.Clear();
 		for (int i = 0; i < 4; i++) {
 			keyframer.mutable_settings(i)->easing_curve = frames::EASING_CURVE_LINEAR;
@@ -376,13 +477,19 @@ struct FramesWidget : ModuleWidget {
 
 					menu->addChild(createMenuLabel("Response curve"));
 
+					// Continuous, as on hardware: a blend between the linear and exponential VCA responses.
+					ui::Slider* slider = new ui::Slider;
+					slider->quantity = module->getParamQuantity(Frames::RESPONSE_PARAMS + c);
+					slider->box.size.x = 200.f;
+					menu->addChild(slider);
+
 					menu->addChild(createCheckMenuItem("Linear", "",
-						[=]() {return module->keyframer.mutable_settings(c)->response == 0;},
-						[=]() {module->keyframer.mutable_settings(c)->response = 0;}
+						[=]() {return module->params[Frames::RESPONSE_PARAMS + c].getValue() == 0.f;},
+						[=]() {module->getParamQuantity(Frames::RESPONSE_PARAMS + c)->setValue(0.f);}
 					));
 					menu->addChild(createCheckMenuItem("Exponential", "",
-						[=]() {return module->keyframer.mutable_settings(c)->response == 255;},
-						[=]() {module->keyframer.mutable_settings(c)->response = 255;}
+						[=]() {return module->params[Frames::RESPONSE_PARAMS + c].getValue() == 1.f;},
+						[=]() {module->getParamQuantity(Frames::RESPONSE_PARAMS + c)->setValue(1.f);}
 					));
 				}
 			));
@@ -392,17 +499,23 @@ struct FramesWidget : ModuleWidget {
 			[=]() {module->keyframer.Clear();}
 		));
 
+		menu->addChild(createBoolPtrMenuItem("Legacy response curve", "", &module->legacyResponse));
+
 		menu->addChild(new MenuSeparator);
 		menu->addChild(createMenuLabel("Alternate modes"));
 
 		static const std::vector<std::string> modeLabels = {
 			"Keyframer",
 			"Poly LFO",
+			"Sequencer",
 		};
 		for (int i = 0; i < (int) modeLabels.size(); i++) {
 			menu->addChild(createCheckMenuItem(modeLabels[i], "",
-				[=]() {return module->poly_lfo_mode == i;},
-				[=]() {module->poly_lfo_mode = i;}
+				[=]() {return (module->poly_lfo_mode ? 1 : module->sequencer_mode ? 2 : 0) == i;},
+				[=]() {
+					module->poly_lfo_mode = i == 1;
+					module->sequencer_mode = i == 2;
+				}
 			));
 		}
 	}

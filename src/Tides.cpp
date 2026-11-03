@@ -46,7 +46,9 @@ struct Tides : Module {
 	bool sheep;
 	tides::Generator generator;
 	int frame = 0;
-	uint8_t lastGate;
+	uint8_t lastGate = 0;
+	bool legacyGates = false;
+	bool legacyClock = false;
 	dsp::SchmittTrigger modeTrigger;
 	dsp::SchmittTrigger rangeTrigger;
 
@@ -75,7 +77,7 @@ struct Tides : Module {
 		configOutput(UNI_OUTPUT, "Unipolar");
 		configOutput(BI_OUTPUT, "Bipolar");
 
-		memset(&generator, 0, sizeof(generator));
+		memset((void*) &generator, 0, sizeof(generator));
 		generator.Init();
 		generator.set_sync(false);
 		onReset();
@@ -101,14 +103,21 @@ struct Tides : Module {
 		// Buffer loop
 		if (++frame >= 16) {
 			frame = 0;
+			// Rack enables PLL when CLOCK is patched. The firmware setter
+			// resets its edge counter, so only call it on transitions.
+			bool sync = inputs[CLOCK_INPUT].isConnected() && !sheep;
+			if (!legacyClock && sync != generator.sync())
+				generator.set_sync(sync);
 
 			// Pitch
 			float pitch = params[FREQUENCY_PARAM].getValue();
 			pitch += 12.0 * inputs[PITCH_INPUT].getVoltage();
 			pitch += params[FM_PARAM].getValue() * inputs[FM_INPUT].getNormalVoltage(0.1) / 5.0;
-			pitch += 60.0;
-			// Scale to the global sample rate
-			pitch += log2f(48000.0 / args.sampleRate) * 12.0;
+			// Ratio selection is centered on MIDI note 36 in the firmware.
+			// Free-running pitch retains the port's tuning and rate correction.
+			pitch += (!legacyClock && sync) ? 36.f : 60.f;
+			if (legacyClock || !sync)
+				pitch += log2f(48000.0 / args.sampleRate) * 12.0;
 			generator.set_pitch((int) clamp(pitch * 0x80, (float) -0x8000, (float) 0x7fff));
 
 			// Slope, smoothness, pitch
@@ -122,7 +131,8 @@ struct Tides : Module {
 			// Sync
 			// Slight deviation from spec here.
 			// Instead of toggling sync by holding the range button, just enable it if the clock port is plugged in.
-			generator.set_sync(inputs[CLOCK_INPUT].isConnected() && !sheep);
+			if (legacyClock)
+				generator.set_sync(sync);
 
 			// Generator
 			generator.Process(sheep);
@@ -141,7 +151,7 @@ struct Tides : Module {
 		if (inputs[CLOCK_INPUT].getVoltage() >= 0.7)
 			gate |= tides::CONTROL_CLOCK;
 		if (!(lastGate & tides::CONTROL_CLOCK) && (gate & tides::CONTROL_CLOCK))
-			gate |= tides::CONTROL_GATE_RISING;
+			gate |= legacyClock ? tides::CONTROL_GATE_RISING : tides::CONTROL_CLOCK_RISING;
 		if (!(lastGate & tides::CONTROL_GATE) && (gate & tides::CONTROL_GATE))
 			gate |= tides::CONTROL_GATE_RISING;
 		if ((lastGate & tides::CONTROL_GATE) && !(gate & tides::CONTROL_GATE))
@@ -157,8 +167,8 @@ struct Tides : Module {
 		float unif = (float) uni / 0xffff;
 		float bif = (float) bi / 0x8000;
 
-		outputs[HIGH_OUTPUT].setVoltage(sample.flags & tides::FLAG_END_OF_ATTACK ? 0.0 : 5.0);
-		outputs[LOW_OUTPUT].setVoltage(sample.flags & tides::FLAG_END_OF_RELEASE ? 0.0 : 5.0);
+		outputs[HIGH_OUTPUT].setVoltage((bool(sample.flags & tides::FLAG_END_OF_ATTACK) != legacyGates) ? 5.f : 0.f);
+		outputs[LOW_OUTPUT].setVoltage((bool(sample.flags & tides::FLAG_END_OF_RELEASE) != legacyGates) ? 5.f : 0.f);
 		outputs[UNI_OUTPUT].setVoltage(unif * 8.0);
 		outputs[BI_OUTPUT].setVoltage(bif * 5.0);
 
@@ -172,6 +182,9 @@ struct Tides : Module {
 		generator.set_range(tides::GENERATOR_RANGE_MEDIUM);
 		generator.set_mode(tides::GENERATOR_MODE_LOOPING);
 		sheep = false;
+		legacyGates = false;
+		legacyClock = false;
+		lastGate = 0;
 	}
 
 	void onRandomize() override {
@@ -185,11 +198,17 @@ struct Tides : Module {
 		json_object_set_new(rootJ, "mode", json_integer((int) generator.mode()));
 		json_object_set_new(rootJ, "range", json_integer((int) generator.range()));
 		json_object_set_new(rootJ, "sheep", json_boolean(sheep));
+		json_object_set_new(rootJ, "legacyGates", json_boolean(legacyGates));
+		json_object_set_new(rootJ, "legacyClock", json_boolean(legacyClock));
 
 		return rootJ;
 	}
 
 	void dataFromJson(json_t* rootJ) override {
+		json_t* gatesJ = json_object_get(rootJ, "legacyGates");
+		legacyGates = gatesJ ? json_is_true(gatesJ) : true;
+		json_t* clockJ = json_object_get(rootJ, "legacyClock");
+		legacyClock = clockJ ? json_is_true(clockJ) : true;
 		json_t* modeJ = json_object_get(rootJ, "mode");
 		if (modeJ) {
 			generator.set_mode((tides::GeneratorMode) json_integer_value(modeJ));
@@ -282,6 +301,8 @@ struct TidesWidget : ModuleWidget {
 		menu->addChild(new MenuSeparator);
 
 		menu->addChild(createBoolPtrMenuItem("Wavetable firmware (Sheep)", "", &module->sheep));
+		menu->addChild(createBoolPtrMenuItem("Legacy inverted High/Low gates", "", &module->legacyGates));
+		menu->addChild(createBoolPtrMenuItem("Legacy clock handling", "", &module->legacyClock));
 	}
 };
 
