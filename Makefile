@@ -17,6 +17,9 @@ SOURCES += eurorack/braids/resources.cc
 
 SOURCES += $(wildcard eurorack/plaits/dsp/*.cc)
 SOURCES += $(wildcard eurorack/plaits/dsp/engine/*.cc)
+SOURCES += $(wildcard eurorack/plaits/dsp/engine2/*.cc)
+SOURCES += $(wildcard eurorack/plaits/dsp/chords/*.cc)
+SOURCES += $(wildcard eurorack/plaits/dsp/fm/*.cc)
 SOURCES += $(wildcard eurorack/plaits/dsp/speech/*.cc)
 SOURCES += $(wildcard eurorack/plaits/dsp/physical_modelling/*.cc)
 SOURCES += eurorack/plaits/resources.cc
@@ -50,7 +53,7 @@ SOURCES += eurorack/tides/generator.cc
 SOURCES += eurorack/tides/resources.cc
 
 SOURCES += eurorack/tides2/poly_slope_generator.cc
-SOURCES += eurorack/tides2/ramp_extractor.cc
+SOURCES += eurorack/tides2/ramp/ramp_extractor.cc
 SOURCES += eurorack/tides2/resources.cc
 
 SOURCES += eurorack/warps/dsp/modulator.cc
@@ -76,7 +79,6 @@ SOURCES += eurorack/peaks/pulse_processor/pulse_randomizer.cc
 SOURCES += eurorack/peaks/number_station/number_station.cc
 
 SOURCES += eurorack/stages/segment_generator.cc
-SOURCES += eurorack/stages/ramp_extractor.cc
 SOURCES += eurorack/stages/resources.cc
 
 SOURCES += eurorack/stmlib/utils/random.cc

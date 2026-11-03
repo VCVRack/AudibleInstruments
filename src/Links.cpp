@@ -30,6 +30,29 @@ struct Links : Module {
 		NUM_LIGHTS
 	};
 
+	bool legacySumming = false;
+
+	void onReset() override {
+		legacySumming = false;
+	}
+
+	json_t* dataToJson() override {
+		json_t* rootJ = json_object();
+		json_object_set_new(rootJ, "legacySumming", json_boolean(legacySumming));
+		return rootJ;
+	}
+
+	void fromJson(json_t* rootJ) override {
+		// Old Multiples instances have no "data" object at all.
+		legacySumming = true;
+		Module::fromJson(rootJ);
+	}
+
+	void dataFromJson(json_t* rootJ) override {
+		json_t* legacyJ = json_object_get(rootJ, "legacySumming");
+		legacySumming = legacyJ ? json_is_true(legacyJ) : true;
+	}
+
 	Links() {
 		config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
 		configInput(A1_INPUT, "A1");
@@ -85,6 +108,8 @@ struct Links : Module {
 			float in[16];
 			for (int c = 0; c < channels; c++) {
 				in[c] = inputs[C1_INPUT].getPolyVoltage(c) + inputs[C2_INPUT].getPolyVoltage(c) + inputs[C3_INPUT].getPolyVoltage(c);
+				if (!legacySumming)
+					in[c] /= 3.f;
 				outputs[C1_OUTPUT].setVoltage(in[c], c);
 			}
 			outputs[C1_OUTPUT].setChannels(channels);
@@ -121,6 +146,12 @@ struct LinksWidget : ModuleWidget {
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 59), module, Links::A_LIGHT));
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 161), module, Links::B_LIGHT));
 		addChild(createLight<SmallLight<GreenRedLight>>(Vec(26, 262), module, Links::C_LIGHT));
+	}
+
+	void appendContextMenu(Menu* menu) override {
+		Links* module = getModule<Links>();
+		menu->addChild(new MenuSeparator);
+		menu->addChild(createBoolPtrMenuItem("Legacy 3:1 summing (no attenuation)", "", &module->legacySumming));
 	}
 };
 

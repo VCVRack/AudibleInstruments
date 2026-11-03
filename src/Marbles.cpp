@@ -4,6 +4,10 @@
 #include "marbles/random/t_generator.h"
 #include "marbles/random/x_y_generator.h"
 #include "marbles/note_filter.h"
+#include "marbles/clock_self_patching_detector.h"
+#include "marbles/scale_recorder.h"
+#include <atomic>
+#include <mutex>
 
 
 static const int BLOCK_SIZE = 5;
@@ -43,8 +47,8 @@ static const marbles::Scale preset_scales[6] = {
 			{ 0.4167f, 64 },   // F
 			{ 0.5000f, 4 },    // F#
 			{ 0.5833f, 192 },  // G
-			{ 0.6667f, 16 },   // G#
-			{ 0.7500f, 96 },   // A
+			{ 0.6667f, 96 },   // G#
+			{ 0.7500f, 16 },   // A
 			{ 0.8333f, 128 },  // Bb
 			{ 0.9167f, 16 },   // B
 		}
@@ -127,6 +131,40 @@ static const marbles::Scale preset_scales[6] = {
 };
 
 
+// Panel buttons act on release, or as a long press once held for 2 s, as in the firmware UI.
+struct MarblesButton {
+	enum Press {
+		NONE,
+		SHORT,
+		LONG,
+	};
+	bool held = false;
+	bool longFired = false;
+	float heldTime = 0.f;
+
+	Press process(bool pressed, float sampleTime) {
+		if (pressed) {
+			if (!held) {
+				held = true;
+				longFired = false;
+				heldTime = 0.f;
+			}
+			else if (!longFired) {
+				heldTime += sampleTime;
+				if (heldTime >= 2.f) {
+					longFired = true;
+					return LONG;
+				}
+			}
+			return NONE;
+		}
+		Press press = (held && !longFired) ? SHORT : NONE;
+		held = false;
+		return press;
+	}
+};
+
+
 struct Marbles : Module {
 	enum ParamIds {
 		T_DEJA_VU_PARAM,
@@ -144,6 +182,13 @@ struct Marbles : Module {
 		EXTERNAL_PARAM,
 		T_JITTER_PARAM,
 		X_STEPS_PARAM,
+		// Append parameters to preserve existing patch and automation IDs.
+		Y_RATE_PARAM,
+		Y_SPREAD_PARAM,
+		Y_BIAS_PARAM,
+		Y_STEPS_PARAM,
+		GATE_BIAS_PARAM,
+		GATE_JITTER_PARAM,
 		NUM_PARAMS
 	};
 	enum InputIds {
@@ -179,10 +224,10 @@ struct Marbles : Module {
 		T1_LIGHT,
 		T2_LIGHT,
 		T3_LIGHT,
-		Y_LIGHT,
-		X1_LIGHT,
-		X2_LIGHT,
-		X3_LIGHT,
+		ENUMS(Y_LIGHT, 2),
+		ENUMS(X1_LIGHT, 2),
+		ENUMS(X2_LIGHT, 2),
+		ENUMS(X3_LIGHT, 2),
 		NUM_LIGHTS
 	};
 
@@ -193,23 +238,71 @@ struct Marbles : Module {
 	marbles::NoteFilter note_filter;
 
 	// State
-	dsp::BooleanTrigger tDejaVuTrigger;
-	dsp::BooleanTrigger xDejaVuTrigger;
-	dsp::BooleanTrigger tModeTrigger;
-	dsp::BooleanTrigger xModeTrigger;
-	dsp::BooleanTrigger tRangeTrigger;
-	dsp::BooleanTrigger xRangeTrigger;
-	dsp::BooleanTrigger externalTrigger;
-	bool t_deja_vu;
-	bool x_deja_vu;
+	MarblesButton tDejaVuButton;
+	MarblesButton xDejaVuButton;
+	MarblesButton tModeButton;
+	MarblesButton xModeButton;
+	MarblesButton tRangeButton;
+	MarblesButton xRangeButton;
+	MarblesButton externalButton;
+	enum DejaVuState {
+		DEJA_VU_OFF,
+		DEJA_VU_ON,
+		// Long press: the loop stays locked regardless of the DEJA VU knob.
+		DEJA_VU_LOCKED,
+	};
+	int t_deja_vu;
+	int x_deja_vu;
+	// Long-pressing X RANGE selects the scale until the buttons have been idle for 4 s.
+	bool selectingScale = false;
+	float buttonIdleTime = 0.f;
+	float lightTime = 0.f;
 	int t_mode;
 	int x_mode;
 	int t_range;
 	int x_range;
 	bool external;
 	int x_scale;
-	int y_divider_index;
 	int x_clock_source_internal;
+	int y_range;
+	// Patches saved before Y had its own settings drove Y from X's range and knobs.
+	bool legacyYFollowsX = false;
+	// Patches saved before these fixes keep the previous behavior.
+	// External mode sampled 0.5 * (SPREAD knob + V/5), and the jack also modulated SPREAD.
+	bool legacyExternalScaling = false;
+	// Self-patched X CLOCK was only detected with explicit reset enabled.
+	bool legacyClockDetection = false;
+	// Hardware Y quantizes to octaves only; optionally use X's selected scale instead.
+	bool yScaleFollowsX = false;
+	bool yScaleLoadedFollowsX = false;
+	// Six scale slots, as in the firmware's persistent data. Recording replaces the selected slot.
+	// Patch saving reads these from another thread, so they are guarded by scalesMutex.
+	marbles::Scale scales[6];
+	bool scaleRecorded[6] = {};
+	std::mutex scalesMutex;
+	std::atomic<bool> scalesDirty{true};
+	// Long-pressing EXT records a scale from the X SPREAD input, one note per X CLOCK gate.
+	marbles::ScaleRecorder scaleRecorder;
+	bool recordingScale = false;
+	// Scale recording requested from the context menu, applied on the audio thread like EXT presses.
+	enum ScaleRecordingRequest {
+		SCALE_REQUEST_NONE,
+		SCALE_REQUEST_START,
+		SCALE_REQUEST_SAVE,
+		SCALE_REQUEST_RESTORE,
+	};
+	std::atomic<int> scaleRecordingRequest{SCALE_REQUEST_NONE};
+	// A recorded or restored slot waiting for scalesMutex.
+	int pendingScaleSlot = -1;
+	marbles::Scale pendingScale;
+	bool pendingScaleRecorded = false;
+	bool explicitReset = false;
+	bool tResetPending = false;
+	bool xResetPending = false;
+	dsp::SchmittTrigger tResetTrigger;
+	dsp::SchmittTrigger xResetTrigger;
+	marbles::ClockSelfPatchingDetector selfPatchingDetector[3];
+	marbles::IOBuffer::Block clockHistory = {};
 
 	// Buffers
 	stmlib::GateFlags t_clocks[BLOCK_SIZE] = {};
@@ -240,6 +333,15 @@ struct Marbles : Module {
 		configButton(EXTERNAL_PARAM, "External processing mode");
 		configParam(T_JITTER_PARAM, 0.0, 1.0, 0.0, "Randomness amount");
 		configParam(X_STEPS_PARAM, 0.0, 1.0, 0.5, "Smoothness");
+		configSwitch(Y_RATE_PARAM, 0.f, 11.f, 6.f, "Y divider ratio",
+			{"1/64", "1/48", "1/32", "1/24", "1/16", "1/12", "1/8", "1/6", "1/4", "1/3", "1/2", "1"});
+		configParam(Y_SPREAD_PARAM, 0.f, 1.f, 0.5f, "Y spread", "%", 0.f, 100.f);
+		configParam(Y_BIAS_PARAM, 0.f, 1.f, 0.5f, "Y bias", "%", 0.f, 100.f);
+		configParam(Y_STEPS_PARAM, 0.f, 1.f, 0.f, "Y steps", "%", 0.f, 100.f);
+		configParam(GATE_BIAS_PARAM, 0.f, 1.f, 0.5f, "T gate length", "%", 0.f, 100.f);
+		configParam(GATE_JITTER_PARAM, 0.f, 1.f, 0.f, "T gate length randomness", "%", 0.f, 100.f);
+		for (int i = Y_RATE_PARAM; i < NUM_PARAMS; i++)
+			getParamQuantity(i)->randomizeEnabled = false;
 
 		configInput(T_BIAS_INPUT, "T bias");
 		configInput(X_BIAS_INPUT, "X bias");
@@ -262,21 +364,49 @@ struct Marbles : Module {
 		random_generator.Init(1);
 		random_stream.Init(&random_generator);
 		note_filter.Init();
+		scaleRecorder.Init();
 		onSampleRateChange();
 		onReset();
 	}
 
 	void onReset() override {
-		t_deja_vu = false;
-		x_deja_vu = false;
+		t_deja_vu = DEJA_VU_OFF;
+		x_deja_vu = DEJA_VU_OFF;
+		selectingScale = false;
+		recordingScale = false;
+		pendingScaleSlot = -1;
+		{
+			std::lock_guard<std::mutex> lock(scalesMutex);
+			for (int i = 0; i < 6; i++) {
+				scales[i] = preset_scales[i];
+				scaleRecorded[i] = false;
+			}
+		}
+		scalesDirty = true;
 		t_mode = 0;
 		x_mode = 0;
 		t_range = 1;
-		x_range = 1;
+		x_range = 2;
 		external = false;
 		x_scale = 0;
-		y_divider_index = 8;
+		params[Y_RATE_PARAM].setValue(6);
 		x_clock_source_internal = 0;
+		y_range = 2;
+		params[Y_SPREAD_PARAM].setValue(0.5f);
+		params[Y_BIAS_PARAM].setValue(0.5f);
+		params[Y_STEPS_PARAM].setValue(0.f);
+		params[GATE_BIAS_PARAM].setValue(0.5f);
+		params[GATE_JITTER_PARAM].setValue(0.f);
+		legacyYFollowsX = false;
+		legacyExternalScaling = false;
+		legacyClockDetection = false;
+		yScaleFollowsX = false;
+		explicitReset = false;
+		tResetPending = xResetPending = false;
+		tResetTrigger.reset();
+		xResetTrigger.reset();
+		for (int i = 0; i < 3; i++)
+			selfPatchingDetector[i].Init(i);
 	}
 
 	void onRandomize() override {
@@ -291,53 +421,196 @@ struct Marbles : Module {
 		t_generator.Init(&random_stream, sampleRate);
 		xy_generator.Init(&random_stream, sampleRate);
 
-		// Set scales
-		for (int i = 0; i < 6; i++) {
-			xy_generator.LoadScale(i, preset_scales[i]);
+		// Init() clears the quantizer scales; stepBlock() reloads them before the next render.
+		scalesDirty = true;
+	}
+
+	// Called on the audio thread. Applies a recorded or restored slot, then reloads the quantizers
+	// when anything changed. As on hardware, the shared loader covers X only; Y keeps the default
+	// octave scale unless it follows X.
+	void updateScales() {
+		if (pendingScaleSlot < 0 && !scalesDirty && yScaleLoadedFollowsX == yScaleFollowsX)
+			return;
+		// Never block the audio thread: if patch saving holds the lock, retry next block.
+		std::unique_lock<std::mutex> lock(scalesMutex, std::try_to_lock);
+		if (!lock.owns_lock())
+			return;
+		if (pendingScaleSlot >= 0) {
+			scales[pendingScaleSlot] = pendingScale;
+			scaleRecorded[pendingScaleSlot] = pendingScaleRecorded;
+			pendingScaleSlot = -1;
 		}
+		marbles::Scale octaves;
+		octaves.Init();
+		for (int i = 0; i < 6; i++) {
+			xy_generator.LoadScale(i, scales[i]);
+			xy_generator.LoadScale(marbles::kNumXChannels, i, yScaleFollowsX ? scales[i] : octaves);
+		}
+		yScaleLoadedFollowsX = yScaleFollowsX;
+		scalesDirty = false;
+	}
+
+	void startScaleRecording() {
+		scaleRecorder.Clear();
+		recordingScale = true;
+		selectingScale = false;
+	}
+
+	// Saving stores the recording in the selected slot if it has at least two notes; restoring brings
+	// back that slot's factory scale. Either way, recording ends.
+	void finishScaleRecording(bool restore) {
+		marbles::Scale scale;
+		if (restore)
+			queueScale(x_scale, preset_scales[x_scale], false);
+		else if (scaleRecorder.ExtractScale(&scale))
+			queueScale(x_scale, scale, true);
+		recordingScale = false;
+	}
+
+	void queueScale(int slot, const marbles::Scale& scale, bool recorded) {
+		pendingScale = scale;
+		pendingScaleRecorded = recorded;
+		pendingScaleSlot = slot;
+	}
+
+	static json_t* scaleToJson(const marbles::Scale& scale) {
+		json_t* scaleJ = json_object();
+		json_object_set_new(scaleJ, "baseInterval", json_real(scale.base_interval));
+		json_t* degreesJ = json_array();
+		for (int i = 0; i < scale.num_degrees; i++)
+			json_array_append_new(degreesJ, json_pack("[f, i]", scale.degree[i].voltage, (int) scale.degree[i].weight));
+		json_object_set_new(scaleJ, "degrees", degreesJ);
+		return scaleJ;
+	}
+
+	// Rejects anything the quantizer could misread: degree count, non-finite or extreme values, weights.
+	static bool scaleFromJson(json_t* scaleJ, marbles::Scale* scale) {
+		json_t* baseJ = json_object_get(scaleJ, "baseInterval");
+		json_t* degreesJ = json_object_get(scaleJ, "degrees");
+		if (!json_is_number(baseJ) || !json_is_array(degreesJ))
+			return false;
+		float base = json_number_value(baseJ);
+		size_t n = json_array_size(degreesJ);
+		if (!std::isfinite(base) || base <= 0.f || base > 10.f || n < 1 || n > (size_t) marbles::kMaxDegrees)
+			return false;
+		scale->base_interval = base;
+		scale->num_degrees = n;
+		for (size_t i = 0; i < n; i++) {
+			json_t* degreeJ = json_array_get(degreesJ, i);
+			json_t* voltageJ = json_array_get(degreeJ, 0);
+			json_t* weightJ = json_array_get(degreeJ, 1);
+			if (!json_is_number(voltageJ) || !json_is_integer(weightJ))
+				return false;
+			float voltage = json_number_value(voltageJ);
+			json_int_t weight = json_integer_value(weightJ);
+			if (!std::isfinite(voltage) || std::fabs(voltage) > 2.f * base || weight < 0 || weight > 255)
+				return false;
+			scale->degree[i].voltage = voltage;
+			scale->degree[i].weight = weight;
+		}
+		// The quantizer searches degrees in ascending voltage order, as ScaleRecorder::ExtractScale() sorts them.
+		std::sort(scale->degree, scale->degree + n, [](const marbles::Degree& a, const marbles::Degree& b) {
+			return a.voltage < b.voltage;
+		});
+		return true;
 	}
 
 	json_t* dataToJson() override {
 		json_t* rootJ = json_object();
 
-		json_object_set_new(rootJ, "t_deja_vu", json_boolean(t_deja_vu));
-		json_object_set_new(rootJ, "x_deja_vu", json_boolean(x_deja_vu));
+		// Older builds read these as on/off; locking is saved separately.
+		json_object_set_new(rootJ, "t_deja_vu", json_boolean(t_deja_vu != DEJA_VU_OFF));
+		json_object_set_new(rootJ, "x_deja_vu", json_boolean(x_deja_vu != DEJA_VU_OFF));
+		json_object_set_new(rootJ, "t_deja_vu_locked", json_boolean(t_deja_vu == DEJA_VU_LOCKED));
+		json_object_set_new(rootJ, "x_deja_vu_locked", json_boolean(x_deja_vu == DEJA_VU_LOCKED));
 		json_object_set_new(rootJ, "t_mode", json_integer(t_mode));
 		json_object_set_new(rootJ, "x_mode", json_integer(x_mode));
 		json_object_set_new(rootJ, "t_range", json_integer(t_range));
 		json_object_set_new(rootJ, "x_range", json_integer(x_range));
 		json_object_set_new(rootJ, "external", json_boolean(external));
 		json_object_set_new(rootJ, "x_scale", json_integer(x_scale));
-		json_object_set_new(rootJ, "y_divider_index", json_integer(y_divider_index));
+		// Retain legacy fields so older builds can read the knob settings.
+		json_object_set_new(rootJ, "y_divider_index", json_integer(clamp(int(std::round(params[Y_RATE_PARAM].getValue())), 0, 11)));
 		json_object_set_new(rootJ, "x_clock_source_internal", json_integer(x_clock_source_internal));
+		json_object_set_new(rootJ, "y_range", json_integer(y_range));
+		json_object_set_new(rootJ, "y_spread", json_real(params[Y_SPREAD_PARAM].getValue()));
+		json_object_set_new(rootJ, "y_bias", json_real(params[Y_BIAS_PARAM].getValue()));
+		json_object_set_new(rootJ, "y_steps", json_real(params[Y_STEPS_PARAM].getValue()));
+		json_object_set_new(rootJ, "t_pulse_width_mean", json_real(params[GATE_BIAS_PARAM].getValue()));
+		json_object_set_new(rootJ, "t_pulse_width_std", json_real(params[GATE_JITTER_PARAM].getValue()));
+		json_object_set_new(rootJ, "explicitReset", json_boolean(explicitReset));
+		json_object_set_new(rootJ, "legacyYFollowsX", json_boolean(legacyYFollowsX));
+		json_object_set_new(rootJ, "legacyExternalScaling", json_boolean(legacyExternalScaling));
+		json_object_set_new(rootJ, "legacyClockDetection", json_boolean(legacyClockDetection));
+		json_object_set_new(rootJ, "yScaleFollowsX", json_boolean(yScaleFollowsX));
+		{
+			// Only recorded slots are stored; the others are the factory presets.
+			std::lock_guard<std::mutex> lock(scalesMutex);
+			json_t* scalesJ = json_array();
+			for (int i = 0; i < 6; i++)
+				json_array_append_new(scalesJ, scaleRecorded[i] ? scaleToJson(scales[i]) : json_null());
+			json_object_set_new(rootJ, "recordedScales", scalesJ);
+		}
 
 		return rootJ;
 	}
 
 	void dataFromJson(json_t* rootJ) override {
+		// Migrate settings from patches saved before these became Rack parameters.
+		json_t* meanJ = json_object_get(rootJ, "t_pulse_width_mean");
+		params[GATE_BIAS_PARAM].setValue(meanJ ? clamp(float(json_number_value(meanJ)), 0.f, 1.f) : 0.f);
+		json_t* stdJ = json_object_get(rootJ, "t_pulse_width_std");
+		params[GATE_JITTER_PARAM].setValue(stdJ ? clamp(float(json_number_value(stdJ)), 0.f, 1.f) : 0.f);
+		explicitReset = json_is_true(json_object_get(rootJ, "explicitReset"));
+		// Patches saved before independent Y settings have no y_range.
+		json_t* legacyYJ = json_object_get(rootJ, "legacyYFollowsX");
+		legacyYFollowsX = legacyYJ ? json_boolean_value(legacyYJ) : !json_object_get(rootJ, "y_range");
+		json_t* legacyExternalJ = json_object_get(rootJ, "legacyExternalScaling");
+		legacyExternalScaling = legacyExternalJ ? json_is_true(legacyExternalJ) : true;
+		json_t* legacyClockJ = json_object_get(rootJ, "legacyClockDetection");
+		legacyClockDetection = legacyClockJ ? json_is_true(legacyClockJ) : true;
+		yScaleFollowsX = json_is_true(json_object_get(rootJ, "yScaleFollowsX"));
+		{
+			// Invalid or missing slots fall back to the factory presets.
+			json_t* scalesJ = json_object_get(rootJ, "recordedScales");
+			std::lock_guard<std::mutex> lock(scalesMutex);
+			for (int i = 0; i < 6; i++) {
+				marbles::Scale scale;
+				json_t* scaleJ = json_array_get(scalesJ, i);
+				scaleRecorded[i] = json_is_object(scaleJ) && scaleFromJson(scaleJ, &scale);
+				scales[i] = scaleRecorded[i] ? scale : preset_scales[i];
+			}
+		}
+		recordingScale = false;
+		pendingScaleSlot = -1;
+		scalesDirty = true;
 		json_t* t_deja_vuJ = json_object_get(rootJ, "t_deja_vu");
 		if (t_deja_vuJ)
-			t_deja_vu = json_boolean_value(t_deja_vuJ);
+			t_deja_vu = json_boolean_value(t_deja_vuJ) ? DEJA_VU_ON : DEJA_VU_OFF;
+		if (json_is_true(json_object_get(rootJ, "t_deja_vu_locked")))
+			t_deja_vu = DEJA_VU_LOCKED;
 
 		json_t* x_deja_vuJ = json_object_get(rootJ, "x_deja_vu");
 		if (x_deja_vuJ)
-			x_deja_vu = json_boolean_value(x_deja_vuJ);
+			x_deja_vu = json_boolean_value(x_deja_vuJ) ? DEJA_VU_ON : DEJA_VU_OFF;
+		if (json_is_true(json_object_get(rootJ, "x_deja_vu_locked")))
+			x_deja_vu = DEJA_VU_LOCKED;
 
 		json_t* t_modeJ = json_object_get(rootJ, "t_mode");
 		if (t_modeJ)
-			t_mode = json_integer_value(t_modeJ);
+			t_mode = clamp((int) json_integer_value(t_modeJ), 0, 6);
 
 		json_t* x_modeJ = json_object_get(rootJ, "x_mode");
 		if (x_modeJ)
-			x_mode = json_integer_value(x_modeJ);
+			x_mode = clamp((int) json_integer_value(x_modeJ), 0, 2);
 
 		json_t* t_rangeJ = json_object_get(rootJ, "t_range");
 		if (t_rangeJ)
-			t_range = json_integer_value(t_rangeJ);
+			t_range = clamp((int) json_integer_value(t_rangeJ), 0, 2);
 
 		json_t* x_rangeJ = json_object_get(rootJ, "x_range");
 		if (x_rangeJ)
-			x_range = json_integer_value(x_rangeJ);
+			x_range = clamp((int) json_integer_value(x_rangeJ), 0, 2);
 
 		json_t* externalJ = json_object_get(rootJ, "external");
 		if (externalJ)
@@ -345,40 +618,102 @@ struct Marbles : Module {
 
 		json_t* x_scaleJ = json_object_get(rootJ, "x_scale");
 		if (x_scaleJ)
-			x_scale = json_integer_value(x_scaleJ);
+			x_scale = clamp((int) json_integer_value(x_scaleJ), 0, 5);
 
 		json_t* y_divider_indexJ = json_object_get(rootJ, "y_divider_index");
 		if (y_divider_indexJ)
-			y_divider_index = json_integer_value(y_divider_indexJ);
+			params[Y_RATE_PARAM].setValue(clamp(float(json_integer_value(y_divider_indexJ)), 0.f, 11.f));
 
 		json_t* x_clock_source_internalJ = json_object_get(rootJ, "x_clock_source_internal");
 		if (x_clock_source_internalJ)
-			x_clock_source_internal = json_integer_value(x_clock_source_internalJ);
+			x_clock_source_internal = clamp((int) json_integer_value(x_clock_source_internalJ), 0, 3);
+
+		json_t* y_rangeJ = json_object_get(rootJ, "y_range");
+		if (y_rangeJ)
+			y_range = clamp((int) json_integer_value(y_rangeJ), 0, 2);
+
+		json_t* y_spreadJ = json_object_get(rootJ, "y_spread");
+		if (y_spreadJ)
+			params[Y_SPREAD_PARAM].setValue(clamp(float(json_number_value(y_spreadJ)), 0.f, 1.f));
+
+		json_t* y_biasJ = json_object_get(rootJ, "y_bias");
+		if (y_biasJ)
+			params[Y_BIAS_PARAM].setValue(clamp(float(json_number_value(y_biasJ)), 0.f, 1.f));
+
+		json_t* y_stepsJ = json_object_get(rootJ, "y_steps");
+		if (y_stepsJ)
+			params[Y_STEPS_PARAM].setValue(clamp(float(json_number_value(y_stepsJ)), 0.f, 1.f));
 	}
 
 	void process(const ProcessArgs& args) override {
-		// Buttons
-		if (tDejaVuTrigger.process(params[T_DEJA_VU_PARAM].getValue() <= 0.f)) {
-			t_deja_vu = !t_deja_vu;
+		// Buttons, following the firmware's Ui::OnSwitchReleased()
+		MarblesButton::Press press;
+		bool buttonEvent = false;
+		if ((press = tDejaVuButton.process(params[T_DEJA_VU_PARAM].getValue() > 0.f, args.sampleTime))) {
+			t_deja_vu = nextDejaVuState(t_deja_vu, press == MarblesButton::LONG);
+			buttonEvent = true;
 		}
-		if (xDejaVuTrigger.process(params[X_DEJA_VU_PARAM].getValue() <= 0.f)) {
-			x_deja_vu = !x_deja_vu;
+		if ((press = xDejaVuButton.process(params[X_DEJA_VU_PARAM].getValue() > 0.f, args.sampleTime))) {
+			x_deja_vu = nextDejaVuState(x_deja_vu, press == MarblesButton::LONG);
+			buttonEvent = true;
 		}
-		if (tModeTrigger.process(params[T_MODE_PARAM].getValue() <= 0.f)) {
-			t_mode = (t_mode + 1) % 3;
+		if ((press = tModeButton.process(params[T_MODE_PARAM].getValue() > 0.f, args.sampleTime))) {
+			// Long press switches to the second bank of models; short press returns to the
+			// same model in the first bank, or cycles models within it.
+			if (press == MarblesButton::LONG) {
+				if (t_mode < 3)
+					t_mode += 3;
+			}
+			else {
+				t_mode = (t_mode < 3) ? (t_mode + 1) % 3 : t_mode % 3;
+			}
+			buttonEvent = true;
 		}
-		if (xModeTrigger.process(params[X_MODE_PARAM].getValue() <= 0.f)) {
+		if ((press = xModeButton.process(params[X_MODE_PARAM].getValue() > 0.f, args.sampleTime))) {
 			x_mode = (x_mode + 1) % 3;
+			buttonEvent = true;
 		}
-		if (tRangeTrigger.process(params[T_RANGE_PARAM].getValue() <= 0.f)) {
+		if ((press = tRangeButton.process(params[T_RANGE_PARAM].getValue() > 0.f, args.sampleTime))) {
 			t_range = (t_range + 1) % 3;
+			buttonEvent = true;
 		}
-		if (xRangeTrigger.process(params[X_RANGE_PARAM].getValue() <= 0.f)) {
-			x_range = (x_range + 1) % 3;
+		if ((press = xRangeButton.process(params[X_RANGE_PARAM].getValue() > 0.f, args.sampleTime))) {
+			if (press == MarblesButton::LONG) {
+				if (!recordingScale)
+					selectingScale = true;
+			}
+			else if (selectingScale) {
+				x_scale = (x_scale + 1) % 6;
+			}
+			else if (!external) {
+				// Range does not apply while X processes the external input.
+				x_range = (x_range + 1) % 3;
+			}
+			buttonEvent = true;
 		}
-		if (externalTrigger.process(params[EXTERNAL_PARAM].getValue() <= 0.f)) {
-			external = !external;
+		if ((press = externalButton.process(params[EXTERNAL_PARAM].getValue() > 0.f, args.sampleTime))) {
+			if (recordingScale) {
+				// Short press saves the recording; long press restores the factory scale.
+				finishScaleRecording(press == MarblesButton::LONG);
+			}
+			else if (press == MarblesButton::LONG) {
+				startScaleRecording();
+			}
+			else {
+				external = !external;
+			}
+			buttonEvent = true;
 		}
+		if (scaleRecordingRequest.load(std::memory_order_relaxed) != SCALE_REQUEST_NONE) {
+			int request = scaleRecordingRequest.exchange(SCALE_REQUEST_NONE);
+			if (request == SCALE_REQUEST_START && !recordingScale)
+				startScaleRecording();
+			else if (request != SCALE_REQUEST_START && recordingScale)
+				finishScaleRecording(request == SCALE_REQUEST_RESTORE);
+		}
+		buttonIdleTime = buttonEvent ? 0.f : buttonIdleTime + args.sampleTime;
+		if (selectingScale && buttonIdleTime > 4.f)
+			selectingScale = false;
 
 		// Clocks
 		bool t_gate = (inputs[T_CLOCK_INPUT].getVoltage() >= 1.7f);
@@ -388,6 +723,14 @@ struct Marbles : Module {
 		bool x_gate = (inputs[X_CLOCK_INPUT].getVoltage() >= 1.7f);
 		last_xy_clock = stmlib::ExtractGateFlags(last_xy_clock, x_gate);
 		xy_clocks[blockIndex] = last_xy_clock;
+		clockHistory.input[1][blockIndex] = last_xy_clock;
+		for (int i = 0; i < 3; i++)
+			clockHistory.gate_output[i][blockIndex] = outputs[T1_OUTPUT + i].getVoltage() >= 1.7f;
+
+		bool tReset = tResetTrigger.process(inputs[T_JITTER_INPUT].getVoltage(), 0.5f, 1.f);
+		bool xReset = xResetTrigger.process(inputs[X_STEPS_INPUT].getVoltage(), 0.5f, 1.f);
+		tResetPending = explicitReset && (tResetPending || tReset);
+		xResetPending = explicitReset && (xResetPending || xReset);
 
 		// Process block
 		if (++blockIndex >= BLOCK_SIZE) {
@@ -397,23 +740,48 @@ struct Marbles : Module {
 
 		// Lights and outputs
 
-		lights[T_DEJA_VU_LIGHT].setBrightness(t_deja_vu);
-		lights[X_DEJA_VU_LIGHT].setBrightness(x_deja_vu);
+		// Firmware LED timing: 256 ms blink, 64 ms fast blink, 512 ms triangle pulse.
+		lightTime += args.sampleTime;
+		if (lightTime >= 1.024f)
+			lightTime -= 1.024f;
+		bool slowBlink = std::fmod(lightTime, 0.256f) > 0.128f;
+		bool fastBlink = std::fmod(lightTime, 0.064f) > 0.032f;
+		float pulse = 1.f - std::fabs(1.f - std::fmod(lightTime, 0.512f) / 0.256f);
 
+		// While selecting a scale, hardware shows only the X RANGE LED.
+		float panel = selectingScale ? 0.f : 1.f;
+
+		lights[T_DEJA_VU_LIGHT].setBrightness(panel * dejaVuLight(t_deja_vu, pulse));
+		lights[X_DEJA_VU_LIGHT].setBrightness(panel * dejaVuLight(x_deja_vu, pulse));
+
+		// The second bank of T models blinks.
 		int t_mode3 = t_mode % 3;
-		lights[T_MODE_LIGHTS + 0].setBrightness(t_mode3 == 0 || t_mode3 == 1);
-		lights[T_MODE_LIGHTS + 1].setBrightness(t_mode3 == 1 || t_mode3 == 2);
+		float t_mode_on = panel * (t_mode < 3 || slowBlink);
+		lights[T_MODE_LIGHTS + 0].setBrightness(t_mode_on * (t_mode3 == 0 || t_mode3 == 1));
+		lights[T_MODE_LIGHTS + 1].setBrightness(t_mode_on * (t_mode3 == 1 || t_mode3 == 2));
 
-		lights[X_MODE_LIGHTS + 0].setBrightness(x_mode == 0 || x_mode == 1);
-		lights[X_MODE_LIGHTS + 1].setBrightness(x_mode == 1 || x_mode == 2);
+		lights[X_MODE_LIGHTS + 0].setBrightness(panel * (x_mode == 0 || x_mode == 1));
+		lights[X_MODE_LIGHTS + 1].setBrightness(panel * (x_mode == 1 || x_mode == 2));
 
-		lights[T_RANGE_LIGHTS + 0].setBrightness(t_range == 0 || t_range == 1);
-		lights[T_RANGE_LIGHTS + 1].setBrightness(t_range == 1 || t_range == 2);
+		lights[T_RANGE_LIGHTS + 0].setBrightness(panel * (t_range == 0 || t_range == 1));
+		lights[T_RANGE_LIGHTS + 1].setBrightness(panel * (t_range == 1 || t_range == 2));
 
-		lights[X_RANGE_LIGHTS + 0].setBrightness(x_range == 0 || x_range == 1);
-		lights[X_RANGE_LIGHTS + 1].setBrightness(x_range == 1 || x_range == 2);
+		if (selectingScale || recordingScale) {
+			// Scales 1-3 blink slowly in green/yellow/red, scales 4-6 quickly.
+			int color = x_scale % 3;
+			float on = (x_scale < 3) ? slowBlink : fastBlink;
+			lights[X_RANGE_LIGHTS + 0].setBrightness(on * (color == 0 || color == 1));
+			lights[X_RANGE_LIGHTS + 1].setBrightness(on * (color == 1 || color == 2));
+		}
+		else {
+			// The range LED is off while X processes the external input.
+			float x_range_on = external ? 0.f : 1.f;
+			lights[X_RANGE_LIGHTS + 0].setBrightness(x_range_on * (x_range == 0 || x_range == 1));
+			lights[X_RANGE_LIGHTS + 1].setBrightness(x_range_on * (x_range == 1 || x_range == 2));
+		}
 
-		lights[EXTERNAL_LIGHT].setBrightness(external);
+		// EXT stays lit while recording a scale.
+		lights[EXTERNAL_LIGHT].setBrightness(recordingScale ? 1.f : panel * external);
 
 		outputs[T1_OUTPUT].setVoltage(gates[blockIndex * 2 + 0] ? 10.f : 0.f);
 		lights[T1_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 0], args.sampleTime);
@@ -423,13 +791,37 @@ struct Marbles : Module {
 		lights[T3_LIGHT].setSmoothBrightness(gates[blockIndex * 2 + 1], args.sampleTime);
 
 		outputs[X1_OUTPUT].setVoltage(voltages[blockIndex * 4 + 0]);
-		lights[X1_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 0], args.sampleTime);
+		setVoltageLight(X1_LIGHT, voltages[blockIndex * 4 + 0], args.sampleTime);
 		outputs[X2_OUTPUT].setVoltage(voltages[blockIndex * 4 + 1]);
-		lights[X2_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 1], args.sampleTime);
+		setVoltageLight(X2_LIGHT, voltages[blockIndex * 4 + 1], args.sampleTime);
 		outputs[X3_OUTPUT].setVoltage(voltages[blockIndex * 4 + 2]);
-		lights[X3_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 2], args.sampleTime);
+		setVoltageLight(X3_LIGHT, voltages[blockIndex * 4 + 2], args.sampleTime);
 		outputs[Y_OUTPUT].setVoltage(voltages[blockIndex * 4 + 3]);
-		lights[Y_LIGHT].setSmoothBrightness(voltages[blockIndex * 4 + 3], args.sampleTime);
+		setVoltageLight(Y_LIGHT, voltages[blockIndex * 4 + 3], args.sampleTime);
+	}
+
+	static int nextDejaVuState(int state, bool longPress) {
+		if (state == DEJA_VU_OFF)
+			return longPress ? DEJA_VU_LOCKED : DEJA_VU_ON;
+		if (state == DEJA_VU_LOCKED)
+			return DEJA_VU_ON;
+		return longPress ? DEJA_VU_LOCKED : DEJA_VU_OFF;
+	}
+
+	static float dejaVuAmount(int state, float deja_vu) {
+		// A DEJA VU amount of 0.5 locks the loop.
+		return (state == DEJA_VU_LOCKED) ? 0.5f : (state == DEJA_VU_ON) ? deja_vu : 0.f;
+	}
+
+	static float dejaVuLight(int state, float pulse) {
+		// Locked deja vu pulses.
+		return (state == DEJA_VU_LOCKED) ? pulse : (state == DEJA_VU_ON) ? 1.f : 0.f;
+	}
+
+	// The hardware drives each bicolor X/Y LED with a current proportional to the output voltage: green when positive, red when negative.
+	void setVoltageLight(int lightId, float voltage, float sampleTime) {
+		lights[lightId + 0].setSmoothBrightness(clamp(voltage / 5.f, 0.f, 1.f), sampleTime);
+		lights[lightId + 1].setSmoothBrightness(clamp(-voltage / 5.f, 0.f, 1.f), sampleTime);
 	}
 
 	void stepBlock() {
@@ -465,38 +857,62 @@ struct Marbles : Module {
 		t_generator.set_rate(t_rate);
 		float t_bias = clamp(params[T_BIAS_PARAM].getValue() + inputs[T_BIAS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		t_generator.set_bias(t_bias);
-		float t_jitter = clamp(params[T_JITTER_PARAM].getValue() + inputs[T_JITTER_INPUT].getVoltage() / 5.f, 0.f, 1.f);
+		float t_jitter = clamp(params[T_JITTER_PARAM].getValue() + (explicitReset ? 0.f : inputs[T_JITTER_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		t_generator.set_jitter(t_jitter);
-		t_generator.set_deja_vu(t_deja_vu ? deja_vu : 0.f);
+		t_generator.set_deja_vu(dejaVuAmount(t_deja_vu, deja_vu));
 		t_generator.set_length(deja_vu_length);
-		// TODO
-		t_generator.set_pulse_width_mean(0.f);
-		t_generator.set_pulse_width_std(0.f);
+		t_generator.set_pulse_width_mean(params[GATE_BIAS_PARAM].getValue());
+		t_generator.set_pulse_width_std(params[GATE_JITTER_PARAM].getValue());
 
-		t_generator.Process(t_external_clock, t_clocks, ramps, gates, BLOCK_SIZE);
+		bool tReset = tResetPending;
+		tResetPending = false;
+		t_generator.Process(t_external_clock, &tReset, t_clocks, ramps, gates, BLOCK_SIZE);
 
 		// Set up XYGenerator
 
 		marbles::ClockSource x_clock_source = (marbles::ClockSource) x_clock_source_internal;
 		if (inputs[X_CLOCK_INPUT].isConnected())
 			x_clock_source = marbles::CLOCK_SOURCE_EXTERNAL;
+		if (inputs[X_CLOCK_INPUT].isConnected() && (explicitReset || !legacyClockDetection)) {
+			// As on hardware, a T output patched into X CLOCK is detected from matching edges
+			// (after several clocks) and X then follows that T output's exact internal ramp.
+			// This also covers indirect routes, and avoids querying Rack's engine lock from the audio thread.
+			size_t bestScore = 8;
+			for (int i = 0; i < 3; i++) {
+				size_t score = selfPatchingDetector[i].Process(&clockHistory, BLOCK_SIZE);
+				if (score >= bestScore) {
+					x_clock_source = marbles::ClockSource(marbles::CLOCK_SOURCE_INTERNAL_T1 + i);
+					bestScore = score;
+				}
+			}
+		}
+		else {
+			for (int i = 0; i < 3; i++)
+				selfPatchingDetector[i].Init(i);
+		}
 
 		marbles::GroupSettings x;
 		x.control_mode = (marbles::ControlMode) x_mode;
 		x.voltage_range = (marbles::VoltageRange) x_range;
-		// TODO Fix the scaling
-		float note_cv = 0.5f * (params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f);
+		// External mode samples the X SPREAD jack alone. Its input stage and default ADC calibration
+		// map ±5 V to ±1 and clip beyond, so X reproduces the input voltage (1 V/oct).
+		// Scale recording always uses this scaling.
+		bool legacyNote = legacyExternalScaling && !recordingScale;
+		float note_cv = legacyNote
+			? 0.5f * (params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f)
+			: clamp(inputs[X_SPREAD_INPUT].getVoltage() / 5.f, -1.f, 1.f);
 		float u = note_filter.Process(0.5f * (note_cv + 1.f));
 		x.register_mode = external;
 		x.register_value = u;
 
-		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + inputs[X_SPREAD_INPUT].getVoltage() / 5.f, 0.f, 1.f);
+		// In external mode, firmware sets the SPREAD attenuverter to 12 o'clock (no CV), so the jack only feeds the register.
+		float x_spread = clamp(params[X_SPREAD_PARAM].getValue() + (external && !legacyExternalScaling ? 0.f : inputs[X_SPREAD_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		x.spread = x_spread;
 		float x_bias = clamp(params[X_BIAS_PARAM].getValue() + inputs[X_BIAS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
 		x.bias = x_bias;
-		float x_steps = clamp(params[X_STEPS_PARAM].getValue() + inputs[X_STEPS_INPUT].getVoltage() / 5.f, 0.f, 1.f);
+		float x_steps = clamp(params[X_STEPS_PARAM].getValue() + (explicitReset ? 0.f : inputs[X_STEPS_INPUT].getVoltage() / 5.f), 0.f, 1.f);
 		x.steps = x_steps;
-		x.deja_vu = x_deja_vu ? deja_vu : 0.f;
+		x.deja_vu = dejaVuAmount(x_deja_vu, deja_vu);
 		x.length = deja_vu_length;
 		x.ratio.p = 1;
 		x.ratio.q = 1;
@@ -504,14 +920,20 @@ struct Marbles : Module {
 
 		marbles::GroupSettings y;
 		y.control_mode = marbles::CONTROL_MODE_IDENTICAL;
-		// TODO
-		y.voltage_range = (marbles::VoltageRange) x_range;
 		y.register_mode = false;
 		y.register_value = 0.0f;
-		// TODO
-		y.spread = x_spread;
-		y.bias = x_bias;
-		y.steps = x_steps;
+		if (legacyYFollowsX) {
+			y.voltage_range = x.voltage_range;
+			y.spread = x_spread;
+			y.bias = x_bias;
+			y.steps = x_steps;
+		}
+		else {
+			y.voltage_range = (marbles::VoltageRange) y_range;
+			y.spread = params[Y_SPREAD_PARAM].getValue();
+			y.bias = params[Y_BIAS_PARAM].getValue();
+			y.steps = params[Y_STEPS_PARAM].getValue();
+		}
 		y.deja_vu = 0.0f;
 		y.length = 1;
 		static const marbles::Ratio y_divider_ratios[] = {
@@ -528,10 +950,34 @@ struct Marbles : Module {
 			{ 1, 2 },
 			{ 1, 1 },
 		};
-		y.ratio = y_divider_ratios[y_divider_index];
+		y.ratio = y_divider_ratios[clamp(int(std::round(params[Y_RATE_PARAM].getValue())), 0, 11)];
 		y.scale_index = x_scale;
+		updateScales();
 
-		xy_generator.Process(x_clock_source, x, y, xy_clocks, ramps, voltages, BLOCK_SIZE);
+		bool xReset = xResetPending;
+		xResetPending = false;
+		if (x_clock_source != marbles::CLOCK_SOURCE_EXTERNAL)
+			xReset |= tReset;
+
+		if (recordingScale) {
+			// As in firmware, X CLOCK gates mark notes on the X SPREAD input (nothing is recorded while
+			// it is unpatched), and every X/Y output monitors that input instead of generating.
+			float voltage = (u - 0.5f) * 10.f;
+			bool clockPatched = inputs[X_CLOCK_INPUT].isConnected();
+			for (int i = 0; i < BLOCK_SIZE; i++) {
+				stmlib::GateFlags gate = clockPatched ? xy_clocks[i] : stmlib::GATE_FLAG_LOW;
+				if (gate & stmlib::GATE_FLAG_RISING)
+					scaleRecorder.NewNote(voltage);
+				if (gate & stmlib::GATE_FLAG_HIGH)
+					scaleRecorder.UpdateVoltage(voltage);
+				if (gate & stmlib::GATE_FLAG_FALLING)
+					scaleRecorder.AcceptNote();
+			}
+			std::fill(&voltages[0], &voltages[BLOCK_SIZE * 4], voltage);
+		}
+		else {
+			xy_generator.Process(x_clock_source, x, y, &xReset, xy_clocks, ramps, voltages, BLOCK_SIZE);
+		}
 	}
 };
 
@@ -545,6 +991,8 @@ struct CKD6Light : BASE {
 
 
 struct MarblesWidget : ModuleWidget {
+	int editMode = 0;
+
 	MarblesWidget(Marbles* module) {
 		setModule(module);
 		setPanel(Svg::load(asset::plugin(pluginInstance, "res/Marbles.svg")));
@@ -570,6 +1018,43 @@ struct MarblesWidget : ModuleWidget {
 		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(31.544, 73.694)), module, Marbles::T_JITTER_PARAM));
 		addParam(createParamCentered<Rogan2PSWhite>(mm2px(Vec(59.845, 73.694)), module, Marbles::X_STEPS_PARAM));
 
+		{
+			ParamWidget* knob = createParamCentered<Rogan3PSGreen>(mm2px(Vec(23.467, 35.264)), module, Marbles::Y_RATE_PARAM);
+			knob->hide();
+			addParam(knob);
+		}
+
+		{
+			ParamWidget* knob = createParamCentered<Rogan3PSGreen>(mm2px(Vec(67.945, 35.243)), module, Marbles::Y_SPREAD_PARAM);
+			knob->hide();
+			addParam(knob);
+		}
+
+		{
+			ParamWidget* knob = createParamCentered<Rogan2PSGreen>(mm2px(Vec(81.844, 58.394)), module, Marbles::Y_BIAS_PARAM);
+			knob->hide();
+			addParam(knob);
+		}
+
+		{
+			ParamWidget* knob = createParamCentered<Rogan2PSGreen>(mm2px(Vec(59.845, 73.694)), module, Marbles::Y_STEPS_PARAM);
+			knob->hide();
+			addParam(knob);
+		}
+
+		{
+			ParamWidget* knob = createParamCentered<Rogan2PSRed>(mm2px(Vec(9.545, 58.394)), module, Marbles::GATE_BIAS_PARAM);
+			knob->hide();
+			addParam(knob);
+		}
+
+		{
+			ParamWidget* knob = createParamCentered<Rogan2PSRed>(mm2px(Vec(31.544, 73.694)), module, Marbles::GATE_JITTER_PARAM);
+			knob->hide();
+			addParam(knob);
+		}
+
+
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.545, 81.944)), module, Marbles::T_BIAS_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(81.844, 81.944)), module, Marbles::X_BIAS_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(9.545, 96.544)), module, Marbles::T_CLOCK_INPUT));
@@ -590,24 +1075,49 @@ struct MarblesWidget : ModuleWidget {
 
 		addChild(createLightCentered<CKD6Light<GreenLight>>(mm2px(Vec(16.545, 17.794)), module, Marbles::T_DEJA_VU_LIGHT));
 		addChild(createLightCentered<CKD6Light<GreenLight>>(mm2px(Vec(74.845, 17.794)), module, Marbles::X_DEJA_VU_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(6.944, 29.894)), module, Marbles::T_MODE_LIGHTS));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(84.444, 29.894)), module, Marbles::X_MODE_LIGHTS));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(26.644, 53.994)), module, Marbles::T_RANGE_LIGHTS));
-		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(64.744, 53.994)), module, Marbles::X_RANGE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(6.944, 29.894)), module, Marbles::T_MODE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(84.444, 29.894)), module, Marbles::X_MODE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(26.644, 53.994)), module, Marbles::T_RANGE_LIGHTS));
+		addChild(createLightCentered<MediumLight<GreenRedBicolorLight>>(mm2px(Vec(64.744, 53.994)), module, Marbles::X_RANGE_LIGHTS));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(45.695, 76.194)), module, Marbles::EXTERNAL_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(6.044, 104.794)), module, Marbles::T1_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(18.094, 104.794)), module, Marbles::T2_LIGHT));
 		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(30.145, 104.794)), module, Marbles::T3_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(42.194, 104.794)), module, Marbles::Y_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(54.244, 104.794)), module, Marbles::X1_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(66.294, 104.794)), module, Marbles::X2_LIGHT));
-		addChild(createLightCentered<MediumLight<GreenLight>>(mm2px(Vec(78.344, 104.794)), module, Marbles::X3_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(42.194, 104.794)), module, Marbles::Y_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(54.244, 104.794)), module, Marbles::X1_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(66.294, 104.794)), module, Marbles::X2_LIGHT));
+		addChild(createLightCentered<MediumLight<GreenRedLight>>(mm2px(Vec(78.344, 104.794)), module, Marbles::X3_LIGHT));
+	}
+
+	void setEditMode(int mode) {
+		if (!module)
+			return;
+		editMode = mode;
+		const int normal[] = {Marbles::T_RATE_PARAM, Marbles::X_SPREAD_PARAM,
+			Marbles::X_BIAS_PARAM, Marbles::X_STEPS_PARAM, Marbles::T_BIAS_PARAM, Marbles::T_JITTER_PARAM};
+		const int alternate[] = {Marbles::Y_RATE_PARAM, Marbles::Y_SPREAD_PARAM,
+			Marbles::Y_BIAS_PARAM, Marbles::Y_STEPS_PARAM, Marbles::GATE_BIAS_PARAM, Marbles::GATE_JITTER_PARAM};
+		for (int i = 0; i < 6; i++) {
+			bool editing = editMode == (i < 4 ? 1 : 2);
+			getParam(normal[i])->visible = !editing;
+			getParam(alternate[i])->visible = editing;
+		}
 	}
 
 	void appendContextMenu(Menu* menu) override {
 		Marbles* module = dynamic_cast<Marbles*>(this->module);
 
 		menu->addChild(new MenuSeparator);
+		menu->addChild(createIndexSubmenuItem("Knob edit mode", {"Default", "Y generator", "Gate"},
+			[=]() {return editMode;},
+			[=](int mode) {setEditMode(mode);}
+		));
+
+		menu->addChild(createIndexPtrSubmenuItem("T deja vu", {
+			"Off",
+			"On",
+			"Locked (hold T DEJA VU)",
+		}, &module->t_deja_vu));
 
 		menu->addChild(createIndexPtrSubmenuItem("T mode", {
 			"Complementary Bernoulli",
@@ -625,6 +1135,12 @@ struct MarblesWidget : ModuleWidget {
 			"4x",
 		}, &module->t_range));
 
+		menu->addChild(createIndexPtrSubmenuItem("X deja vu", {
+			"Off",
+			"On",
+			"Locked (hold X DEJA VU)",
+		}, &module->x_deja_vu));
+
 		menu->addChild(createIndexPtrSubmenuItem("X mode", {
 			"Identical",
 			"Bump",
@@ -637,14 +1153,40 @@ struct MarblesWidget : ModuleWidget {
 			"Full",
 		}, &module->x_range));
 
-		menu->addChild(createIndexPtrSubmenuItem("Scales", {
+		std::vector<std::string> scaleNames = {
 			"Major",
 			"Minor",
 			"Pentatonic",
 			"Pelog",
 			"Raag Bhairav That",
 			"Raag Shri",
-		}, &module->x_scale));
+		};
+		std::vector<std::string> scaleLabels = scaleNames;
+		{
+			std::lock_guard<std::mutex> lock(module->scalesMutex);
+			for (int i = 0; i < 6; i++) {
+				if (module->scaleRecorded[i])
+					scaleLabels[i] += " (recorded)";
+			}
+		}
+		menu->addChild(createIndexPtrSubmenuItem("Scales (hold X RANGE)", scaleLabels, &module->x_scale));
+
+		// Scale recording, also available by holding EXT.
+		std::string slotName = scaleNames[clamp(module->x_scale, 0, 5)];
+		if (module->recordingScale) {
+			menu->addChild(createMenuLabel("Recording into " + slotName + ": play notes into X SPREAD, gated by X CLOCK"));
+			menu->addChild(createMenuItem("Save recorded scale", "EXT", [=]() {
+				module->scaleRecordingRequest = Marbles::SCALE_REQUEST_SAVE;
+			}));
+			menu->addChild(createMenuItem("Restore factory scale", "hold EXT", [=]() {
+				module->scaleRecordingRequest = Marbles::SCALE_REQUEST_RESTORE;
+			}));
+		}
+		else {
+			menu->addChild(createMenuItem("Record scale into " + slotName, "hold EXT", [=]() {
+				module->scaleRecordingRequest = Marbles::SCALE_REQUEST_START;
+			}));
+		}
 
 		menu->addChild(createIndexPtrSubmenuItem("Internal X clock source", {
 			"T₁ → X₁, T₂ → X₂, T₃ → X₃",
@@ -653,7 +1195,7 @@ struct MarblesWidget : ModuleWidget {
 			"T₃ → X₁, X₂, X₃",
 		}, &module->x_clock_source_internal));
 
-		menu->addChild(createIndexPtrSubmenuItem("Y divider ratio", {
+		menu->addChild(createIndexSubmenuItem("Y divider ratio", {
 			"1/64",
 			"1/48",
 			"1/32",
@@ -666,7 +1208,38 @@ struct MarblesWidget : ModuleWidget {
 			"1/3",
 			"1/2",
 			"1",
-		}, &module->y_divider_index));
+		},
+			[=]() {return int(std::round(module->params[Marbles::Y_RATE_PARAM].getValue()));},
+			[=](int value) {module->getParamQuantity(Marbles::Y_RATE_PARAM)->setValue(value);}
+		));
+
+		menu->addChild(createIndexPtrSubmenuItem("Y range", {
+			"Narrow",
+			"Positive",
+			"Full",
+		}, &module->y_range));
+
+		menu->addChild(createIndexSubmenuItem("Y scale", {
+			"Octaves (hardware)",
+			"Same as X",
+		},
+			[=]() {return module->yScaleFollowsX ? 1 : 0;},
+			[=](int value) {module->yScaleFollowsX = value == 1;}
+		));
+
+		menu->addChild(createBoolPtrMenuItem("Legacy Y follows X range and knobs", "", &module->legacyYFollowsX));
+		menu->addChild(createBoolPtrMenuItem("Legacy external X SPREAD scaling", "", &module->legacyExternalScaling));
+		menu->addChild(createBoolPtrMenuItem("Legacy self-patched X clock detection", "", &module->legacyClockDetection));
+
+		menu->addChild(createBoolPtrMenuItem("Jitter/Steps CV inputs reset T/X", "", &module->explicitReset));
+
+		for (int paramId : {Marbles::GATE_BIAS_PARAM, Marbles::GATE_JITTER_PARAM,
+			Marbles::Y_SPREAD_PARAM, Marbles::Y_BIAS_PARAM, Marbles::Y_STEPS_PARAM}) {
+			ui::Slider* slider = new ui::Slider;
+			slider->quantity = module->getParamQuantity(paramId);
+			slider->box.size.x = 200.f;
+			menu->addChild(slider);
+		}
 	}
 };
 

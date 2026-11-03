@@ -7,14 +7,21 @@ Based on [Mutable Instruments](https://mutable-instruments.net/) Eurorack module
 
 ### Macro Oscillator
 Based on [Braids](https://mutable-instruments.net/modules/braids), [Manual](https://mutable-instruments.net/modules/braids/manual/)
-- Sync input doesn't work
-- More settings could be supported
+- As on hardware, TRIG also hard-syncs the models built on the analog oscillator, with one render block (0.25 ms) of latency. Older patches keep TRIG as strike only through **Legacy TRIG without hard sync**.
+- BITS (bit depth) and RATE (sample rate reduction) are in the context menu. The AD envelope, trigger delay and quantizer settings are not supported.
 
 ### Modal Synthesizer
 Based on [Elements](https://mutable-instruments.net/modules/elements), [Manual](https://mutable-instruments.net/modules/elements/manual/)
 
 ### Tidal Modulator
 Based on [Tides](https://mutable-instruments.net/modules/tides), [Manual](https://mutable-instruments.net/modules/tides/manual/)
+
+Connecting CLOCK enables PLL operation; the frequency control selects a ratio with unity at its center. High/Low outputs indicate the ends of attack/release. Older patches retain their original behavior through the **Legacy clock handling** and **Legacy inverted High/Low gates** context-menu options.
+
+### Random Sampler
+Based on [Marbles](https://pichenettes.github.io/mutable-instruments-documentation/modules/marbles/manual/).
+
+The context menu includes independent Y controls and **T gate length** / **T gate length randomness** for t1/t3; t2 stays at 50% duty. **Jitter/Steps CV inputs reset T/X** repurposes those two CV inputs for firmware-style resets while leaving the knobs active. Send reset before the next clock. Internally clocked X follows t reset. As on hardware, a t output patched into X CLOCK is recognized after several matching edges, and X then follows that output's internal clock. In external mode, X follows the X SPREAD input 1:1 (1 V/oct). Older patches keep the previous behavior through **Legacy self-patched X clock detection** and **Legacy external X SPREAD scaling**. Older patches retain their original gate-length setting. Hold a button for 2 s for its long press, as on hardware: DEJA VU locks the loop (the LED pulses), T MODE selects the second bank of t models (the LED blinks), and X RANGE selects the scale. Long-press EXT to record a scale into the selected slot: play notes into X SPREAD with a gate at X CLOCK for each, then press EXT to save (or long-press to restore the factory scale). Recorded scales are saved with the patch. Deja vu lock, scale selection and scale recording are also in the context menu, which names each panel shortcut. As on hardware, Y quantizes to octaves; **Y scale** can instead follow X's scale. Older patches load with **Legacy Y follows X range and knobs**, which reproduces earlier versions' Y output.
 
 ### Wavetable Oscillator
 Based on [Sheep](https://mutable-instruments.net/modules/tides/firmware/) (Tides alternative firmware)
@@ -25,8 +32,14 @@ Based on [Clouds](https://mutable-instruments.net/modules/clouds), [Manual](http
 - freeze button
 - right-click context menus to replace menu diving
 
+The **Sample memory** context submenu saves and loads four audio-buffer slots, including quality and playback mode. Saved slots are embedded in patches and presets; loading a slot freezes playback. Save/load requests run at the next audio-processing block, so resume the engine if the menu reports a pending request. The live unsaved buffer is not automatically captured when saving a patch.
+
+New instances detect rising edges at TRIGGER. Older patches retain **Legacy trigger-as-gate behavior**, which can be disabled in the context menu.
+
 ### Meta Modulator
 Based on [Warps](https://mutable-instruments.net/modules/warps), [Manual](https://mutable-instruments.net/modules/warps/manual/)
+
+The level knobs attenuate their CV inputs using the firmware's squared response and hardware input scaling. Unpatched inputs use the firmware's internal normalization. Internal oscillator pitch control remains additive. Older patches retain **Legacy additive level CV** in the context menu.
 
 ### Resonator
 Based on [Rings](https://mutable-instruments.net/modules/rings), [Manual](https://mutable-instruments.net/modules/rings/manual/)
@@ -34,8 +47,19 @@ Based on [Rings](https://mutable-instruments.net/modules/rings), [Manual](https:
 ### Keyframer/Mixer
 Based on [Frames](https://mutable-instruments.net/modules/frames), [Manual](https://mutable-instruments.net/modules/frames/manual/)
 
+FRAME STEP emits 5 V, 1 ms pulses when crossing keyframes, with the firmware's rearming behavior. Select **Sequencer** in the context menu to advance through stored frames with pulses on FRAME; turn MODULATION fully clockwise for standard 5 V clocks.
+
+Each channel's context menu sets its interpolation curve and its VCA response, a continuous blend from linear to exponential (75 dB range, as on hardware). The hardware sets these by holding ADD or DELETE and turning a channel knob; Rack uses the menu instead. Patches saved before this curve existed keep their previous levels through **Legacy response curve**, which can be turned off in the context menu.
+
+### Segment Generator
+Based on [Stages](https://pichenettes.github.io/mutable-instruments-documentation/modules/stages/manual/).
+
+All modes receive the firmware's extended slider-plus-CV range, including negative voltages for slew/sample-and-hold and additional oscillator/envelope rate control. Outputs saturate at the default firmware DAC limits (approximately +/-8.125 V). Older patches retain **Legacy limited CV range** in the context menu.
+
 ### Multiples
 Based on [Links](https://mutable-instruments.net/modules/links), [Manual](https://mutable-instruments.net/modules/links/manual/)
+
+The 3:1 section averages with a fixed gain of 1/3. Older patches retain **Legacy 3:1 summing (no attenuation)**; disable it in the context menu for hardware behavior.
 
 ### Utilities
 Based on [Kinks](https://mutable-instruments.net/modules/kinks), [Manual](https://mutable-instruments.net/modules/kinks/manual/)
