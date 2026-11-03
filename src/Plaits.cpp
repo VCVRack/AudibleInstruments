@@ -1021,6 +1021,9 @@ struct PlaitsWidget : ModuleWidget {
 		// ModuleWidget::getParam() doesn't work if the ModuleWidget doesn't have a module.
 		if (!module)
 			return;
+		// Like holding one button on the hardware, only one edit mode is shown on the LEDs at a time.
+		if (lpgMode && rangeMode)
+			setRangeMode(false);
 		if (lpgMode) {
 			getParam(Plaits::MORPH_PARAM)->hide();
 			getParam(Plaits::TIMBRE_PARAM)->hide();
@@ -1035,7 +1038,7 @@ struct PlaitsWidget : ModuleWidget {
 		}
 		this->lpgMode = lpgMode;
 		// Like holding the left button, the LEDs show the LPG settings.
-		getModule<Plaits>()->editMode = lpgMode ? Plaits::UI_MODE_DISPLAY_ALTERNATE_PARAMETERS : rangeMode ? Plaits::UI_MODE_DISPLAY_OCTAVE : Plaits::UI_MODE_NORMAL;
+		getModule<Plaits>()->editMode = lpgMode ? Plaits::UI_MODE_DISPLAY_ALTERNATE_PARAMETERS : Plaits::UI_MODE_NORMAL;
 	}
 
 	bool getLpgMode() {
@@ -1046,6 +1049,8 @@ struct PlaitsWidget : ModuleWidget {
 	void setRangeMode(bool rangeMode) {
 		if (!module)
 			return;
+		if (rangeMode && lpgMode)
+			setLpgMode(false);
 		if (rangeMode) {
 			getParam(Plaits::FREQ_PARAM)->hide();
 			getParam(Plaits::HARMONICS_PARAM)->hide();
@@ -1059,7 +1064,7 @@ struct PlaitsWidget : ModuleWidget {
 			getParam(Plaits::FREQ_RANGE_PARAM)->hide();
 		}
 		this->rangeMode = rangeMode;
-		getModule<Plaits>()->editMode = rangeMode ? Plaits::UI_MODE_DISPLAY_OCTAVE : lpgMode ? Plaits::UI_MODE_DISPLAY_ALTERNATE_PARAMETERS : Plaits::UI_MODE_NORMAL;
+		getModule<Plaits>()->editMode = rangeMode ? Plaits::UI_MODE_DISPLAY_OCTAVE : Plaits::UI_MODE_NORMAL;
 	}
 
 	bool getRangeMode() {
